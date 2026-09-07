@@ -71,9 +71,15 @@ Data visualization and game-state colors are intentionally not part of this rule
 - Shared section title: `16px` (`--mfl-section-title-font-size`)
 - Shared compact section title: `15px` (`--mfl-section-title-compact-font-size`)
 - Shared section-title weight / line-height: `700` / `1.1` (`--mfl-section-title-font-weight` / `--mfl-section-title-line-height`)
+- Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)
+- Compact metadata/small-label size: `11px` (`--mfl-metadata-compact-font-size`)
+- Shared metadata weight: `700` (`--mfl-metadata-font-weight`); strong metadata: `800` (`--mfl-metadata-strong-font-weight`)
+- Shared metadata line-height where the semantic role permits it: `1.1` (`--mfl-metadata-line-height`)
 - Numeric/count values use tabular figures where stable alignment matters
 
 The shared section-title scale is used only where the heading has the same structural role. Settings and Advanced Settings use the standard size; MFL Stats distribution and Privacy cards use the compact size. Player and Evaluation headings remain specialist-owned.
+
+Metadata tokens apply only to true small labels/secondary metadata. Component labels whose geometry controls a row height, and Player/Evaluation-specific labels, may keep locally owned line-height or sizing.
 
 ## Layout and chrome
 
@@ -91,6 +97,23 @@ The shared section-title scale is used only where the heading has the same struc
 - There is intentionally no global content max-width because table-heavy routes use the available width
 
 Page-layout tokens are semantic foundations: use them only when sections play the same structural role. Topbar/footer chrome, component-internal gaps, table overflow, Player/Evaluation geometry, and deliberate exceptions remain locally owned.
+
+## Content surfaces
+
+- Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)
+- The panel radius is for equivalent page/content surfaces such as Home summary cards, MFL Stats content panels, Settings surfaces, and Privacy sections.
+- Dialogs use `--mfl-radius-dialog`; controls use `--mfl-radius-control`.
+- Tables, Player cards, Evaluation surfaces, pills, and specialist visualizations keep their own geometry even when their current numeric radius also happens to be `8px`.
+
+## Keyboard focus
+
+Ordinary keyboard-focus affordances share:
+
+- Ring color: `var(--primary)` through `--mfl-focus-ring-color`
+- Ring width: `2px` through `--mfl-focus-ring-width`
+- Standard ring offset: `2px` through `--mfl-focus-ring-offset`
+
+Equivalent ordinary controls should consume these tokens. Compact controls may keep a deliberately smaller local offset, while table action menus, selected/expanded controls, and other specialist interaction states retain their domain-owned focus behavior.
 
 ## Controls
 
@@ -185,6 +208,9 @@ Component-local z-index values stay below the global application layers.
 4. Page/table title typography and repeated page-section vertical rhythm use the shared `--mfl-page-title-*` / `--mfl-page-section-gap` contracts. Phone and compact-phone title sizes override the same semantic token instead of redefining `.tablePageTitle`.
 5. Main page gutters and block insets use the shared `--mfl-page-gutter-inline` / `--mfl-page-inset-block-*` contracts while responsive safe-area logic remains in the responsive owner.
 6. Equivalent section headings use the shared standard/compact section-title typography contracts; Player and Evaluation keep their domain-specific heading geometry.
+7. Equivalent ordinary content surfaces consume `--mfl-radius-panel` without collapsing dialog, control, table, Player, or Evaluation radius ownership into one token.
+8. Ordinary keyboard focus consumes shared ring color/width/offset tokens while specialist interaction states remain locally owned.
+9. Repeated small-label and secondary metadata roles consume the shared 12px/11px metadata scale with 700/800 weight variants.
 
 ## What must remain intentionally separate
 
@@ -193,7 +219,8 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - desktop / tablet / phone / compact layouts
 - standard `40px` and compact `36px` controls
 - normal controls and tiny steppers/table actions
-- control, dialog/popover, and pill radii
+- content-panel, control, dialog/popover, table, Player/Evaluation, and pill radii
+- ordinary focus rings and specialist table/dropdown/selected interaction states
 - tooltip, dropdown, modal, and mobile-navigation shadows
 - topbar/footer chrome and main page-content gutters
 - Player/Evaluation-specific geometry
