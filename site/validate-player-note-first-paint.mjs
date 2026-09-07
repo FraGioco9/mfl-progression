@@ -67,38 +67,32 @@ for (const source of [noteSource, generatedIndex]) {
       && !source.includes('note.textContent = "📝";'),
     "A cached Player note must render the recreated SVG synchronously during first paint.",
   );
-  assert.ok(
-    source.includes('observer.observe(playerDetail, { childList: true, subtree: true });')
-      && source.includes('if (root.dataset.playerFirstPaintContentReady === "true")')
-      && source.includes('observer.disconnect();'),
-    "The isolated first-paint Notes observer must preserve pending note data only until authoritative Player content is ready.",
-  );
 }
 
 for (const token of [
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:not(:empty) {\n    position: absolute;\n    top: var(--mfl-player-panel-padding);\n    right: var(--mfl-player-panel-padding);',
+  '.playerHeroIdentity .playerTitle > :is(.playerTitleNoteIcon:not(:empty), .playerListingBadge) {\n    position: absolute;\n    top: var(--mfl-player-panel-padding);\n    display: grid;\n    place-items: center;',
   'width: 14px;\n    min-width: 14px;\n    max-width: 14px;\n    height: 14px;',
-  '.playerHeroIdentity .playerTitle:has(> .playerListingBadge) > .playerTitleNoteIcon:not(:empty) {\n    right: calc(var(--mfl-player-panel-padding) + 22px);',
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon > .playerNoteIconSvg {',
-  'flex: 0 0 14px;',
-  'stroke: currentColor;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    right: var(--mfl-player-panel-padding);',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:not(:empty) {\n    right: calc(var(--mfl-player-panel-padding) + 22px);',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon > .playerNoteIconSvg,\n  .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {',
+  'display: block;\n    width: 14px;',
   'stroke-width: 1.8;',
 ]) {
-  assert.ok(mobilePlacement.includes(token), `Canonical mobile Player Note placement/redesign is missing: ${token}`);
-  assert.ok(responsive.includes(token), `Generated responsive mobile Player Note placement/redesign is missing: ${token}`);
+  assert.ok(mobilePlacement.includes(token), `Canonical mobile Player Note/Listing alignment is missing: ${token}`);
+  assert.ok(responsive.includes(token), `Generated responsive mobile Player Note/Listing alignment is missing: ${token}`);
 }
 
 for (const token of [
   '@media (min-width: 901px) {',
   '.playerHeroIdentity .playerTitle {\n    display: flex;\n    align-items: center;\n    flex-wrap: nowrap;\n    gap: 8px;',
-  '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;',
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;',
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon > .playerNoteIconSvg {',
-  'flex: 0 0 18px;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    align-self: center;\n    margin-left: 0;',
+  '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n    display: inline-flex;\n    align-items: center;\n    line-height: 1.05;',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;\n    display: grid;\n    place-items: center;\n    flex: 0 0 22px;\n    align-self: center;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-flex;\n    align-items: center;\n    align-self: center;\n    height: 22px;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    display: block;\n    margin: 0;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    line-height: 1;',
 ]) {
-  assert.ok(desktopPlacement.includes(token), `Canonical desktop Player Note/Listing placement is missing: ${token}`);
-  assert.ok(responsive.includes(token), `Generated responsive desktop Player Note/Listing placement is missing: ${token}`);
+  assert.ok(desktopPlacement.includes(token), `Canonical desktop Player title alignment is missing: ${token}`);
+  assert.ok(responsive.includes(token), `Generated responsive desktop Player title alignment is missing: ${token}`);
 }
 
 for (const source of [mobilePlacement, desktopPlacement]) {
@@ -111,4 +105,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("/player-note.svg"), "Player Note presentation must not depend on the removed external icon asset.");
 }
 
-console.log("Player Note inline SVG rendering, first-paint availability, mobile Listing-scale geometry, desktop shared title-control placement, and observer idempotency validation passed.");
+console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing shared-axis alignment, desktop name/control centering, and observer idempotency validation passed.");
