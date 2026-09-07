@@ -4185,7 +4185,7 @@ html:not(.mflInitialRouteResolved):is(
     display: inline-flex;
     align-items: center;
     flex: 0 0 auto;
-    align-self: baseline;
+    align-self: center;
     width: max-content;
     min-width: 0;
     max-width: none;
