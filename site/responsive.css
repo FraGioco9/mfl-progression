@@ -2089,6 +2089,11 @@ html:not(.mflInitialRouteResolved):is(
  * gain a second, competing mobile implementation in a runtime or base style.
  */
 @media (max-width: 900px) {
+  :root {
+    --mfl-page-gutter-inline: 12px;
+    --mfl-page-inset-block-end: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
+  }
+
   html,
   body {
     width: 100%;
@@ -2113,9 +2118,9 @@ html:not(.mflInitialRouteResolved):is(
 
   body > #appShell > main {
     min-width: 0;
-    padding-right: max(12px, env(safe-area-inset-right));
-    padding-bottom: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(var(--mfl-page-gutter-inline), env(safe-area-inset-right));
+    padding-bottom: var(--mfl-page-inset-block-end);
+    padding-left: max(var(--mfl-page-gutter-inline), env(safe-area-inset-left));
   }
 
   #progressionPage,
@@ -2239,6 +2244,12 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 520px) {
+  :root {
+    --mfl-page-gutter-inline: 8px;
+    --mfl-page-title-font-size: 18px;
+    --mfl-page-section-gap: 5px;
+  }
+
   body > .topbar {
     column-gap: 8px;
     padding-right: max(10px, env(safe-area-inset-right));
@@ -2247,8 +2258,6 @@ html:not(.mflInitialRouteResolved):is(
 
   body > #appShell > main {
     --mfl-footer-page-floor: max(500px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
-    padding-right: max(8px, env(safe-area-inset-right));
-    padding-left: max(8px, env(safe-area-inset-left));
   }
 
   .topbar h1 {
@@ -2368,10 +2377,6 @@ html:not(.mflInitialRouteResolved):is(
   #progressionPage .viewControlsSeparator {
     height: 18px;
     margin-inline: 1px;
-  }
-
-  .tablePageTitle {
-    font-size: 18px;
   }
 
   html:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-table-page="club"] #progressionPage .viewButton[data-view="attributes"]::after {
@@ -3241,17 +3246,13 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 100%;
   }
 
-  .mflStatsPage .tablePageTitle {
-    font-size: 18px;
-  }
-
   .mflStatsViews {
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsFilters {
     gap: 4px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
     padding: 5px 6px;
   }
 
@@ -3273,7 +3274,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsCards {
     gap: 5px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsCards article {
@@ -3297,7 +3298,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsDistributionHeader {
     gap: 6px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsDistributionHeader h3 {
@@ -3547,6 +3548,10 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 380px) {
+  :root {
+    --mfl-page-title-font-size: 17px;
+  }
+
   body > #appShell > main {
     --mfl-footer-page-floor: max(460px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
   }
@@ -3615,10 +3620,6 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 68px;
     padding-inline: 4px;
     font-size: 9px;
-  }
-
-  .tablePageTitle {
-    font-size: 17px;
   }
 
   .filtersDialog {

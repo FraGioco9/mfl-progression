@@ -118,8 +118,10 @@ input[type="checkbox"]:indeterminate {
 
 input[type="checkbox"]:focus-visible {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+  border-color: var(--mfl-focus-ring-color);
+  box-shadow:
+    0 0 0 var(--mfl-focus-ring-offset) var(--surface),
+    0 0 0 calc(var(--mfl-focus-ring-offset) + var(--mfl-focus-ring-width)) var(--mfl-focus-ring-color);
 }
 
 input[type="checkbox"]:disabled {
@@ -189,7 +191,6 @@ p {
   text-align: left;
   transition: background 120ms ease, border-color 120ms ease;
 }
-
 
 .searchButton span {
   color: var(--text-soft);
@@ -317,7 +318,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
 .menuRail {
   position: fixed;
   top: 102px;
@@ -443,9 +443,9 @@ body[data-page="home"] .topbar .stats {
   align-self: center;
   height: 100%;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
+  line-height: var(--mfl-metadata-line-height);
 }
 
 .changelogMinorSection.is-expanded > .changelogMinorToggle .changelogMinorMeta {
@@ -530,7 +530,6 @@ body[data-page="home"] .topbar .stats {
   line-height: 1.15;
 }
 
-
 .sidebar {
   width: 162px;
   margin-top: 12px;
@@ -553,7 +552,6 @@ body[data-page="home"] .topbar .stats {
   gap: 8px;
   min-width: 0;
 }
-
 
 .settingsNavButton {
   grid-row: 3;
@@ -610,7 +608,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
 .navDatabaseIcon,
 .navTrendIcon,
 .navEvaluationIcon,
@@ -645,7 +642,6 @@ body[data-page="home"] .topbar .stats {
   fill: currentColor;
   stroke: none;
 }
-
 
 .navEvaluationIcon {
   fill: none;
@@ -693,8 +689,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
-
 body.guest .navButton[data-page="progression"] {
   display: none;
 }
@@ -703,7 +697,6 @@ body.filtersOpen .navButton:hover {
   border-color: var(--border-strong);
   background: var(--surface);
 }
-
 
 .pageView[hidden] {
   display: none;
@@ -742,7 +735,7 @@ main > .pageView {
 .homeStats div {
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -756,8 +749,8 @@ main > .pageView {
   display: block;
   margin-top: 4px;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -853,7 +846,7 @@ main {
   min-height: 0;
   height: 100%;
   margin-left: var(--sidebar-offset, 0px);
-  padding: 4px 28px 6px;
+  padding: var(--mfl-page-inset-block-start) var(--mfl-page-gutter-inline) var(--mfl-page-inset-block-end);
   overflow-x: clip;
   overflow-y: scroll;
   overscroll-behavior: contain;
@@ -867,7 +860,6 @@ body.pinnedSidebarVisible .siteFooter {
   width: calc(100% - var(--pinned-sidebar-width));
   margin-left: var(--pinned-sidebar-width);
 }
-
 
 body:not(.pinnedSidebarVisible) main,
 body:not(.pinnedSidebarVisible) .siteFooter {
@@ -896,7 +888,6 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   line-height: 1;
 }
 
-
 .watchlistSwitcher {
   position: relative;
   display: flex;
@@ -911,8 +902,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .watchlistSwitcherLabel {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   line-height: 1;
   white-space: nowrap;
 }
@@ -920,9 +911,10 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: var(--danger);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--mfl-helper-error-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-error-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {
@@ -1021,7 +1013,6 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   display: none;
 }
 
-
 .controlsBar {
   display: grid;
   grid-template-columns: max-content max-content auto 150px;
@@ -1040,8 +1031,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .field.rowsField span {
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   line-height: 40px;
   text-transform: uppercase;
 }
@@ -1071,8 +1062,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 }
 
 .field span {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -1106,8 +1097,6 @@ button:hover:not(:disabled) {
   border-color: var(--primary-hover);
   background: var(--primary-hover);
 }
-
-
 
 .menuButton:hover:not(:disabled) {
   border-color: transparent;
@@ -1250,7 +1239,9 @@ button:disabled:not(.menuButton) {
 
 .advancedSettingsSection h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--mfl-section-title-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .advancedSettingSummary {
@@ -2000,7 +1991,6 @@ td a {
   color: var(--text-muted);
 }
 
-
 .selectionBar {
   --mfl-selection-exit-y: 0px;
   position: fixed;
@@ -2560,7 +2550,6 @@ button.playerIdText:active {
   white-space: nowrap;
 }
 
-
 .playerAttributeCard strong {
   display: flex;
   align-items: center;
@@ -2625,7 +2614,6 @@ button.playerIdText:active {
 #playerDetail:not(.playerOverallRarityPaintComplete) .playerAttributeCard.featured:not(.isPending) {
   background: var(--surface);
 }
-
 
 @keyframes playerOverallRarityPaint {
   from {
@@ -3111,7 +3099,6 @@ button.playerIdText:active {
   border-bottom: 0;
 }
 
-
 .evaluationPage {
   width: min(1180px, 100%);
   margin: 0 auto;
@@ -3493,14 +3480,11 @@ button.playerIdText:active {
   font-weight: 800;
 }
 
-
-
 .evaluationSummaryTable td:nth-child(2) {
   position: relative;
   text-align: left;
   user-select: none;
 }
-
 
 .evaluationOverallControl {
   display: grid;
@@ -3592,7 +3576,6 @@ button.playerIdText:active {
   align-items: center;
   gap: 8px;
 }
-
 
 .playerNotesPanel {
   display: grid;
@@ -3956,7 +3939,6 @@ button.playerIdText:active {
   stroke-width: 2;
 }
 
-
 .evaluationLoadList,
 .evaluationLoadResult,
 .evaluationLoadActions {
@@ -4160,14 +4142,14 @@ button.playerIdText:active {
   margin-bottom: 7px;
   padding: 7px 9px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
 .mflStatsFilters > span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   text-transform: uppercase;
 }
 
@@ -4191,8 +4173,6 @@ button.playerIdText:active {
   white-space: nowrap;
 }
 
-
-
 .mflStatsCards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4203,7 +4183,7 @@ button.playerIdText:active {
 .mflStatsCards article,
 .mflStatsDistribution {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -4215,9 +4195,9 @@ button.playerIdText:active {
 .mflStatsCards span {
   display: block;
   color: var(--text-soft);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
+  line-height: var(--mfl-metadata-line-height);
   text-transform: uppercase;
 }
 
@@ -4252,7 +4232,9 @@ button.playerIdText:active {
 
 .mflStatsDistribution h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--mfl-section-title-compact-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .mflStatsDistributionModeButtons {
@@ -4272,8 +4254,6 @@ button.playerIdText:active {
   font-size: 12px;
   font-weight: 800;
 }
-
-
 
 .mflStatsAgeDistribution {
   height: clamp(240px, calc(100vh - 380px), 450px);
@@ -4359,7 +4339,6 @@ button.playerIdText:active {
   font-weight: 700;
 }
 
-
 .settingsPage {
   width: min(1180px, 100%);
   margin: 0 auto;
@@ -4380,15 +4359,15 @@ button.playerIdText:active {
 .settingsIdentity div,
 .settingsSection {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
   padding: 14px;
 }
 
 .settingsIdentity span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -4402,7 +4381,9 @@ button.playerIdText:active {
 
 .settingsSection h3 {
   margin: 0 0 12px;
-  font-size: 16px;
+  font-size: var(--mfl-section-title-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .settingsDateFormatOptions {
@@ -4458,8 +4439,13 @@ button.playerIdText:active {
   border-color: var(--danger);
 }
 
-.settingsEmailAddressInput:focus {
+.settingsEmailAddressInput:focus:not(:focus-visible) {
   outline: none;
+}
+
+.settingsEmailAddressInput:focus-visible {
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
+  outline-offset: var(--mfl-focus-ring-offset);
 }
 
 .settingsEmailActionButton {
@@ -4556,7 +4542,6 @@ button.playerIdText:active {
   opacity: 0.62;
 }
 
-
 /* Compact individual player notes panel. */
 .playerStack {
   grid-template-rows: auto auto auto;
@@ -4593,7 +4578,6 @@ button.playerIdText:active {
   vertical-align: middle;
 }
 
-
 .appShell .tableScroller .selectionCell {
   padding-left: 4px;
   padding-right: 4px;
@@ -4606,7 +4590,6 @@ button.playerIdText:active {
 }
 
 /* Pinned content grid, guest centering, and flicker-free tables. */
-
 
 .myPlayersLockedPage:not([hidden]),
 body.guest main > [class*="LockedPage"]:not([hidden]),
@@ -4663,7 +4646,6 @@ body[data-page="watchlist"] #progressionPage .views {
 #progressionPage .tableScroller table {
   box-sizing: border-box;
 }
-
 
 #progressionPage .tableScroller table,
 #progressionPage .tableScroller col,
@@ -4722,8 +4704,6 @@ body[data-page="club"] #progressionPage * {
   border-top-right-radius: inherit;
 }
 
-
-
 /* Stabilize Evaluation, MFL Stats, and modal state ownership. */
 
 #searchModal:not([hidden]),
@@ -4758,7 +4738,6 @@ body[data-page="evaluation"]::after {
   display: none;
   pointer-events: none;
 }
-
 
 html.mflEvaluationInitialLoadVisible #evaluationLoadButton,
 html.mflEvaluationInitialLoadVisible #evaluationLoadButton[hidden] {
@@ -4800,7 +4779,6 @@ html body[data-page="evaluation"] #evaluationSearchInput:not(:placeholder-shown)
   pointer-events: auto;
 }
 
-
 html body[data-page="evaluation"] #evaluationPage .evaluationDiscountRate[data-tooltip]::after,
 html body[data-page="evaluation"] #evaluationPage .evaluationDiscountRate[data-tooltip]::before {
   content: none;
@@ -4826,7 +4804,6 @@ html[data-initial-page^="players/"] body[data-page="player"]:not(.playerRouteGua
   text-decoration: none;
 }
 
-
 .evaluationDiscountTooltipPortal {
   position: fixed;
   z-index: var(--mfl-z-topmost);
@@ -4844,7 +4821,6 @@ html[data-initial-page^="players/"] body[data-page="player"]:not(.playerRouteGua
   opacity: 0;
   transform: translateY(4px);
 }
-
 
 .evaluationDiscountTooltipPortal[hidden] {
   display: none;
@@ -4933,7 +4909,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   visibility: hidden;
 }
 
-
 [data-tooltip]::before,
 [data-tooltip]::after,
 [data-note-tooltip]::before,
@@ -4973,7 +4948,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   visibility: visible;
   transform: translateY(0);
 }
-
 
 /* Site-owned date picker for table filters. */
 .siteDateField {
@@ -5019,7 +4993,7 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 }
 
 .siteDatePickerButton:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
   outline-offset: 1px;
 }
 
@@ -5154,7 +5128,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   font-weight: 700;
 }
 
-
 /* Privacy static page. */
 .privacyPage {
   width: 100%;
@@ -5181,13 +5154,15 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 .privacySection {
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
 .privacySection h3 {
   margin: 0 0 5px;
-  font-size: 15px;
+  font-size: var(--mfl-section-title-compact-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .privacySection p {

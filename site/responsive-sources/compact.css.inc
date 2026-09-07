@@ -1,5 +1,9 @@
 
 @media (max-width: 380px) {
+  :root {
+    --mfl-page-title-font-size: 17px;
+  }
+
   body > #appShell > main {
     --mfl-footer-page-floor: max(460px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
   }
@@ -68,10 +72,6 @@
     max-width: 68px;
     padding-inline: 4px;
     font-size: 9px;
-  }
-
-  .tablePageTitle {
-    font-size: 17px;
   }
 
   .filtersDialog {

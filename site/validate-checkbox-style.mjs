@@ -17,7 +17,9 @@ const requiredRules = [
   'background-color: var(--primary);',
   'input[type="checkbox"]:indeterminate {',
   'input[type="checkbox"]:focus-visible {',
-  'box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);',
+  'border-color: var(--mfl-focus-ring-color);',
+  '0 0 0 var(--mfl-focus-ring-offset) var(--surface),',
+  '0 0 0 calc(var(--mfl-focus-ring-offset) + var(--mfl-focus-ring-width)) var(--mfl-focus-ring-color);',
   'input[type="checkbox"]:disabled {',
   'cursor: not-allowed;',
 ];
@@ -26,6 +28,10 @@ for (const rule of requiredRules) {
   if (!css.includes(rule)) {
     throw new Error(`Shared checkbox styling is missing required contract: ${rule}`);
   }
+}
+
+if (css.includes('box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);')) {
+  throw new Error("Checkbox focus must consume the shared keyboard-focus foundation instead of the legacy literal ring.");
 }
 
 const legacyDimensionBlocks = [
@@ -45,4 +51,4 @@ if (css.includes('input[type="checkbox"] !important')) {
   throw new Error("Shared checkbox styling must not use !important.");
 }
 
-console.log("Shared checkbox styling validation passed.");
+console.log("Shared checkbox styling and keyboard-focus foundation validation passed.");

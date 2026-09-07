@@ -7,14 +7,38 @@ const includes = (source, token, message) => {
 const excludes = (source, token, message) => {
   if (source.includes(token)) throw new Error(message);
 };
+const exactRule = (source, selector) => {
+  const start = source.indexOf(`${selector} {`);
+  if (start < 0) return "";
+  const end = source.indexOf("\n}", start);
+  return end > start ? source.slice(start, end + 2) : "";
+};
 
-const [foundations, stacking, stylesBase, controls, dropdowns, footer, docs] = await Promise.all([
+const [
+  foundations,
+  stacking,
+  stylesBase,
+  styles,
+  controls,
+  dropdowns,
+  footer,
+  parity,
+  phoneTables,
+  phoneStatic,
+  compact,
+  docs,
+] = await Promise.all([
   read("./ui-foundations.css"),
   read("./stacking.css"),
   read("./styles-base.css"),
+  read("./styles.css"),
   read("./controls.css"),
   read("./dropdowns.css"),
   read("./footer.css"),
+  read("./responsive-sources/parity.css.inc"),
+  read("./responsive-sources/tables-phone.css.inc"),
+  read("./responsive-sources/static-phone.css.inc"),
+  read("./responsive-sources/compact.css.inc"),
   read("../docs/ui-foundations.md"),
 ]);
 
@@ -24,6 +48,34 @@ for (const token of [
   "--mfl-radius-control: 6px;",
   "--mfl-checkbox-size: 16px;",
   "--mfl-radius-checkbox: 4px;",
+  "--mfl-page-gutter-inline: 28px;",
+  "--mfl-page-inset-block-start: 4px;",
+  "--mfl-page-inset-block-end: 6px;",
+  "--mfl-page-title-font-size: 20px;",
+  "--mfl-page-title-min-height: 32px;",
+  "--mfl-page-title-margin-block-start: 6px;",
+  "--mfl-page-title-margin-block-end: 8px;",
+  "--mfl-page-title-line-height: 1.2;",
+  "--mfl-page-section-gap: 6px;",
+  "--mfl-section-title-font-size: 16px;",
+  "--mfl-section-title-compact-font-size: 15px;",
+  "--mfl-section-title-line-height: 1.1;",
+  "--mfl-section-title-font-weight: 700;",
+  "--mfl-metadata-font-size: 12px;",
+  "--mfl-metadata-compact-font-size: 11px;",
+  "--mfl-metadata-font-weight: 700;",
+  "--mfl-metadata-strong-font-weight: 800;",
+  "--mfl-metadata-line-height: 1.1;",
+  "--mfl-helper-text-font-size: 12px;",
+  "--mfl-helper-text-line-height: 1.25;",
+  "--mfl-helper-text-font-weight: 400;",
+  "--mfl-helper-error-font-weight: 700;",
+  "--mfl-helper-text-color: var(--text-soft);",
+  "--mfl-helper-error-color: var(--danger);",
+  "--mfl-focus-ring-color: var(--primary);",
+  "--mfl-focus-ring-width: 2px;",
+  "--mfl-focus-ring-offset: 2px;",
+  "--mfl-radius-panel: 8px;",
   "--mfl-radius-dialog: 8px;",
   "--mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);",
   "--mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);",
@@ -33,12 +85,144 @@ for (const token of [
 }
 
 includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");
+
+for (const duplicate of [
+  "--mfl-page-title-font-size: 20px;",
+  "--mfl-page-title-min-height: 32px;",
+  "--mfl-page-title-margin-block-start: 6px;",
+  "--mfl-page-title-margin-block-end: 8px;",
+  "--mfl-page-title-line-height: 1.2;",
+  "--mfl-page-section-gap: 6px;",
+]) {
+  excludes(styles, duplicate, `Page foundation value must be owned only by ui-foundations.css: ${duplicate}`);
+}
+
+for (const token of [
+  "min-height: var(--mfl-page-title-min-height);",
+  "margin: var(--mfl-page-title-margin-block-start) 0 var(--mfl-page-title-margin-block-end);",
+  "line-height: var(--mfl-page-title-line-height);",
+  "font-size: var(--mfl-page-title-font-size);",
+  "#progressionPage .views {\n  margin-bottom: var(--mfl-page-section-gap);",
+  ".quickFilters {\n  margin-bottom: var(--mfl-page-section-gap);",
+  "top: calc(var(--mfl-page-title-margin-block-start) + var(--mfl-page-title-min-height) + var(--mfl-page-title-margin-block-end));",
+]) {
+  includes(styles, token, `Page chrome must consume the shared page foundation: ${token}`);
+}
+excludes(
+  styles,
+  "top: calc(var(--mfl-page-title-margin-block-start) + 32px + var(--mfl-page-title-margin-block-end));",
+  "First-paint page controls must not duplicate the shared 32px page-title height.",
+);
+
+includes(
+  stylesBase,
+  "padding: var(--mfl-page-inset-block-start) var(--mfl-page-gutter-inline) var(--mfl-page-inset-block-end);",
+  "Desktop main content must consume the shared page gutter and block inset tokens.",
+);
+excludes(stylesBase, "padding: 4px 28px 6px;", "Desktop main content must not retain duplicated page inset/gutter literals.");
+
+for (const token of [
+  "--mfl-page-gutter-inline: 12px;",
+  "--mfl-page-inset-block-end: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));",
+  "padding-right: max(var(--mfl-page-gutter-inline), env(safe-area-inset-right));",
+  "padding-bottom: var(--mfl-page-inset-block-end);",
+  "padding-left: max(var(--mfl-page-gutter-inline), env(safe-area-inset-left));",
+]) {
+  includes(parity, token, `Tablet/mobile page layout must consume the shared page foundation: ${token}`);
+}
+
+for (const token of [
+  "--mfl-page-gutter-inline: 8px;",
+  "--mfl-page-title-font-size: 18px;",
+  "--mfl-page-section-gap: 5px;",
+]) {
+  includes(phoneTables, token, `Phone page foundations must override the shared semantic token: ${token}`);
+}
+excludes(phoneTables, ".tablePageTitle {\n    font-size: 18px;", "Phone title sizing must use the shared page-title token.");
+excludes(phoneTables, "padding-right: max(8px, env(safe-area-inset-right));", "Phone main gutter must use the shared gutter token.");
+excludes(phoneTables, "padding-left: max(8px, env(safe-area-inset-left));", "Phone main gutter must use the shared gutter token.");
+
+for (const [selector, sizeToken] of [
+  [".advancedSettingsSection h3", "var(--mfl-section-title-font-size)"],
+  [".settingsSection h3", "var(--mfl-section-title-font-size)"],
+  [".mflStatsDistribution h3", "var(--mfl-section-title-compact-font-size)"],
+  [".privacySection h3", "var(--mfl-section-title-compact-font-size)"],
+]) {
+  const rule = exactRule(stylesBase, selector);
+  if (!rule) throw new Error(`Expected shared section-title consumer ${selector}.`);
+  includes(rule, `font-size: ${sizeToken};`, `${selector} must consume its shared section-title size.`);
+  includes(rule, "font-weight: var(--mfl-section-title-font-weight);", `${selector} must consume the shared section-title weight.`);
+  includes(rule, "line-height: var(--mfl-section-title-line-height);", `${selector} must consume the shared section-title line height.`);
+}
+includes(stylesBase, ".evaluationPanel h3 {\n  margin: 0 0 10px;\n  font-size: 18px;", "Evaluation section headings must keep their specialist geometry.");
+includes(stylesBase, ".playerHero h2,\n.playerPanel h3 {\n  margin: 0;", "Player heading geometry must remain Player-owned.");
+
+for (const selector of [
+  ".mflStatsViews",
+  ".mflStatsFilters",
+  ".mflStatsCards",
+  ".mflStatsDistributionHeader",
+]) {
+  const start = phoneStatic.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`Expected small-screen Stats section ${selector}.`);
+  const end = phoneStatic.indexOf("}", start);
+  includes(
+    phoneStatic.slice(start, end),
+    "var(--mfl-page-section-gap)",
+    `${selector} must use the shared page section gap.`,
+  );
+}
+excludes(phoneStatic, ".mflStatsPage .tablePageTitle", "Stats pages must not own a separate phone title size.");
+includes(compact, "--mfl-page-title-font-size: 17px;", "Compact screens must override the shared page-title token.");
+excludes(compact, ".tablePageTitle {\n    font-size: 17px;", "Compact title sizing must use the shared page-title token.");
+
+for (const token of [
+  ".homeStats div {\n  padding: 10px 14px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
+  ".mflStatsFilters {\n  display: grid;\n  gap: 5px;\n  margin-bottom: 7px;\n  padding: 7px 9px;\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".mflStatsCards article,\n.mflStatsDistribution {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".settingsIdentity div,\n.settingsSection {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".privacySection {\n  padding: 14px 16px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
+]) {
+  includes(stylesBase, token, `Equivalent page/content surfaces must consume the shared panel radius: ${token}`);
+}
+includes(stylesBase, ".tableShell {\n  position: relative;\n  background: var(--surface);\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Table radius must remain table-owned rather than consuming the generic panel radius.");
+includes(stylesBase, ".playerHero,\n.playerPanel {\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Player surface radius must remain Player-owned.");
+
+for (const [selector, sizeToken, weightToken, lineToken] of [
+  [".changelogMinorMeta", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", "var(--mfl-metadata-line-height)"],
+  [".homeStats label", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".watchlistSwitcherLabel", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".field.rowsField span", "var(--mfl-metadata-compact-font-size)", "var(--mfl-metadata-strong-font-weight)", null],
+  [".field span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".mflStatsFilters > span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-strong-font-weight)", null],
+  [".mflStatsCards span", "var(--mfl-metadata-compact-font-size)", "var(--mfl-metadata-strong-font-weight)", "var(--mfl-metadata-line-height)"],
+  [".settingsIdentity span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+]) {
+  const rule = exactRule(stylesBase, selector);
+  if (!rule) throw new Error(`Expected metadata foundation consumer ${selector}.`);
+  includes(rule, `font-size: ${sizeToken};`, `${selector} must consume the shared metadata size.`);
+  includes(rule, `font-weight: ${weightToken};`, `${selector} must consume the shared metadata weight.`);
+  if (lineToken) includes(rule, `line-height: ${lineToken};`, `${selector} must consume the shared metadata line height.`);
+}
+
+const checkboxFocus = exactRule(stylesBase, 'input[type="checkbox"]:focus-visible');
+includes(checkboxFocus, "border-color: var(--mfl-focus-ring-color);", "Checkbox keyboard focus must consume the shared ring color.");
+includes(checkboxFocus, "var(--mfl-focus-ring-offset)", "Checkbox keyboard focus must consume the shared ring offset.");
+includes(checkboxFocus, "var(--mfl-focus-ring-width)", "Checkbox keyboard focus must consume the shared ring width.");
+excludes(checkboxFocus, "0 0 0 4px var(--primary)", "Checkbox focus must not retain the old literal outer ring.");
+
+includes(stylesBase, ".settingsEmailAddressInput:focus:not(:focus-visible) {\n  outline: none;", "Mouse focus on the Settings email field may remain visually quiet.");
+includes(stylesBase, ".settingsEmailAddressInput:focus-visible {\n  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);\n  outline-offset: var(--mfl-focus-ring-offset);", "Settings email keyboard focus must consume the shared ring contract.");
+includes(stylesBase, ".siteDatePickerButton:focus-visible {\n  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);\n  outline-offset: 1px;", "Compact date-picker focus must consume shared ring width/color while preserving its compact offset.");
+includes(footer, "outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);", "Footer keyboard focus must consume the shared focus ring.");
+includes(footer, "outline-offset: var(--mfl-focus-ring-offset);", "Footer keyboard focus must consume the shared focus offset.");
+
 includes(controls, "--mfl-filter-remove-danger: var(--danger);", "Filter removal must derive from the theme-aware global danger token.");
 excludes(controls, "#ff2020", "Filter controls must not retain the old one-off destructive red.");
 includes(controls, "border-radius: var(--mfl-radius-control);", "Filter removal must consume the shared control radius.");
 
 for (const token of [
-  ".addWatchlistError {\n  min-height: 18px;\n  margin: 6px 0 0;\n  color: var(--danger);",
+  ".addWatchlistError {\n  min-height: 18px;\n  margin: 6px 0 0;\n  color: var(--mfl-helper-error-color);\n  font-size: var(--mfl-helper-text-font-size);\n  font-weight: var(--mfl-helper-error-font-weight);\n  line-height: var(--mfl-helper-text-line-height);",
   "#addWatchlistNameInput[aria-invalid=\"true\"] {\n  border-color: var(--danger);",
   ".evaluationLoadDeleteButton {\n  border-color: var(--border);\n  background: var(--surface-muted);\n  color: var(--danger);",
   ".evaluationFooterDeleteButton {\n  align-self: center;\n  gap: 8px;\n  border-color: var(--border);\n  background: var(--surface-muted);\n  color: var(--danger);",
@@ -60,7 +244,8 @@ for (const token of [
 includes(footer, "border-radius: var(--mfl-radius-dialog);", "Bug Report must consume the canonical 8px dialog radius.");
 includes(footer, "box-shadow: var(--mfl-shadow-modal);", "Bug Report must consume the canonical modal shadow.");
 includes(footer, "border-radius: var(--mfl-radius-control);", "Bug Report fields must consume the shared control radius where the semantic role matches.");
-includes(footer, ".bugReportStatus.isError {\n  color: var(--danger);", "Bug Report error feedback must derive from --danger.");
+includes(footer, ".bugReportStatus {\n  min-height: 16px;\n  margin: 0;\n  color: var(--mfl-helper-text-color);\n  font-size: var(--mfl-helper-text-font-size);\n  font-weight: var(--mfl-helper-text-font-weight);\n  line-height: var(--mfl-helper-text-line-height);", "Bug Report ordinary status feedback must consume the shared helper-text foundation.");
+includes(footer, ".bugReportStatus.isError {\n  color: var(--mfl-helper-error-color);\n  font-weight: var(--mfl-helper-error-font-weight);", "Bug Report error feedback must consume the shared helper error foundation.");
 excludes(footer, ".bugReportDialog {\n  display: flex;\n  flex-direction: column;\n  width: min(620px, calc(100vw - 24px));\n  max-height: min(760px, calc(100dvh - 24px));\n  min-width: 0;\n  border: 1px solid var(--border);\n  border-radius: 10px;", "Bug Report must not reintroduce its former 10px dialog radius.");
 
 for (const [name, source] of [
@@ -78,17 +263,26 @@ for (const token of [
   "# MFL Front Office UI foundations",
   "## Ownership map",
   "`--danger` is the only global destructive/error-color source.",
+  "Shared page/table title size: `20px` (`--mfl-page-title-font-size`)",
+  "Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)",
+  "Shared section title: `16px` (`--mfl-section-title-font-size`)",
+  "Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)",
+  "Ordinary helper/status text size: `12px` (`--mfl-helper-text-font-size`)",
+  "Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)",
+  "Ring width: `2px` through `--mfl-focus-ring-width`",
+  "Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)",
   "Canonical dialog radius: `8px`",
   "Uniform Width remains the only numeric player-table column-width contract.",
   "Semantic destructive/error UI uses `--danger` end to end.",
+  "Equivalent ordinary content surfaces consume `--mfl-radius-panel`",
   "data visualization/game-state colors",
   "Do not globalize a value merely because two numbers or colors match.",
 ]) {
   includes(docs, token, `UI foundations documentation is missing: ${token}`);
 }
 
-for (const source of [foundations, stacking, stylesBase, controls, dropdowns, footer]) {
+for (const source of [foundations, stacking, stylesBase, styles, controls, dropdowns, footer, parity, phoneTables, phoneStatic, compact]) {
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic ownership, unified theme-aware destructive/error danger, and the canonical 8px dialog contract.");
+console.log("Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");

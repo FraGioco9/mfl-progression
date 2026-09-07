@@ -8,7 +8,7 @@ The goal is **shared ownership, not forced sameness**. Responsive geometry, Play
 
 | Foundation | Canonical owner |
 | --- | --- |
-| Cross-site shared control/surface tokens | `site/ui-foundations.css` |
+| Cross-site shared control/surface/page-layout tokens | `site/ui-foundations.css` |
 | Theme palette and desktop shell geometry | `site/styles-base.css` |
 | Table geometry and Uniform Width | `site/styles.css` |
 | Motion timings | `site/motion.css` |
@@ -63,19 +63,74 @@ Data visualization and game-state colors are intentionally not part of this rule
 
 - Font: `"Titillium Web", Arial, Helvetica, sans-serif`
 - `font-size-adjust`: `0.500`
-- Table/page title: `20px` desktop
-- Current responsive title scaling remains `18px` / `17px` where intentionally defined
-- Page-title block margins: `6px` before, `8px` after
-- Page-title line-height: `1.2`
+- Shared page/table title size: `20px` (`--mfl-page-title-font-size`)
+- Shared page-title minimum height: `32px` (`--mfl-page-title-min-height`)
+- Phone and compact-phone title scaling override the same token to `18px` / `17px`
+- Page-title block margins: `6px` before / `8px` after (`--mfl-page-title-margin-block-start` / `--mfl-page-title-margin-block-end`)
+- Page-title line-height: `1.2` (`--mfl-page-title-line-height`)
+- Shared section title: `16px` (`--mfl-section-title-font-size`)
+- Shared compact section title: `15px` (`--mfl-section-title-compact-font-size`)
+- Shared section-title weight / line-height: `700` / `1.1` (`--mfl-section-title-font-weight` / `--mfl-section-title-line-height`)
+- Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)
+- Compact metadata/small-label size: `11px` (`--mfl-metadata-compact-font-size`)
+- Shared metadata weight: `700` (`--mfl-metadata-font-weight`); strong metadata: `800` (`--mfl-metadata-strong-font-weight`)
+- Shared metadata line-height where the semantic role permits it: `1.1` (`--mfl-metadata-line-height`)
+- Ordinary helper/status text size: `12px` (`--mfl-helper-text-font-size`)
+- Ordinary helper/status line-height: `1.25` (`--mfl-helper-text-line-height`)
+- Ordinary status weight: `400` (`--mfl-helper-text-font-weight`)
+- Error feedback weight: `700` (`--mfl-helper-error-font-weight`)
 - Numeric/count values use tabular figures where stable alignment matters
+
+The shared section-title scale is used only where the heading has the same structural role. Settings and Advanced Settings use the standard size; MFL Stats distribution and Privacy cards use the compact size. Player and Evaluation headings remain specialist-owned.
+
+Metadata tokens apply only to true small labels/secondary metadata. Component labels whose geometry controls a row height, and Player/Evaluation-specific labels, may keep locally owned line-height or sizing.
+
+## Helper and status feedback
+
+Ordinary helper/status feedback shares:
+
+- Text color: `var(--text-soft)` through `--mfl-helper-text-color`
+- Error color: `var(--danger)` through `--mfl-helper-error-color`
+- Size: `12px`
+- Line-height: `1.25`
+- Normal status weight: `400`
+- Error feedback weight: `700`
+
+This contract is intentionally narrow. It covers ordinary form/status feedback such as Add Watchlist validation and Bug Report status/error text. Search hints, empty states, table loading/empty states, Player/Evaluation data labels, and domain-specific game-state messages remain locally owned.
 
 ## Layout and chrome
 
 - Desktop pinned sidebar: `190px`
 - Desktop topbar: `102px`
 - Mobile navigation: `58px`
-- Responsive page padding remains breakpoint-owned
+- Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)
+- Tablet/mobile page gutter at `<=900px`: `12px`, expressed by overriding the same token
+- Phone page gutter at `<=520px`: `8px`, expressed by overriding the same token
+- Desktop page block inset: `4px` top / `6px` bottom (`--mfl-page-inset-block-start` / `--mfl-page-inset-block-end`)
+- Tablet/mobile bottom page inset derives from the mobile-navigation clearance and safe-area inset through `--mfl-page-inset-block-end`
+- Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)
+- Phone page-section rhythm: `5px`, expressed by overriding the same shared token
+- Safe-area calculations remain in the responsive layout owner while consuming the shared page-gutter token
 - There is intentionally no global content max-width because table-heavy routes use the available width
+
+Page-layout tokens are semantic foundations: use them only when sections play the same structural role. Topbar/footer chrome, component-internal gaps, table overflow, Player/Evaluation geometry, and deliberate exceptions remain locally owned.
+
+## Content surfaces
+
+- Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)
+- The panel radius is for equivalent page/content surfaces such as Home summary cards, MFL Stats content panels, Settings surfaces, and Privacy sections.
+- Dialogs use `--mfl-radius-dialog`; controls use `--mfl-radius-control`.
+- Tables, Player cards, Evaluation surfaces, pills, and specialist visualizations keep their own geometry even when their current numeric radius also happens to be `8px`.
+
+## Keyboard focus
+
+Ordinary keyboard-focus affordances share:
+
+- Ring color: `var(--primary)` through `--mfl-focus-ring-color`
+- Ring width: `2px` through `--mfl-focus-ring-width`
+- Standard ring offset: `2px` through `--mfl-focus-ring-offset`
+
+Equivalent ordinary controls should consume these tokens. Compact controls may keep a deliberately smaller local offset, while table action menus, selected/expanded controls, and other specialist interaction states retain their domain-owned focus behavior.
 
 ## Controls
 
@@ -167,6 +222,13 @@ Component-local z-index values stay below the global application layers.
 1. Filter-rule removal uses the theme-aware global `--danger` value instead of hard-coded `#ff2020`.
 2. Bug Report uses the same `8px` dialog radius as the other shared dialogs instead of `10px`.
 3. Semantic destructive/error UI uses `--danger` end to end. This includes Bug Report errors, Watchlist and Evaluation delete actions, Add Watchlist validation, Settings invalid/discard states, wallet opt-out, and destructive hover/focus states that previously used separate fixed reds such as `#e06b6b`, `#ff8a8a`, `#c92a2a`, `#d84b4b`, `#ff6b6b`, and `#e95656`.
+4. Page/table title typography and repeated page-section vertical rhythm use the shared `--mfl-page-title-*` / `--mfl-page-section-gap` contracts. Phone and compact-phone title sizes override the same semantic token instead of redefining `.tablePageTitle`.
+5. Main page gutters and block insets use the shared `--mfl-page-gutter-inline` / `--mfl-page-inset-block-*` contracts while responsive safe-area logic remains in the responsive owner.
+6. Equivalent section headings use the shared standard/compact section-title typography contracts; Player and Evaluation keep their domain-specific heading geometry.
+7. Equivalent ordinary content surfaces consume `--mfl-radius-panel` without collapsing dialog, control, table, Player, or Evaluation radius ownership into one token.
+8. Ordinary keyboard focus consumes shared ring color/width/offset tokens while specialist interaction states remain locally owned.
+9. Repeated small-label and secondary metadata roles consume the shared 12px/11px metadata scale with 700/800 weight variants.
+10. Ordinary form/status feedback uses one 12px/1.25 helper contract with soft normal text and stronger danger-derived error feedback; search hints, empty states, table states, and domain-specific data messages remain separate.
 
 ## What must remain intentionally separate
 
@@ -175,9 +237,13 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - desktop / tablet / phone / compact layouts
 - standard `40px` and compact `36px` controls
 - normal controls and tiny steppers/table actions
-- control, dialog/popover, and pill radii
+- content-panel, control, dialog/popover, table, Player/Evaluation, and pill radii
+- ordinary focus rings and specialist table/dropdown/selected interaction states
+- ordinary helper/status feedback and domain-specific empty/loading/data states
 - tooltip, dropdown, modal, and mobile-navigation shadows
+- topbar/footer chrome and main page-content gutters
 - Player/Evaluation-specific geometry
+- page-level semantic rhythm and component-internal spacing
 - data visualization/game-state colors such as progression, Training deltas, and difficulty/status scales
 
 When a new value is genuinely global, add it to the appropriate canonical owner and update validation so a competing one-off literal cannot silently reappear.

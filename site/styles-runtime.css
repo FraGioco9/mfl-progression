@@ -25,7 +25,45 @@
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
 
+  /* Shared page layout, titles, and vertical rhythm. */
+  --mfl-page-gutter-inline: 28px;
+  --mfl-page-inset-block-start: 4px;
+  --mfl-page-inset-block-end: 6px;
+  --mfl-page-title-font-size: 20px;
+  --mfl-page-title-min-height: 32px;
+  --mfl-page-title-margin-block-start: 6px;
+  --mfl-page-title-margin-block-end: 8px;
+  --mfl-page-title-line-height: 1.2;
+  --mfl-page-section-gap: 6px;
+
+  /* Shared section-title typography. */
+  --mfl-section-title-font-size: 16px;
+  --mfl-section-title-compact-font-size: 15px;
+  --mfl-section-title-line-height: 1.1;
+  --mfl-section-title-font-weight: 700;
+
+  /* Shared small-label and metadata typography. */
+  --mfl-metadata-font-size: 12px;
+  --mfl-metadata-compact-font-size: 11px;
+  --mfl-metadata-font-weight: 700;
+  --mfl-metadata-strong-font-weight: 800;
+  --mfl-metadata-line-height: 1.1;
+
+  /* Shared ordinary helper/status feedback. */
+  --mfl-helper-text-font-size: 12px;
+  --mfl-helper-text-line-height: 1.25;
+  --mfl-helper-text-font-weight: 400;
+  --mfl-helper-error-font-weight: 700;
+  --mfl-helper-text-color: var(--text-soft);
+  --mfl-helper-error-color: var(--danger);
+
+  /* Shared keyboard-focus language for ordinary interactive controls. */
+  --mfl-focus-ring-color: var(--primary);
+  --mfl-focus-ring-width: 2px;
+  --mfl-focus-ring-offset: 2px;
+
   /* Shared application surfaces. */
+  --mfl-radius-panel: 8px;
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
   --mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);
@@ -213,8 +251,10 @@ input[type="checkbox"]:indeterminate {
 
 input[type="checkbox"]:focus-visible {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+  border-color: var(--mfl-focus-ring-color);
+  box-shadow:
+    0 0 0 var(--mfl-focus-ring-offset) var(--surface),
+    0 0 0 calc(var(--mfl-focus-ring-offset) + var(--mfl-focus-ring-width)) var(--mfl-focus-ring-color);
 }
 
 input[type="checkbox"]:disabled {
@@ -284,7 +324,6 @@ p {
   text-align: left;
   transition: background 120ms ease, border-color 120ms ease;
 }
-
 
 .searchButton span {
   color: var(--text-soft);
@@ -412,7 +451,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
 .menuRail {
   position: fixed;
   top: 102px;
@@ -538,9 +576,9 @@ body[data-page="home"] .topbar .stats {
   align-self: center;
   height: 100%;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
+  line-height: var(--mfl-metadata-line-height);
 }
 
 .changelogMinorSection.is-expanded > .changelogMinorToggle .changelogMinorMeta {
@@ -625,7 +663,6 @@ body[data-page="home"] .topbar .stats {
   line-height: 1.15;
 }
 
-
 .sidebar {
   width: 162px;
   margin-top: 12px;
@@ -648,7 +685,6 @@ body[data-page="home"] .topbar .stats {
   gap: 8px;
   min-width: 0;
 }
-
 
 .settingsNavButton {
   grid-row: 3;
@@ -705,7 +741,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
 .navDatabaseIcon,
 .navTrendIcon,
 .navEvaluationIcon,
@@ -740,7 +775,6 @@ body[data-page="home"] .topbar .stats {
   fill: currentColor;
   stroke: none;
 }
-
 
 .navEvaluationIcon {
   fill: none;
@@ -788,8 +822,6 @@ body[data-page="home"] .topbar .stats {
   transition: none;
 }
 
-
-
 body.guest .navButton[data-page="progression"] {
   display: none;
 }
@@ -798,7 +830,6 @@ body.filtersOpen .navButton:hover {
   border-color: var(--border-strong);
   background: var(--surface);
 }
-
 
 .pageView[hidden] {
   display: none;
@@ -837,7 +868,7 @@ main > .pageView {
 .homeStats div {
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -851,8 +882,8 @@ main > .pageView {
   display: block;
   margin-top: 4px;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -948,7 +979,7 @@ main {
   min-height: 0;
   height: 100%;
   margin-left: var(--sidebar-offset, 0px);
-  padding: 4px 28px 6px;
+  padding: var(--mfl-page-inset-block-start) var(--mfl-page-gutter-inline) var(--mfl-page-inset-block-end);
   overflow-x: clip;
   overflow-y: scroll;
   overscroll-behavior: contain;
@@ -962,7 +993,6 @@ body.pinnedSidebarVisible .siteFooter {
   width: calc(100% - var(--pinned-sidebar-width));
   margin-left: var(--pinned-sidebar-width);
 }
-
 
 body:not(.pinnedSidebarVisible) main,
 body:not(.pinnedSidebarVisible) .siteFooter {
@@ -991,7 +1021,6 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   line-height: 1;
 }
 
-
 .watchlistSwitcher {
   position: relative;
   display: flex;
@@ -1006,8 +1035,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .watchlistSwitcherLabel {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   line-height: 1;
   white-space: nowrap;
 }
@@ -1015,9 +1044,10 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: var(--danger);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--mfl-helper-error-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-error-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {
@@ -1116,7 +1146,6 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   display: none;
 }
 
-
 .controlsBar {
   display: grid;
   grid-template-columns: max-content max-content auto 150px;
@@ -1135,8 +1164,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .field.rowsField span {
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   line-height: 40px;
   text-transform: uppercase;
 }
@@ -1166,8 +1195,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 }
 
 .field span {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -1201,8 +1230,6 @@ button:hover:not(:disabled) {
   border-color: var(--primary-hover);
   background: var(--primary-hover);
 }
-
-
 
 .menuButton:hover:not(:disabled) {
   border-color: transparent;
@@ -1345,7 +1372,9 @@ button:disabled:not(.menuButton) {
 
 .advancedSettingsSection h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: var(--mfl-section-title-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .advancedSettingSummary {
@@ -2095,7 +2124,6 @@ td a {
   color: var(--text-muted);
 }
 
-
 .selectionBar {
   --mfl-selection-exit-y: 0px;
   position: fixed;
@@ -2655,7 +2683,6 @@ button.playerIdText:active {
   white-space: nowrap;
 }
 
-
 .playerAttributeCard strong {
   display: flex;
   align-items: center;
@@ -2720,7 +2747,6 @@ button.playerIdText:active {
 #playerDetail:not(.playerOverallRarityPaintComplete) .playerAttributeCard.featured:not(.isPending) {
   background: var(--surface);
 }
-
 
 @keyframes playerOverallRarityPaint {
   from {
@@ -3206,7 +3232,6 @@ button.playerIdText:active {
   border-bottom: 0;
 }
 
-
 .evaluationPage {
   width: min(1180px, 100%);
   margin: 0 auto;
@@ -3588,14 +3613,11 @@ button.playerIdText:active {
   font-weight: 800;
 }
 
-
-
 .evaluationSummaryTable td:nth-child(2) {
   position: relative;
   text-align: left;
   user-select: none;
 }
-
 
 .evaluationOverallControl {
   display: grid;
@@ -3687,7 +3709,6 @@ button.playerIdText:active {
   align-items: center;
   gap: 8px;
 }
-
 
 .playerNotesPanel {
   display: grid;
@@ -4051,7 +4072,6 @@ button.playerIdText:active {
   stroke-width: 2;
 }
 
-
 .evaluationLoadList,
 .evaluationLoadResult,
 .evaluationLoadActions {
@@ -4255,14 +4275,14 @@ button.playerIdText:active {
   margin-bottom: 7px;
   padding: 7px 9px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
 .mflStatsFilters > span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   text-transform: uppercase;
 }
 
@@ -4286,8 +4306,6 @@ button.playerIdText:active {
   white-space: nowrap;
 }
 
-
-
 .mflStatsCards {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -4298,7 +4316,7 @@ button.playerIdText:active {
 .mflStatsCards article,
 .mflStatsDistribution {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -4310,9 +4328,9 @@ button.playerIdText:active {
 .mflStatsCards span {
   display: block;
   color: var(--text-soft);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
+  line-height: var(--mfl-metadata-line-height);
   text-transform: uppercase;
 }
 
@@ -4347,7 +4365,9 @@ button.playerIdText:active {
 
 .mflStatsDistribution h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--mfl-section-title-compact-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .mflStatsDistributionModeButtons {
@@ -4367,8 +4387,6 @@ button.playerIdText:active {
   font-size: 12px;
   font-weight: 800;
 }
-
-
 
 .mflStatsAgeDistribution {
   height: clamp(240px, calc(100vh - 380px), 450px);
@@ -4454,7 +4472,6 @@ button.playerIdText:active {
   font-weight: 700;
 }
 
-
 .settingsPage {
   width: min(1180px, 100%);
   margin: 0 auto;
@@ -4475,15 +4492,15 @@ button.playerIdText:active {
 .settingsIdentity div,
 .settingsSection {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
   padding: 14px;
 }
 
 .settingsIdentity span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -4497,7 +4514,9 @@ button.playerIdText:active {
 
 .settingsSection h3 {
   margin: 0 0 12px;
-  font-size: 16px;
+  font-size: var(--mfl-section-title-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .settingsDateFormatOptions {
@@ -4553,8 +4572,13 @@ button.playerIdText:active {
   border-color: var(--danger);
 }
 
-.settingsEmailAddressInput:focus {
+.settingsEmailAddressInput:focus:not(:focus-visible) {
   outline: none;
+}
+
+.settingsEmailAddressInput:focus-visible {
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
+  outline-offset: var(--mfl-focus-ring-offset);
 }
 
 .settingsEmailActionButton {
@@ -4651,7 +4675,6 @@ button.playerIdText:active {
   opacity: 0.62;
 }
 
-
 /* Compact individual player notes panel. */
 .playerStack {
   grid-template-rows: auto auto auto;
@@ -4688,7 +4711,6 @@ button.playerIdText:active {
   vertical-align: middle;
 }
 
-
 .appShell .tableScroller .selectionCell {
   padding-left: 4px;
   padding-right: 4px;
@@ -4701,7 +4723,6 @@ button.playerIdText:active {
 }
 
 /* Pinned content grid, guest centering, and flicker-free tables. */
-
 
 .myPlayersLockedPage:not([hidden]),
 body.guest main > [class*="LockedPage"]:not([hidden]),
@@ -4758,7 +4779,6 @@ body[data-page="watchlist"] #progressionPage .views {
 #progressionPage .tableScroller table {
   box-sizing: border-box;
 }
-
 
 #progressionPage .tableScroller table,
 #progressionPage .tableScroller col,
@@ -4817,8 +4837,6 @@ body[data-page="club"] #progressionPage * {
   border-top-right-radius: inherit;
 }
 
-
-
 /* Stabilize Evaluation, MFL Stats, and modal state ownership. */
 
 #searchModal:not([hidden]),
@@ -4853,7 +4871,6 @@ body[data-page="evaluation"]::after {
   display: none;
   pointer-events: none;
 }
-
 
 html.mflEvaluationInitialLoadVisible #evaluationLoadButton,
 html.mflEvaluationInitialLoadVisible #evaluationLoadButton[hidden] {
@@ -4895,7 +4912,6 @@ html body[data-page="evaluation"] #evaluationSearchInput:not(:placeholder-shown)
   pointer-events: auto;
 }
 
-
 html body[data-page="evaluation"] #evaluationPage .evaluationDiscountRate[data-tooltip]::after,
 html body[data-page="evaluation"] #evaluationPage .evaluationDiscountRate[data-tooltip]::before {
   content: none;
@@ -4921,7 +4937,6 @@ html[data-initial-page^="players/"] body[data-page="player"]:not(.playerRouteGua
   text-decoration: none;
 }
 
-
 .evaluationDiscountTooltipPortal {
   position: fixed;
   z-index: var(--mfl-z-topmost);
@@ -4939,7 +4954,6 @@ html[data-initial-page^="players/"] body[data-page="player"]:not(.playerRouteGua
   opacity: 0;
   transform: translateY(4px);
 }
-
 
 .evaluationDiscountTooltipPortal[hidden] {
   display: none;
@@ -5028,7 +5042,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   visibility: hidden;
 }
 
-
 [data-tooltip]::before,
 [data-tooltip]::after,
 [data-note-tooltip]::before,
@@ -5068,7 +5081,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   visibility: visible;
   transform: translateY(0);
 }
-
 
 /* Site-owned date picker for table filters. */
 .siteDateField {
@@ -5114,7 +5126,7 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 }
 
 .siteDatePickerButton:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
   outline-offset: 1px;
 }
 
@@ -5249,7 +5261,6 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
   font-weight: 700;
 }
 
-
 /* Privacy static page. */
 .privacyPage {
   width: 100%;
@@ -5276,13 +5287,15 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 .privacySection {
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
 .privacySection h3 {
   margin: 0 0 5px;
-  font-size: 15px;
+  font-size: var(--mfl-section-title-compact-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
 }
 
 .privacySection p {
@@ -7461,8 +7474,8 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 
 .siteFooterDetailsGroup :is(a, .siteFooterDetailsSupportButton):focus-visible,
 .siteFooterDetailsIdentity > a:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
+  outline-offset: var(--mfl-focus-ring-offset);
   border-radius: 3px;
 }
 
@@ -7555,13 +7568,15 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 .bugReportStatus {
   min-height: 16px;
   margin: 0;
-  color: var(--text-soft);
-  font-size: 12px;
-  line-height: 1.25;
+  color: var(--mfl-helper-text-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-text-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 .bugReportStatus.isError {
-  color: var(--danger);
+  color: var(--mfl-helper-error-color);
+  font-weight: var(--mfl-helper-error-font-weight);
 }
 
 .bugReportFooter {
@@ -7702,9 +7717,6 @@ html.mflSelectionStartupResetPending #selectionBar {
 
 :root {
   --mfl-pager-block-padding: 12px;
-  --mfl-page-title-margin-block-start: 6px;
-  --mfl-page-title-margin-block-end: 8px;
-  --mfl-page-title-line-height: 1.2;
 
   /* Uniform Width. This is the only numeric column-width contract. */
   --mfl-table-header-height: 38px;
@@ -7881,7 +7893,7 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 }
 
 #progressionPage .views {
-  margin-bottom: 6px;
+  margin-bottom: var(--mfl-page-section-gap);
   anchor-name: --mfl-table-views;
 }
 
@@ -7890,13 +7902,13 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 }
 
 .quickFilters {
-  margin-bottom: 6px;
+  margin-bottom: var(--mfl-page-section-gap);
   padding-bottom: 0;
 }
 
 #progressionPage > .controlsBar > .rowsField {
   position: absolute;
-  top: calc(var(--mfl-page-title-margin-block-start) + 32px + var(--mfl-page-title-margin-block-end));
+  top: calc(var(--mfl-page-title-margin-block-start) + var(--mfl-page-title-min-height) + var(--mfl-page-title-margin-block-end));
   right: 0;
   position-anchor: --mfl-table-views;
   top: anchor(top);
@@ -8174,10 +8186,10 @@ body[data-page="club"] #progressionPage .rowsField {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  min-height: 32px;
+  min-height: var(--mfl-page-title-min-height);
   margin: var(--mfl-page-title-margin-block-start) 0 var(--mfl-page-title-margin-block-end);
   line-height: var(--mfl-page-title-line-height);
-  font-size: 20px;
+  font-size: var(--mfl-page-title-font-size);
   white-space: pre;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -8281,7 +8293,7 @@ body[data-page="club"] #progressionPage .rowsField {
   border-radius: 5px;
   background: #171717;
   color: #ffffff;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--mfl-shadow-tooltip);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
@@ -8384,7 +8396,7 @@ html:has(body > .modalBackdrop:not([hidden])) body > #appShell > main {
   margin: 0;
   padding: 5px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-dialog);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--mfl-dropdown-shadow);
@@ -10546,6 +10558,11 @@ html:not(.mflInitialRouteResolved):is(
  * gain a second, competing mobile implementation in a runtime or base style.
  */
 @media (max-width: 900px) {
+  :root {
+    --mfl-page-gutter-inline: 12px;
+    --mfl-page-inset-block-end: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
+  }
+
   html,
   body {
     width: 100%;
@@ -10570,9 +10587,9 @@ html:not(.mflInitialRouteResolved):is(
 
   body > #appShell > main {
     min-width: 0;
-    padding-right: max(12px, env(safe-area-inset-right));
-    padding-bottom: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(var(--mfl-page-gutter-inline), env(safe-area-inset-right));
+    padding-bottom: var(--mfl-page-inset-block-end);
+    padding-left: max(var(--mfl-page-gutter-inline), env(safe-area-inset-left));
   }
 
   #progressionPage,
@@ -10696,6 +10713,12 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 520px) {
+  :root {
+    --mfl-page-gutter-inline: 8px;
+    --mfl-page-title-font-size: 18px;
+    --mfl-page-section-gap: 5px;
+  }
+
   body > .topbar {
     column-gap: 8px;
     padding-right: max(10px, env(safe-area-inset-right));
@@ -10704,8 +10727,6 @@ html:not(.mflInitialRouteResolved):is(
 
   body > #appShell > main {
     --mfl-footer-page-floor: max(500px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
-    padding-right: max(8px, env(safe-area-inset-right));
-    padding-left: max(8px, env(safe-area-inset-left));
   }
 
   .topbar h1 {
@@ -10825,10 +10846,6 @@ html:not(.mflInitialRouteResolved):is(
   #progressionPage .viewControlsSeparator {
     height: 18px;
     margin-inline: 1px;
-  }
-
-  .tablePageTitle {
-    font-size: 18px;
   }
 
   html:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-table-page="club"] #progressionPage .viewButton[data-view="attributes"]::after {
@@ -11698,17 +11715,13 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 100%;
   }
 
-  .mflStatsPage .tablePageTitle {
-    font-size: 18px;
-  }
-
   .mflStatsViews {
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsFilters {
     gap: 4px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
     padding: 5px 6px;
   }
 
@@ -11730,7 +11743,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsCards {
     gap: 5px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsCards article {
@@ -11754,7 +11767,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsDistributionHeader {
     gap: 6px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsDistributionHeader h3 {
@@ -12004,6 +12017,10 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 380px) {
+  :root {
+    --mfl-page-title-font-size: 17px;
+  }
+
   body > #appShell > main {
     --mfl-footer-page-floor: max(460px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
   }
@@ -12072,10 +12089,6 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 68px;
     padding-inline: 4px;
     font-size: 9px;
-  }
-
-  .tablePageTitle {
-    font-size: 17px;
   }
 
   .filtersDialog {

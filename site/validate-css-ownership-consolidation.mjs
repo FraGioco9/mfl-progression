@@ -119,11 +119,11 @@ invariant(
   "Player title base typography must remain unchanged in styles-base.css.",
 );
 const tableTitleRule = exactRule(styles, ".tablePageTitle");
-invariant(tableTitleRule, "styles.css must remain the canonical table-title owner.");
+invariant(tableTitleRule, "styles.css must remain the canonical table-title consumer.");
 for (const required of [
   "margin: var(--mfl-page-title-margin-block-start) 0 var(--mfl-page-title-margin-block-end);",
   "line-height: var(--mfl-page-title-line-height);",
-  "font-size: 20px;",
+  "font-size: var(--mfl-page-title-font-size);",
 ]) {
   invariant(tableTitleRule.includes(required), `styles.css table-title rule is missing ${required}`);
 }
@@ -132,4 +132,4 @@ invariant(!stylesBase.includes("!important"), "CSS ownership consolidation must 
 invariant(!styles.includes("!important"), "CSS ownership consolidation must not add !important to styles.css.");
 invariant(!controls.includes("!important"), "CSS ownership consolidation must not add !important to controls.css.");
 
-console.log("Canonical shared-control and table-title CSS ownership validation passed.");
+console.log("Canonical shared-control and shared-foundation table-title CSS ownership validation passed.");

@@ -197,7 +197,7 @@ for (const expectedStyle of [
   "width: 220px;",
   "padding: 5px;",
   "border: 1px solid var(--border-strong);",
-  "border-radius: 8px;",
+  "border-radius: var(--mfl-radius-dialog);",
   "box-shadow: var(--mfl-dropdown-shadow);",
 ]) {
   includes(customMenuStyles, expectedStyle, `Database Stats Custom menu must use the canonical site dropdown style: ${expectedStyle}`);
