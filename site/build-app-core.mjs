@@ -38,8 +38,13 @@ for (const entry of coreSourceManifest) {
   const source = String(await readFile(sourcePath, "utf8")).replace(/\r\n?/g, "\n").replace(/\s*$/, "");
   if (!source) throw new Error(`Canonical core source is empty: ${entry.source}.`);
   const sourceBytes = Buffer.byteLength(source, "utf8");
-  if (sourceBytes > entry.maxSourceBytes) {
-    throw new Error(`Canonical ${entry.domain} core source is ${sourceBytes} bytes, above its ${entry.maxSourceBytes}-byte ownership budget. Move new behavior into the owning domain instead of growing the shared/runtime monolith.`);
+  if (entry.maxUniversalBytes !== null) {
+    if (!Number.isInteger(entry.maxUniversalBytes) || entry.maxUniversalBytes <= 0) {
+      throw new Error(`Canonical ${entry.domain} core has an invalid universal ownership ceiling.`);
+    }
+    if (sourceBytes > entry.maxUniversalBytes) {
+      throw new Error(`Canonical ${entry.domain} core source is ${sourceBytes} bytes, above its ${entry.maxUniversalBytes}-byte universal ownership ceiling. Move route/domain behavior out of the universal core instead of growing shared runtime cost.`);
+    }
   }
   artifacts.push(Object.freeze({ ...entry, sourceName: entry.source, sourcePath, runtimePath, source, sourceBytes }));
 }
