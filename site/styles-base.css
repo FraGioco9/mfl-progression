@@ -881,8 +881,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   border-color: var(--border-strong);
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--mfl-control-label-font-size);
+  font-weight: var(--mfl-control-font-weight);
   text-align: center;
   white-space: nowrap;
   line-height: 1;

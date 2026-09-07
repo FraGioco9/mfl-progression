@@ -149,11 +149,14 @@ Cross-site semantic values live in `ui-foundations.css`:
 
 - Standard control height: `40px` (`--mfl-control-height`)
 - Compact control height: `36px` (`--mfl-control-compact-height`)
+- Standard View/Filters label size: `14px` (`--mfl-control-label-font-size`)
+- Shared ordinary selector-control weight: `700` (`--mfl-control-font-weight`)
+- Shared ordinary selector-control line-height: `1` (`--mfl-control-line-height`)
 - Standard control radius: `6px` (`--mfl-radius-control`)
 - Checkbox size: `16px` (`--mfl-checkbox-size`)
 - Checkbox radius: `4px` (`--mfl-radius-checkbox`)
 
-Specialized tiny steppers, table action buttons, mobile-only touch geometry, and other domain-specific controls keep their own sizes.
+Specialized tiny steppers, table action buttons, mobile-only touch geometry, and other domain-specific controls keep their own sizes. View and Filters share the standard 14px label size and 700 weight; smaller Stats and Player controls retain locally owned font sizes and may share only the selector-control line-height when the interaction role matches.
 
 ## Dialogs and overlays
 
@@ -241,6 +244,7 @@ Component-local z-index values stay below the global application layers.
 9. Repeated small-label and secondary metadata roles consume the shared 12px/11px metadata scale with 700/800 weight variants.
 10. Ordinary form/status feedback uses one 12px/1.25 helper contract with soft normal text and stronger danger-derived error feedback; search hints, empty states, table states, and domain-specific data messages remain separate.
 11. Sidebar/mobile navigation icons consume the shared 18px navigation-icon contract, while Search and Filters consume the shared 17px ordinary-control icon contract; numerically similar specialist icons remain locally owned.
+12. Standard View/Filters controls consume one 14px control-label size and 700 weight, while equivalent selector controls consume the shared line-height foundation without flattening smaller Stats or Player-specific sizes.
 
 ## What must remain intentionally separate
 

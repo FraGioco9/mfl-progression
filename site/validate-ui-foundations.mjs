@@ -45,6 +45,9 @@ const [
 for (const token of [
   "--mfl-control-height: 40px;",
   "--mfl-control-compact-height: 36px;",
+  "--mfl-control-label-font-size: 14px;",
+  "--mfl-control-font-weight: 700;",
+  "--mfl-control-line-height: 1;",
   "--mfl-radius-control: 6px;",
   "--mfl-checkbox-size: 16px;",
   "--mfl-radius-checkbox: 4px;",
@@ -87,6 +90,18 @@ for (const token of [
 }
 
 includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");
+
+const viewControlTypography = exactRule(stylesBase, ".viewButton");
+includes(viewControlTypography, "font-size: var(--mfl-control-label-font-size);", "View controls must consume the shared standard control-label size.");
+includes(viewControlTypography, "font-weight: var(--mfl-control-font-weight);", "View controls must consume the shared ordinary-control weight.");
+const filtersControlTypography = exactRule(controls, ".filtersViewButton");
+includes(filtersControlTypography, "font-size: var(--mfl-control-label-font-size);", "Filters must consume the shared standard control-label size.");
+includes(filtersControlTypography, "font-weight: var(--mfl-control-font-weight);", "Filters must consume the shared ordinary-control weight.");
+includes(filtersControlTypography, "line-height: var(--mfl-control-line-height);", "Filters must consume the shared ordinary-control line height.");
+const playerAttributeTypography = exactRule(stylesBase, ".playerAttributeViewButton");
+if (!playerAttributeTypography) throw new Error("Expected Player Attribute control typography owner.");
+excludes(playerAttributeTypography, "font-size: var(--mfl-control-label-font-size);", "Player Attribute control size must remain Player-owned.");
+includes(controls, ".mflStatsFilterButton,\n  .mflStatsDistributionModeButton,\n  .playerAttributeViewButton\n) {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  line-height: var(--mfl-control-line-height);", "Equivalent selector controls must consume the shared ordinary-control line-height foundation.");
 
 includes(stylesBase, ".navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);", "Shared navigation icons must consume the navigation-icon foundation.");
 for (const token of [
@@ -299,4 +314,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic icon sizing, page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
+console.log("Global UI foundations validation passed with semantic icon sizing, control typography, page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
