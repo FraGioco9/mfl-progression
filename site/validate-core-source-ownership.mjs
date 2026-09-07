@@ -13,13 +13,20 @@ invariant(build.includes('resolve(siteRoot, "modules", "core-sources", entry.sou
 invariant(!build.includes("app-core-build-normalizer"), "Application-core build must not depend on behavior-changing normalizers.");
 invariant(!build.includes("replaceRequired"), "Application-core build must not perform source-string behavior rewrites.");
 invariant(!build.includes("modules/app-core.js"), "Application-core build must not depend on the retired monolith.");
+invariant(build.includes("entry.maxUniversalBytes !== null"), "Application-core build must enforce the universal shared-core ceiling when one is configured.");
 
 const domains = new Set();
 for (const entry of coreSourceManifest) {
   invariant(!domains.has(entry.domain), `Core source manifest domain must be unique: ${entry.domain}.`);
   domains.add(entry.domain);
-  invariant(Number.isInteger(entry.maxSourceBytes) && entry.maxSourceBytes > 0, `Core source ${entry.domain} must have a positive ownership budget.`);
+  invariant(
+    entry.maxUniversalBytes === null || (Number.isInteger(entry.maxUniversalBytes) && entry.maxUniversalBytes > 0),
+    `Core source ${entry.domain} must define either no byte ceiling or a positive universal ownership ceiling.`,
+  );
   invariant(String(entry.banner || "").includes("Do not edit directly"), `Core source ${entry.domain} must define a generated ownership banner.`);
+  if (entry.domain !== "shared") {
+    invariant(entry.maxUniversalBytes === null, `Route/domain source ${entry.domain} must not use an arbitrary hard byte ceiling; ownership and lazy loading are the architectural boundary.`);
+  }
 
   const [source, runtime] = await Promise.all([
     read(`./modules/core-sources/${entry.source}`),
@@ -30,11 +37,19 @@ for (const entry of coreSourceManifest) {
     runtime.slice(entry.banner.length).replace(/\s*$/, "") === source.replace(/\s*$/, ""),
     `Generated ${entry.runtime} must exactly match canonical ${entry.source}.`,
   );
-  invariant(Buffer.byteLength(source.replace(/\s*$/, ""), "utf8") <= entry.maxSourceBytes, `Canonical ${entry.domain} source exceeded its manifest ownership budget.`);
+  if (entry.maxUniversalBytes !== null) {
+    invariant(
+      Buffer.byteLength(source.replace(/\s*$/, ""), "utf8") <= entry.maxUniversalBytes,
+      `Canonical ${entry.domain} source exceeded its universal ownership ceiling.`,
+    );
+  }
 }
 
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
-invariant(sharedEntry?.source === "shared.js" && sharedEntry.maxSourceBytes <= 355000, "Shared core must keep an explicit no-growth budget so new route/domain behavior cannot silently return to the monolith.");
+invariant(
+  sharedEntry?.source === "shared.js" && sharedEntry.maxUniversalBytes === 355000,
+  "Shared core must keep the explicit 355000-byte universal no-growth ceiling so route/domain behavior cannot silently return to the monolith.",
+);
 
 const retiredFiles = [
   "app-core-build-normalizer.js",
@@ -63,4 +78,4 @@ for (const file of retiredFiles) {
   }
 }
 
-console.log("Canonical application-core manifest, generated equivalence, no-growth budgets, and retired implementation cleanup validation passed.");
+console.log("Canonical application-core manifest, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");

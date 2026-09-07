@@ -15,8 +15,9 @@ cursor; completed route payloads are reused for the current browser session.
 
 Application-core behavior is source-owned under `site/modules/core-sources/` and
 mapped by `site/modules/core-source-manifest.js`. GitHub Actions generates the
-tracked `app-core-*-runtime.js` projections; source-size budgets prevent new
-behavior from silently growing the shared core again.
+tracked `app-core-*-runtime.js` projections. Only the universal shared core has a
+hard size ceiling; route/domain sources are constrained by ownership and lazy
+loading rather than arbitrary byte counts.
 
 CSS remains modular in its canonical source files, while `site/build-styles.mjs`
 recursively flattens that dependency graph into the tracked
@@ -76,4 +77,4 @@ workflow racing the generated commit.
 
 ## Development ownership
 
-See [source ownership and operational commands](docs/ownership.md) before editing generated assets or running database/email tools.
+See [source ownership and operational commands](docs/ownership.md) before editing generated assets or running database/email tools. The retained architectural constraints and their rationale are listed in [architectural guardrails](docs/architecture-guardrails.md).
