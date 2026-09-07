@@ -37,7 +37,20 @@
   --mfl-section-title-line-height: 1.1;
   --mfl-section-title-font-weight: 700;
 
+  /* Shared small-label and metadata typography. */
+  --mfl-metadata-font-size: 12px;
+  --mfl-metadata-compact-font-size: 11px;
+  --mfl-metadata-font-weight: 700;
+  --mfl-metadata-strong-font-weight: 800;
+  --mfl-metadata-line-height: 1.1;
+
+  /* Shared keyboard-focus language for ordinary interactive controls. */
+  --mfl-focus-ring-color: var(--primary);
+  --mfl-focus-ring-width: 2px;
+  --mfl-focus-ring-offset: 2px;
+
   /* Shared application surfaces. */
+  --mfl-radius-panel: 8px;
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
   --mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);
