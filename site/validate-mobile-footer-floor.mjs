@@ -87,6 +87,8 @@ for (const token of [
 ]) {
   assert.ok(indexHtml.includes(token), `Static Player first-paint geometry is missing ${token}.`);
 }
+assert.ok(indexHtml.includes('<h2 class="playerTitle">'), "Parser-owned Player hero must use the same title class structure as the hydrated hero.");
+assert.ok(!indexHtml.includes('<h2 class="tablePageTitle playerTitle">'), "Player first paint must not inherit table-title layout that changes the mobile hero size before hydration.");
 assert.ok(indexHtml.includes('<div class="attributeGrid" data-mfl-static-player-attributes>'), "Static Player first paint must own a parser-synchronized Attribute grid.");
 assert.ok(indexHtml.includes('<span>Overall</span><strong>&nbsp;</strong>'), "Overall is position-independent and must be labeled with a blank value at first paint.");
 for (const label of ["Nationality", "Height", "Foot", "Seasons", "Agent", "Contract", "Rev Share"]) {
@@ -94,11 +96,12 @@ for (const label of ["Nationality", "Height", "Foot", "Seasons", "Agent", "Contr
 }
 assert.ok(!indexHtml.includes('<span class="playerDetailAgeLine">-</span>'), "Static Player first paint must leave pending Age blank instead of showing '-'.");
 for (const token of [
-  'positions[0] === "GK"',
+  'const attributeLabels = (positions) => positions[0] === "GK"',
   '["Overall", "Goalkeeping"]',
   '["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"]',
-  '? ["Overall", "", "", "", "", "", ""]',
-]) assert.ok(indexHtml.includes(token), `Parser-first Player Attribute labels must match the player's primary position without guessing: ${token}`);
+  'const syncPendingAttributeLabels = () => {',
+  'if (!positions.length) return;',
+]) assert.ok(indexHtml.includes(token), `Parser-first Player Attribute labels must stay synchronized to the player's primary position throughout loading: ${token}`);
 for (const pitchLine of ["pitchBoxTop", "pitchGoalTop", "pitchArcTop", "pitchBoxBottom", "pitchGoalBottom", "pitchArcBottom"]) {
   assert.ok(indexHtml.includes(`class="pitchLine ${pitchLine}"`), `Static Player first paint must include ${pitchLine}.`);
 }
@@ -136,11 +139,17 @@ assert.ok(
   indexHtml.includes('const cachedName = String(firstPaintContext?.name || knownValues?.name?.display || knownValues?.name?.raw || "").trim();')
     && indexHtml.includes('knownValues?.positions?.display ?? knownValues?.positions?.raw ?? ""')
     && indexHtml.includes('const compactPlayerPageName = (value) => {')
-    && indexHtml.includes('const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;')
-    && indexHtml.includes('titleName.dataset.playerFullName = cachedName;')
-    && indexHtml.includes('titleName.textContent = displayName;')
+    && indexHtml.includes('const syncPendingName = () => {')
+    && indexHtml.includes('titleName.dataset.playerFullName = fullName;')
+    && indexHtml.includes('if (titleName.textContent !== displayName) titleName.textContent = displayName;')
     && indexHtml.includes('if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");'),
-  "Parser-owned Player hero must project cached identity in the final responsive name format and preserve the full name before mobile first paint.",
+  "Parser-owned Player hero must project cached identity in the final responsive name format and keep enforcing it throughout pending renders.",
+);
+assert.ok(
+  indexHtml.includes('pendingObserver.observe(playerDetail, { childList: true, subtree: true, characterData: true });')
+    && indexHtml.includes('pendingObserver.observe(root, { attributes: true, attributeFilter: ["data-player-first-paint-content-ready"] });')
+    && indexHtml.includes('syncPendingPlayerShell();'),
+  "Parser-owned Player loading must keep responsive name and Attribute labels synchronized until authoritative content is ready.",
 );
 assert.ok(
   indexHtml.includes('const applyFirstPaintHeroActionLayout = (playerHero) => {')
@@ -173,4 +182,4 @@ assert.equal((footer.match(/--mfl-footer-page-floor:/g) || []).length, 1, "Deskt
 assert.equal((responsive.match(/--mfl-footer-page-floor:/g) || []).length, 3, "Responsive footer floor must be defined exactly once at each mobile breakpoint.");
 assert.ok(!responsive.includes("#homePage {\n    --mfl-footer-page-floor") && !responsive.includes("#progressionPage {\n    --mfl-footer-page-floor"), "Mobile footer floor must not be route-specific.");
 assert.ok(!footer.includes("!important") && !responsive.includes("--mfl-footer-page-floor: 800px !important"), "Footer floor must not use overrides or !important.");
-console.log("Shared responsive footer validation passed with direct Player loading using the complete visible normal-flow shell and cue-synchronized route release.");
+console.log("Shared responsive footer validation passed with direct Player loading using the complete visible normal-flow shell, stable mobile hero geometry, and loading-synchronized Attribute labels.");
