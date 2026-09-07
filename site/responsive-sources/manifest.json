@@ -11,5 +11,6 @@
   "static-phone.css.inc",
   "compact.css.inc",
   "touch.css.inc",
-  "footer.css.inc"
+  "footer.css.inc",
+  "player-note-placement.css.inc"
 ]
