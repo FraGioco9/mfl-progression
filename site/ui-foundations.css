@@ -19,6 +19,12 @@
   --mfl-control-label-font-size: 14px;
   --mfl-control-font-weight: 700;
   --mfl-control-line-height: 1;
+  --mfl-control-border-color: var(--border-strong);
+  --mfl-control-background: var(--surface);
+  --mfl-control-text-color: var(--text);
+  --mfl-control-hover-border-color: var(--primary-hover);
+  --mfl-control-hover-background: var(--row-hover);
+  --mfl-control-hover-text-color: var(--text);
   --mfl-radius-control: 6px;
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;

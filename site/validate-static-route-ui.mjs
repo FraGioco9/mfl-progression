@@ -269,7 +269,7 @@ invariant(
   "Refresh-only table-page chrome must expose the active route directly and relinquish ownership on supersession without a higher-specificity neutral sidebar rule.",
 );
 invariant(
-  indexHtml.includes('#progressionPage .views > .viewButton:not(:hover) { border-color: var(--border-strong); background: var(--surface); color: var(--text); }'),
+  indexHtml.includes('#progressionPage .views > .viewButton:not(:hover) { border-color: var(--mfl-control-border-color); background: var(--mfl-control-background); color: var(--mfl-control-text-color); }'),
   "Initial table-view neutral styling must not override normal hover presentation.",
 );
 

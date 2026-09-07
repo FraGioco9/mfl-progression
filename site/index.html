@@ -347,7 +347,7 @@
           const firstPaintStyle = document.createElement("style");
           const rules = [
             `${routeSelector} #progressionPage .views > .viewButton { display: none; }`,
-            `${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--border-strong); background: var(--surface); color: var(--text); }`,
+            `${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--mfl-control-border-color); background: var(--mfl-control-background); color: var(--mfl-control-text-color); }`,
             `${tableConfig.order.map(buttonSelector).join(",\n")} { display: inline-flex; }`,
             ...tableConfig.order.map((viewName, index) => `${buttonSelector(viewName)} { order: ${index + 1}; }`),
             `${buttonSelector(activeView)} { border-color: var(--primary); background: var(--primary); color: #ffffff; }`,

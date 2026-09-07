@@ -878,9 +878,9 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   height: 40px;
   justify-content: center;
   padding: 0 3px;
-  border-color: var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
+  border-color: var(--mfl-control-border-color);
+  background: var(--mfl-control-background);
+  color: var(--mfl-control-text-color);
   font-size: var(--mfl-control-label-font-size);
   font-weight: var(--mfl-control-font-weight);
   text-align: center;

@@ -91,20 +91,33 @@ for (const required of [
   );
 }
 
-const canonicalHoverSelector = `:is(
+const ordinaryHoverSelector = `:is(
+  .viewButton:not([hidden]),
+  .filtersViewButton
+):not(.active):hover:not(:disabled)`;
+const ordinaryHoverRule = exactRule(controls, ordinaryHoverSelector);
+invariant(ordinaryHoverRule, "controls.css must retain the canonical ordinary View/Filters hover-control rule.");
+for (const required of [
+  "border-color: var(--mfl-control-hover-border-color);",
+  "background: var(--mfl-control-hover-background);",
+  "color: var(--mfl-control-hover-text-color);",
+]) {
+  invariant(ordinaryHoverRule.includes(required), `controls.css ordinary hover-control rule is missing ${required}`);
+}
+
+const specialistHoverSelector = `:is(
   .themeButton,
   .navButton,
-  .viewButton:not([hidden]),
-  .filtersViewButton,
   .mflStatsFilterButton,
   .mflStatsDistributionModeButton,
   .playerAttributeViewButton
 ):not(.active):hover:not(:disabled)`;
-const canonicalHoverRule = exactRule(controls, canonicalHoverSelector);
-invariant(canonicalHoverRule, "controls.css must retain the canonical shared hover-control rule, including the theme toggle.");
-for (const required of ["border-color: var(--primary-hover);", "background: var(--row-hover);"]) {
-  invariant(canonicalHoverRule.includes(required), `controls.css shared hover-control rule is missing ${required}`);
+const specialistHoverRule = exactRule(controls, specialistHoverSelector);
+invariant(specialistHoverRule, "controls.css must retain the specialist Theme/Nav/Stats/Player hover-control rule.");
+for (const required of ["border-color: var(--primary-hover);", "background: var(--row-hover);", "color: var(--text);"]) {
+  invariant(specialistHoverRule.includes(required), `controls.css specialist hover-control rule is missing ${required}`);
 }
+invariant(!specialistHoverRule.includes("var(--mfl-control-hover-"), "Specialist hover-control states must remain independently owned.");
 
 invariant(
   !stylesBase.includes(".tablePageTitle,\n.playerTitle {"),

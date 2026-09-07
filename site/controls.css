@@ -81,10 +81,17 @@
 }
 
 :is(
+  .viewButton:not([hidden]),
+  .filtersViewButton
+):not(.active):hover:not(:disabled) {
+  border-color: var(--mfl-control-hover-border-color);
+  background: var(--mfl-control-hover-background);
+  color: var(--mfl-control-hover-text-color);
+}
+
+:is(
   .themeButton,
   .navButton,
-  .viewButton:not([hidden]),
-  .filtersViewButton,
   .mflStatsFilterButton,
   .mflStatsDistributionModeButton,
   .playerAttributeViewButton
@@ -109,18 +116,18 @@
 
 .searchButton {
   outline: 0;
-  border-color: var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
+  border-color: var(--mfl-control-border-color);
+  background: var(--mfl-control-background);
+  color: var(--mfl-control-text-color);
   box-shadow: none;
 }
 
 .searchButton:hover:not(:disabled),
 .searchButton:focus-visible:not(:disabled) {
   outline: 0;
-  border-color: var(--primary-hover);
-  background: var(--row-hover);
-  color: var(--text);
+  border-color: var(--mfl-control-hover-border-color);
+  background: var(--mfl-control-hover-background);
+  color: var(--mfl-control-hover-text-color);
   box-shadow: none;
 }
 
@@ -146,9 +153,9 @@
   height: 40px;
   gap: 8px;
   padding: 0 10px;
-  border-color: var(--border-strong);
-  background: var(--surface);
-  color: var(--text);
+  border-color: var(--mfl-control-border-color);
+  background: var(--mfl-control-background);
+  color: var(--mfl-control-text-color);
   font-size: var(--mfl-control-label-font-size);
   font-weight: var(--mfl-control-font-weight);
   line-height: var(--mfl-control-line-height);
@@ -201,9 +208,9 @@
 }
 
 body.filtersOpen .filtersViewButton {
-  border-color: var(--primary-hover);
-  background: var(--row-hover);
-  color: var(--text);
+  border-color: var(--mfl-control-hover-border-color);
+  background: var(--mfl-control-hover-background);
+  color: var(--mfl-control-hover-text-color);
 }
 
 .viewControlsSeparator {

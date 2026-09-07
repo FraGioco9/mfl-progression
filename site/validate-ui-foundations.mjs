@@ -48,6 +48,12 @@ for (const token of [
   "--mfl-control-label-font-size: 14px;",
   "--mfl-control-font-weight: 700;",
   "--mfl-control-line-height: 1;",
+  "--mfl-control-border-color: var(--border-strong);",
+  "--mfl-control-background: var(--surface);",
+  "--mfl-control-text-color: var(--text);",
+  "--mfl-control-hover-border-color: var(--primary-hover);",
+  "--mfl-control-hover-background: var(--row-hover);",
+  "--mfl-control-hover-text-color: var(--text);",
   "--mfl-radius-control: 6px;",
   "--mfl-checkbox-size: 16px;",
   "--mfl-radius-checkbox: 4px;",
@@ -101,6 +107,30 @@ const filtersControlTypography = exactRule(controls, ".filtersViewButton");
 includes(filtersControlTypography, "font-size: var(--mfl-control-label-font-size);", "Filters must consume the shared standard control-label size.");
 includes(filtersControlTypography, "font-weight: var(--mfl-control-font-weight);", "Filters must consume the shared ordinary-control weight.");
 includes(filtersControlTypography, "line-height: var(--mfl-control-line-height);", "Filters must consume the shared ordinary-control line height.");
+for (const [label, rule] of [["View", viewControlTypography], ["Filters", filtersControlTypography]]) {
+  includes(rule, "border-color: var(--mfl-control-border-color);", label + " controls must consume the shared resting border color.");
+  includes(rule, "background: var(--mfl-control-background);", label + " controls must consume the shared resting background.");
+  includes(rule, "color: var(--mfl-control-text-color);", label + " controls must consume the shared resting text color.");
+}
+const searchControlState = exactRule(controls, ".searchButton");
+includes(searchControlState, "border-color: var(--mfl-control-border-color);", "Search must consume the shared resting border color.");
+includes(searchControlState, "background: var(--mfl-control-background);", "Search must consume the shared resting background.");
+includes(searchControlState, "color: var(--mfl-control-text-color);", "Search must consume the shared resting text color.");
+const searchHoverState = exactRule(controls, ".searchButton:hover:not(:disabled),\n.searchButton:focus-visible:not(:disabled)");
+includes(searchHoverState, "border-color: var(--mfl-control-hover-border-color);", "Search hover/focus must consume the shared hover border color.");
+includes(searchHoverState, "background: var(--mfl-control-hover-background);", "Search hover/focus must consume the shared hover background.");
+includes(searchHoverState, "color: var(--mfl-control-hover-text-color);", "Search hover/focus must consume the shared hover text color.");
+const ordinaryControlHover = exactRule(controls, ":is(\n  .viewButton:not([hidden]),\n  .filtersViewButton\n):not(.active):hover:not(:disabled)");
+includes(ordinaryControlHover, "border-color: var(--mfl-control-hover-border-color);", "View/Filters hover must consume the shared hover border color.");
+includes(ordinaryControlHover, "background: var(--mfl-control-hover-background);", "View/Filters hover must consume the shared hover background.");
+includes(ordinaryControlHover, "color: var(--mfl-control-hover-text-color);", "View/Filters hover must consume the shared hover text color.");
+const filtersOpenState = exactRule(controls, "body.filtersOpen .filtersViewButton");
+includes(filtersOpenState, "border-color: var(--mfl-control-hover-border-color);", "Open Filters must consume the shared hover border color.");
+includes(filtersOpenState, "background: var(--mfl-control-hover-background);", "Open Filters must consume the shared hover background.");
+const specialistControlHover = exactRule(controls, ":is(\n  .themeButton,\n  .navButton,\n  .mflStatsFilterButton,\n  .mflStatsDistributionModeButton,\n  .playerAttributeViewButton\n):not(.active):hover:not(:disabled)");
+includes(specialistControlHover, "border-color: var(--primary-hover);", "Specialist control hover border must remain locally owned.");
+includes(specialistControlHover, "background: var(--row-hover);", "Specialist control hover background must remain locally owned.");
+excludes(specialistControlHover, "var(--mfl-control-hover-", "Navigation/Stats/Player specialist hover states must not consume ordinary control-state tokens.");
 const playerAttributeTypography = exactRule(stylesBase, ".playerAttributeViewButton");
 if (!playerAttributeTypography) throw new Error("Expected Player Attribute control typography owner.");
 excludes(playerAttributeTypography, "font-size: var(--mfl-control-label-font-size);", "Player Attribute control size must remain Player-owned.");
@@ -304,6 +334,8 @@ for (const token of [
   "Shared section title: `16px` (`--mfl-section-title-font-size`)",
   "Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)",
   "Ordinary helper/status text size: `12px` (`--mfl-helper-text-font-size`)",
+  "Ordinary control resting border: `var(--border-strong)` (`--mfl-control-border-color`)",
+  "Ordinary control hover background: `var(--row-hover)` (`--mfl-control-hover-background`)",
   "Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)",
   "Ring width: `2px` through `--mfl-focus-ring-width`",
   "Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)",
@@ -321,4 +353,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic icon sizing, control typography, page layout/title/rhythm, ordinary content-surface, section-title, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
+console.log("Global UI foundations validation passed with semantic icon sizing, control typography/state, page layout/title/rhythm, ordinary content-surface, section-title, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
