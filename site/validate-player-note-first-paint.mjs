@@ -6,8 +6,8 @@ const playerSource = read("./html-sources/player.html");
 const noteSource = read("./html-sources/player-note-first-paint.html");
 const generatedIndex = read("./index.html");
 const responsive = read("./responsive.css");
-const mobilePlacement = read("./responsive-sources/player-note-mobile.css.inc");
-const desktopPlacement = read("./responsive-sources/player-note-placement.css.inc");
+const mobilePlacement = read("./responsive-sources/player-note-tablet.css.inc");
+const desktopPlacement = read("./responsive-sources/player-note-desktop.css.inc");
 
 assert.ok(
   playerSource.includes('if (notesPanel instanceof HTMLElement) notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";'),
