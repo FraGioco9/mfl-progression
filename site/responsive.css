@@ -2239,6 +2239,11 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 520px) {
+  :root {
+    --mfl-page-title-font-size: 18px;
+    --mfl-page-section-gap: 5px;
+  }
+
   body > .topbar {
     column-gap: 8px;
     padding-right: max(10px, env(safe-area-inset-right));
@@ -2368,10 +2373,6 @@ html:not(.mflInitialRouteResolved):is(
   #progressionPage .viewControlsSeparator {
     height: 18px;
     margin-inline: 1px;
-  }
-
-  .tablePageTitle {
-    font-size: 18px;
   }
 
   html:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-table-page="club"] #progressionPage .viewButton[data-view="attributes"]::after {
@@ -3241,17 +3242,13 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 100%;
   }
 
-  .mflStatsPage .tablePageTitle {
-    font-size: 18px;
-  }
-
   .mflStatsViews {
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsFilters {
     gap: 4px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
     padding: 5px 6px;
   }
 
@@ -3273,7 +3270,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsCards {
     gap: 5px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsCards article {
@@ -3297,7 +3294,7 @@ html:not(.mflInitialRouteResolved):is(
 
   .mflStatsDistributionHeader {
     gap: 6px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsDistributionHeader h3 {
@@ -3547,6 +3544,10 @@ html:not(.mflInitialRouteResolved):is(
 }
 
 @media (max-width: 380px) {
+  :root {
+    --mfl-page-title-font-size: 17px;
+  }
+
   body > #appShell > main {
     --mfl-footer-page-floor: max(460px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
   }
@@ -3615,10 +3616,6 @@ html:not(.mflInitialRouteResolved):is(
     max-width: 68px;
     padding-inline: 4px;
     font-size: 9px;
-  }
-
-  .tablePageTitle {
-    font-size: 17px;
   }
 
   .filtersDialog {
