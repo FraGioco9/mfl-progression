@@ -110,8 +110,7 @@ assert.ok((indexHtml.match(/class="pitchRow pitchRow[13]"/g) || []).length >= 7,
 assert.ok(bootstrap.includes('function playerLoadingAttributeLabels(context = firstPaintPlayerContext()) {'), "Bootstrap fallback Player shell must derive Attribute labels from cached position data.");
 assert.ok(bootstrap.includes('function playerLoadingPitchHtml() {'), "Bootstrap fallback Player shell must draw the complete pitch before Player data loads.");
 assert.ok(
-  indexHtml.includes('const optedIn = root.dataset.storedWalletOptIn === "true";')
-    && indexHtml.includes('panel.hidden = !optedIn;'),
+  indexHtml.includes('notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";'),
   "Static Player first paint must include Notes only when the stored opt-in state requires that box.",
 );
 assert.ok(
