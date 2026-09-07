@@ -83,7 +83,8 @@
     top: auto;
     right: auto;
     order: 2;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
     flex: 0 0 auto;
     align-self: baseline;
     width: max-content;
@@ -95,7 +96,7 @@
     margin: 0;
     padding: 0 5px 0 23px;
     font-size: 16px;
-    line-height: 22px;
+    line-height: 1;
     white-space: nowrap;
   }
 
@@ -110,8 +111,8 @@
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
-    display: inline-block;
-    line-height: inherit;
+    display: block;
+    line-height: 1;
   }
 
   .playerNotesInput {
