@@ -957,6 +957,26 @@
     return `<i class="retirementMarker playerAgeMarker retirementMarker--retiring-${retirementYears}" data-tooltip="${label}" aria-label="${label}"></i>`;
   }
 
+  function firstPaintPlayerPositions(context = firstPaintPlayerContext()) {
+    const supplied = Array.isArray(context?.positions)
+      ? context.positions
+      : String(context?.positions || "").split(",");
+    const known = context?.knownValues && typeof context.knownValues === "object" ? context.knownValues : null;
+    const positionEntry = known?.positions;
+    const cached = String(positionEntry?.display ?? positionEntry?.raw ?? "");
+    return (supplied.some((position) => String(position || "").trim()) ? supplied : cached.split(","))
+      .map((position) => String(position || "").trim().toUpperCase())
+      .filter(Boolean);
+  }
+
+  function playerLoadingAttributeLabels(context = firstPaintPlayerContext()) {
+    const positions = firstPaintPlayerPositions(context);
+    if (!positions.length) return ["Overall", "", "", "", "", "", ""];
+    return positions.includes("GK")
+      ? ["Overall", "Goalkeeping"]
+      : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"];
+  }
+
   function playerLoadingViewButtons() {
     const views = root.dataset.storedProgressionAccess === "true"
       ? [
@@ -976,9 +996,24 @@
     )).join("");
   }
 
+  function playerLoadingPitchHtml() {
+    const pitchLines = '<span class="pitchLine pitchBoxTop"></span><span class="pitchLine pitchGoalTop"></span><span class="pitchLine pitchArcTop"></span><span class="pitchLine pitchBoxBottom"></span><span class="pitchLine pitchGoalBottom"></span><span class="pitchLine pitchArcBottom"></span>';
+    const rowLengths = [1, 3, 1, 3, 3, 3, 1];
+    return pitchLines + rowLengths.map((columnCount) => (
+      `<div class="pitchRow pitchRow${columnCount}" style="--pitch-columns: ${columnCount}">${Array.from({ length: columnCount }, () => '<div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div>').join("")}</div>`
+    )).join("");
+  }
+
   function primePlayerSkeleton() {
     const playerDetail = document.getElementById("playerDetail");
     if (!(playerDetail instanceof HTMLElement)) return;
+    const staticHero = playerDetail.dataset.mflStaticPlayerShell === "true"
+      ? playerDetail.querySelector(":scope > .playerHero.playerHeroPending[data-player-shell-id]")
+      : null;
+    if (staticHero instanceof HTMLElement) {
+      playerDetail.dataset.loadingShell = "true";
+      return;
+    }
     const optedIn = root.dataset.storedWalletOptIn === "true";
     const notesPanel = optedIn
       ? `<div class="playerPanel playerNotesPanel"><h3>Notes</h3><div class="playerNotesInputWrap"><textarea class="playerNotesInput" style="visibility:hidden" aria-hidden="true" disabled></textarea><span class="playerNotesCount" style="visibility:hidden">0/100</span></div></div>`
@@ -988,15 +1023,17 @@
       const cardClass = label === "Contract"
         ? "contractDetailCard playerInfoFullWidthCard"
         : (label === "Rev Share" ? "revShareDetailCard playerInfoFullWidthCard" : "");
-      let valueHtml = LOADING_VALUE_TEXT;
+      let valueHtml = BLANK_TABLE_LOADING_TEXT;
       if (label === "Age") {
         const cachedAge = firstPaintPlayerKnownDisplay(firstPaintContext, "age");
-        valueHtml = `<span class="playerDetailAgeLine">${cachedAge ? escapeFirstPaintPlayerHtml(cachedAge) : LOADING_VALUE_TEXT}${firstPaintPlayerRetirementMarkerHtml(firstPaintContext)}</span>`;
+        valueHtml = `<span class="playerDetailAgeLine">${cachedAge ? escapeFirstPaintPlayerHtml(cachedAge) : BLANK_TABLE_LOADING_TEXT}${firstPaintPlayerRetirementMarkerHtml(firstPaintContext)}</span>`;
       }
       return `<div${cardClass ? ` class="${cardClass}"` : ""}><span>${label}</span><strong>${valueHtml}</strong></div>`;
     }).join("");
-    const attributeCards = Array.from({ length: 7 }, (_, index) => (
-      `<div class="playerAttributeCard${index === 0 ? " featured fullWidth" : ""}"><span>&nbsp;</span><strong>${LOADING_VALUE_TEXT}</strong></div>`
+    const attributeLabels = playerLoadingAttributeLabels(firstPaintContext);
+    const goalkeeperAttributeShell = attributeLabels.length === 2;
+    const attributeCards = attributeLabels.map((label, index) => (
+      `<div class="playerAttributeCard${index === 0 ? " featured" : ""}${index === 0 || goalkeeperAttributeShell ? " fullWidth" : ""}"><span>${label || BLANK_TABLE_LOADING_TEXT}</span><strong>${BLANK_TABLE_LOADING_TEXT}</strong></div>`
     )).join("");
 
     playerDetail.dataset.loadingShell = "true";
@@ -1025,7 +1062,7 @@
           <div class="playerPanel attributesPanel"><div class="playerPanelHeader"><h3>Attributes</h3><div class="playerAttributeViews">${playerLoadingViewButtons()}</div></div><div class="attributeGrid">${attributeCards}</div></div>
           ${notesPanel}
         </div>
-        <div class="playerPanel pitchPanel"><h3>Positions</h3><div class="pitch"></div></div>
+        <div class="playerPanel pitchPanel"><h3>Positions</h3><div class="pitch">${playerLoadingPitchHtml()}</div></div>
       </section>`;
   }
 

@@ -33,7 +33,7 @@ includes(
 includes(
   bootstrap,
   'const LOADING_VALUE_TEXT = "-";',
-  "All first-paint data boxes must share the global dash loading placeholder.",
+  "The shared non-Player loading placeholder must remain available without forcing it onto Player first paint.",
 );
 includes(
   bootstrap,
@@ -62,8 +62,8 @@ excludes(
 );
 includes(
   bootstrap,
-  '<strong>${LOADING_VALUE_TEXT}</strong>',
-  "Player loading cards must show the same global dash placeholder while data resolves.",
+  '<strong>${BLANK_TABLE_LOADING_TEXT}</strong>',
+  "Player loading cards must keep pending data visually blank while preserving their final geometry.",
 );
 includes(
   bootstrap,

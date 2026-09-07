@@ -452,9 +452,7 @@
     const root = document.documentElement;
     root.dataset.playerFirstPaintCuesReady = "false";
     window.__mflSharedTableUiRuntime?.syncRouteHorizontalCuesNow?.();
-    const ready = currentPlayerViewCueReady();
-    root.dataset.playerFirstPaintCuesReady = ready ? "true" : "false";
-    return ready;
+    return currentPlayerViewCueReady();
   }
 
   function observePlayerAttributeViewRenders() {

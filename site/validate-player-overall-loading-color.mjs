@@ -41,11 +41,12 @@ for (const value of [
   "function animateReadyOverallBoxes(container = document) {",
   'detail.classList.add("playerOverallRarityPaintComplete");',
   "function animateReadyControls(container = document) {",
-  "if (playerAttributeLoadingActive(playerId)) {",
 ]) includes(playerCore, value, "Canonical Player core");
 
 excludes(playerCore, 'overall.classList.toggle("isPending", !overallLoaded);', "Canonical Player core");
 excludes(playerCore, 'overall.style.setProperty("--rarity-color", rarityColor(context.overall));', "Canonical Player core");
+excludes(playerCore, 'box.classList.add("rarityPaintOnce")', "Canonical Player core first-visible readiness");
+excludes(playerCore, 'controls[0]?.getBoundingClientRect()', "Canonical Player core first-visible readiness");
 
 const matchingRowIndex = playerCore.indexOf("const matchingRow = payload.rows.find");
 const readyIndex = playerCore.indexOf("readyDetailPlayerId = routePlayerId;");
@@ -74,4 +75,4 @@ for (const value of [
 
 excludes(stylesBase.slice(stylesBase.indexOf("@keyframes playerOverallRarityPaint"), stylesBase.indexOf(".playerHeroOverall.rarityPaintOnce,")), "background-size: 100% 0%, 100% 100%;", "Player Overall rarity paint must not expose the dark overlay on its first frame.");
 
-console.log("Canonical Player loading keeps one rarity paint and exactly one ready-control grey-to-normal release.");
+console.log("Canonical Player loading settles rarity and ready controls before the first visible Player frame.");

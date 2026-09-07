@@ -17,9 +17,6 @@ const sharedRequired = [
   'root.classList.contains("mflNavigationPending")',
   "function attributeViewForRender(selectedView, playerIdValue = playerIdFromLocation()) {",
   'return playerAttributeLoadingActive(playerIdValue) ? "attributes" : selectedView;',
-  "function scheduleReadyControlsAfterLoading(playerIdValue) {",
-  'if (playerAttributeLoadingActive(playerId)) {',
-  'if (typeof owner === "function") owner(playerId);',
   "function stableAttributePanelHtml(row) {",
   "return renderPlayerAttributePanel(row);",
 ];
@@ -27,6 +24,9 @@ const sharedRequired = [
 for (const [label, runtime] of [["Canonical Player source", source], ["Generated Player runtime", generated]]) {
   for (const value of sharedRequired) {
     if (!runtime.includes(value)) throw new Error(`${label}: missing ${value}`);
+  }
+  if (runtime.includes("scheduleReadyControlsAfterLoading")) {
+    throw new Error(`${label}: authoritative Player controls must not be deferred until after first paint.`);
   }
   if (runtime.includes("pendingAttributeViewRestore")) {
     throw new Error(`${label}: legacy event-based selected-view restoration must not remain.`);
