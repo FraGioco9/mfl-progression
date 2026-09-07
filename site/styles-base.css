@@ -734,9 +734,9 @@ main > .pageView {
 
 .homeStats div {
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border: var(--mfl-panel-border);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .homeStats span {
@@ -4141,9 +4141,9 @@ button.playerIdText:active {
   gap: 5px;
   margin-bottom: 7px;
   padding: 7px 9px;
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .mflStatsFilters > span {
@@ -4182,9 +4182,9 @@ button.playerIdText:active {
 
 .mflStatsCards article,
 .mflStatsDistribution {
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .mflStatsCards article {
@@ -4358,9 +4358,9 @@ button.playerIdText:active {
 
 .settingsIdentity div,
 .settingsSection {
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
   padding: 14px;
 }
 
@@ -5153,9 +5153,9 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 
 .privacySection {
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: var(--mfl-panel-border);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .privacySection h3 {

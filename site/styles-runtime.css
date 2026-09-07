@@ -70,6 +70,9 @@
   --mfl-focus-ring-offset: 2px;
 
   /* Shared application surfaces. */
+  --mfl-panel-background: var(--surface);
+  --mfl-panel-border: 1px solid var(--border);
+  --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
@@ -874,9 +877,9 @@ main > .pageView {
 
 .homeStats div {
   padding: 10px 14px;
-  border: 1px solid var(--border);
+  border: var(--mfl-panel-border);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .homeStats span {
@@ -4281,9 +4284,9 @@ button.playerIdText:active {
   gap: 5px;
   margin-bottom: 7px;
   padding: 7px 9px;
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .mflStatsFilters > span {
@@ -4322,9 +4325,9 @@ button.playerIdText:active {
 
 .mflStatsCards article,
 .mflStatsDistribution {
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .mflStatsCards article {
@@ -4498,9 +4501,9 @@ button.playerIdText:active {
 
 .settingsIdentity div,
 .settingsSection {
-  border: 1px solid var(--border-strong);
+  border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
   padding: 14px;
 }
 
@@ -5293,9 +5296,9 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 
 .privacySection {
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: var(--mfl-panel-border);
   border-radius: var(--mfl-radius-panel);
-  background: var(--surface);
+  background: var(--mfl-panel-background);
 }
 
 .privacySection h3 {

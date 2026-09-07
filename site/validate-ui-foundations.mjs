@@ -80,6 +80,9 @@ for (const token of [
   "--mfl-focus-ring-color: var(--primary);",
   "--mfl-focus-ring-width: 2px;",
   "--mfl-focus-ring-offset: 2px;",
+  "--mfl-panel-background: var(--surface);",
+  "--mfl-panel-border: 1px solid var(--border);",
+  "--mfl-panel-border-strong: 1px solid var(--border-strong);",
   "--mfl-radius-panel: 8px;",
   "--mfl-radius-dialog: 8px;",
   "--mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);",
@@ -206,16 +209,20 @@ includes(compact, "--mfl-page-title-font-size: 17px;", "Compact screens must ove
 excludes(compact, ".tablePageTitle {\n    font-size: 17px;", "Compact title sizing must use the shared page-title token.");
 
 for (const token of [
-  ".homeStats div {\n  padding: 10px 14px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
-  ".mflStatsFilters {\n  display: grid;\n  gap: 5px;\n  margin-bottom: 7px;\n  padding: 7px 9px;\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
-  ".mflStatsCards article,\n.mflStatsDistribution {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
-  ".settingsIdentity div,\n.settingsSection {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
-  ".privacySection {\n  padding: 14px 16px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
+  ".homeStats div {\n  padding: 10px 14px;\n  border: var(--mfl-panel-border);\n  border-radius: var(--mfl-radius-panel);\n  background: var(--mfl-panel-background);",
+  ".mflStatsFilters {\n  display: grid;\n  gap: 5px;\n  margin-bottom: 7px;\n  padding: 7px 9px;\n  border: var(--mfl-panel-border-strong);\n  border-radius: var(--mfl-radius-panel);\n  background: var(--mfl-panel-background);",
+  ".mflStatsCards article,\n.mflStatsDistribution {\n  border: var(--mfl-panel-border-strong);\n  border-radius: var(--mfl-radius-panel);\n  background: var(--mfl-panel-background);",
+  ".settingsIdentity div,\n.settingsSection {\n  border: var(--mfl-panel-border-strong);\n  border-radius: var(--mfl-radius-panel);\n  background: var(--mfl-panel-background);",
+  ".privacySection {\n  padding: 14px 16px;\n  border: var(--mfl-panel-border);\n  border-radius: var(--mfl-radius-panel);\n  background: var(--mfl-panel-background);",
 ]) {
   includes(stylesBase, token, `Equivalent page/content surfaces must consume the shared panel radius: ${token}`);
 }
 includes(stylesBase, ".tableShell {\n  position: relative;\n  background: var(--surface);\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Table radius must remain table-owned rather than consuming the generic panel radius.");
 includes(stylesBase, ".playerHero,\n.playerPanel {\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Player surface radius must remain Player-owned.");
+const tableShellSurface = exactRule(stylesBase, ".tableShell");
+excludes(tableShellSurface, "var(--mfl-panel-", "Table surfaces must remain table-owned rather than consuming ordinary panel surface tokens.");
+const playerHeroSurface = exactRule(stylesBase, ".playerHero,\n.playerPanel");
+excludes(playerHeroSurface, "var(--mfl-panel-", "Player surfaces must remain Player-owned rather than consuming ordinary panel surface tokens.");
 
 for (const [selector, sizeToken, weightToken, lineToken] of [
   [".changelogMinorMeta", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", "var(--mfl-metadata-line-height)"],
@@ -314,4 +321,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic icon sizing, control typography, page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
+console.log("Global UI foundations validation passed with semantic icon sizing, control typography, page layout/title/rhythm, ordinary content-surface, section-title, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
