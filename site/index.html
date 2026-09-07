@@ -1035,7 +1035,7 @@
                 <div class="playerPanel playerInfoPanel">
                   <h3>Profile</h3>
                   <div class="detailGrid">
-                    <div><span>Nationality</span><strong>&nbsp;</strong></div>
+                    <div class="nationalityDetailCard"><span>Nationality</span><strong>&nbsp;</strong></div>
                     <div><span>Age</span><strong data-mfl-static-player-age><span class="playerDetailAgeLine">&nbsp;</span></strong></div>
                     <div><span>Height</span><strong>&nbsp;</strong></div>
                     <div><span>Foot</span><strong>&nbsp;</strong></div>
@@ -1100,6 +1100,87 @@
             const views = document.querySelector("#playerPage .playerAttributeViews");
             const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
             const playerId = routeMatch ? String(routeMatch[1] || "") : "";
+            const compactPlayerPageName = (value) => {
+              const fullName = String(value || "").trim().replace(/\s+/g, " ");
+              if (!fullName) return "";
+              return fullName.replace(/^(\S)[^\s]*\s+(?:.*\s)?(\S+)$/, "$1. $2");
+            };
+            const applyFirstPaintHeroActionLayout = (playerHero) => {
+              if (!(playerHero instanceof HTMLElement)) return;
+              const actions = playerHero.querySelector(":scope > .playerHeroActions");
+              const wrapper = actions?.querySelector(":scope > .playerHeroActionMenu");
+              const primary = wrapper?.querySelector(":scope > .playerHeroPrimaryAction");
+              const toggle = wrapper?.querySelector(":scope > .playerHeroActionMenuButton");
+              if (!(actions instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) return;
+
+              actions.style.gap = "0";
+              actions.style.alignSelf = "var(--mfl-player-hero-actions-align-self, center)";
+              actions.style.marginLeft = "var(--mfl-player-hero-actions-margin-left, auto)";
+              const menuWidth = "var(--mfl-player-hero-action-menu-width, 190px)";
+              wrapper.style.position = "relative";
+              wrapper.style.display = "inline-flex";
+              wrapper.style.alignItems = "stretch";
+              wrapper.style.gap = "var(--mfl-player-hero-action-gap, 4px)";
+              wrapper.style.flex = "0 0 " + menuWidth;
+              wrapper.style.width = menuWidth;
+              wrapper.style.minWidth = menuWidth;
+              wrapper.style.maxWidth = menuWidth;
+
+              if (primary instanceof HTMLElement) {
+                const width = "var(--mfl-player-hero-primary-action-width, 152px)";
+                const height = "var(--mfl-player-hero-action-height, 40px)";
+                primary.style.boxSizing = "border-box";
+                primary.style.display = "inline-flex";
+                primary.style.alignItems = "center";
+                primary.style.justifyContent = "center";
+                primary.style.flex = "0 0 " + width;
+                primary.style.width = width;
+                primary.style.minWidth = width;
+                primary.style.maxWidth = width;
+                primary.style.height = height;
+                primary.style.minHeight = height;
+                primary.style.maxHeight = height;
+                primary.style.padding = "0 10px";
+                primary.style.fontSize = "var(--mfl-player-hero-action-font-size, 16px)";
+                primary.style.lineHeight = "1";
+                primary.style.whiteSpace = "nowrap";
+                primary.style.textDecoration = "none";
+                primary.style.color = "var(--text-soft)";
+                primary.style.opacity = "0.5";
+                primary.style.cursor = "default";
+                primary.style.pointerEvents = "none";
+              }
+
+              if (toggle instanceof HTMLElement) {
+                const width = "var(--mfl-player-hero-action-chevron-width, 34px)";
+                const height = "var(--mfl-player-hero-action-height, 40px)";
+                toggle.style.boxSizing = "border-box";
+                toggle.style.display = "grid";
+                toggle.style.placeItems = "center";
+                toggle.style.flex = "0 0 " + width;
+                toggle.style.width = width;
+                toggle.style.minWidth = width;
+                toggle.style.maxWidth = width;
+                toggle.style.height = height;
+                toggle.style.minHeight = height;
+                toggle.style.maxHeight = height;
+                toggle.style.padding = "0";
+                toggle.style.color = "var(--text-soft)";
+                toggle.style.opacity = "0.5";
+                toggle.style.cursor = "default";
+                const icon = toggle.querySelector(".playerHeroChevronIcon");
+                if (icon instanceof SVGElement) {
+                  const iconSize = "var(--mfl-player-hero-chevron-icon-size, 16px)";
+                  icon.style.width = iconSize;
+                  icon.style.height = iconSize;
+                  icon.style.fill = "none";
+                  icon.style.stroke = "currentColor";
+                  icon.style.strokeWidth = "2";
+                  icon.style.strokeLinecap = "round";
+                  icon.style.strokeLinejoin = "round";
+                }
+              }
+            };
             let firstPaintContext = null;
             if (playerId) {
               try {
@@ -1108,6 +1189,7 @@
               } catch {}
             }
             if (playerPage instanceof HTMLElement) playerPage.hidden = false;
+            applyFirstPaintHeroActionLayout(hero);
             if (hero instanceof HTMLElement && playerId) {
               hero.dataset.playerShellId = playerId;
               const idButton = hero.querySelector(".playerIdText");
@@ -1122,7 +1204,12 @@
                 .map((position) => String(position || "").trim())
                 .filter(Boolean);
               const titleName = hero.querySelector(".playerTitleName");
-              if (titleName instanceof HTMLElement && cachedName) titleName.textContent = cachedName;
+              if (titleName instanceof HTMLElement && cachedName) {
+                const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;
+                titleName.dataset.playerFullName = cachedName;
+                titleName.textContent = displayName;
+                titleName.setAttribute("aria-label", cachedName);
+              }
               const positionsText = hero.querySelector(".playerHeroIdentity > p");
               if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");
             }
@@ -1182,7 +1269,7 @@
                 .filter(Boolean);
               const labels = !positions.length
                 ? ["Overall", "", "", "", "", "", ""]
-                : (positions.includes("GK")
+                : (positions[0] === "GK"
                   ? ["Overall", "Goalkeeping"]
                   : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"]);
               const goalkeeper = labels.length === 2;
@@ -1260,6 +1347,7 @@
             root.dataset.playerFirstPaintCuesReady = "false";
           })();
         </script>
+
         <section id="settingsPage" class="pageView settingsPage" hidden>
           <h2 class="tablePageTitle">Settings</h2>
           <section class="settingsPanel" aria-label="Settings">
