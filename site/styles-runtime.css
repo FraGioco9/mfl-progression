@@ -1044,9 +1044,10 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: var(--danger);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--mfl-helper-error-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-error-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {
@@ -7567,13 +7568,15 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 .bugReportStatus {
   min-height: 16px;
   margin: 0;
-  color: var(--text-soft);
-  font-size: 12px;
-  line-height: 1.25;
+  color: var(--mfl-helper-text-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-text-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 .bugReportStatus.isError {
-  color: var(--danger);
+  color: var(--mfl-helper-error-color);
+  font-weight: var(--mfl-helper-error-font-weight);
 }
 
 .bugReportFooter {

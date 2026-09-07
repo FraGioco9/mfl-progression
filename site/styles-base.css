@@ -911,9 +911,10 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: var(--danger);
-  font-size: 12px;
-  font-weight: 700;
+  color: var(--mfl-helper-error-color);
+  font-size: var(--mfl-helper-text-font-size);
+  font-weight: var(--mfl-helper-error-font-weight);
+  line-height: var(--mfl-helper-text-line-height);
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {

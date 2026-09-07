@@ -66,6 +66,12 @@ for (const token of [
   "--mfl-metadata-font-weight: 700;",
   "--mfl-metadata-strong-font-weight: 800;",
   "--mfl-metadata-line-height: 1.1;",
+  "--mfl-helper-text-font-size: 12px;",
+  "--mfl-helper-text-line-height: 1.25;",
+  "--mfl-helper-text-font-weight: 400;",
+  "--mfl-helper-error-font-weight: 700;",
+  "--mfl-helper-text-color: var(--text-soft);",
+  "--mfl-helper-error-color: var(--danger);",
   "--mfl-focus-ring-color: var(--primary);",
   "--mfl-focus-ring-width: 2px;",
   "--mfl-focus-ring-offset: 2px;",
@@ -216,7 +222,7 @@ excludes(controls, "#ff2020", "Filter controls must not retain the old one-off d
 includes(controls, "border-radius: var(--mfl-radius-control);", "Filter removal must consume the shared control radius.");
 
 for (const token of [
-  ".addWatchlistError {\n  min-height: 18px;\n  margin: 6px 0 0;\n  color: var(--danger);",
+  ".addWatchlistError {\n  min-height: 18px;\n  margin: 6px 0 0;\n  color: var(--mfl-helper-error-color);\n  font-size: var(--mfl-helper-text-font-size);\n  font-weight: var(--mfl-helper-error-font-weight);\n  line-height: var(--mfl-helper-text-line-height);",
   "#addWatchlistNameInput[aria-invalid=\"true\"] {\n  border-color: var(--danger);",
   ".evaluationLoadDeleteButton {\n  border-color: var(--border);\n  background: var(--surface-muted);\n  color: var(--danger);",
   ".evaluationFooterDeleteButton {\n  align-self: center;\n  gap: 8px;\n  border-color: var(--border);\n  background: var(--surface-muted);\n  color: var(--danger);",
@@ -238,7 +244,8 @@ for (const token of [
 includes(footer, "border-radius: var(--mfl-radius-dialog);", "Bug Report must consume the canonical 8px dialog radius.");
 includes(footer, "box-shadow: var(--mfl-shadow-modal);", "Bug Report must consume the canonical modal shadow.");
 includes(footer, "border-radius: var(--mfl-radius-control);", "Bug Report fields must consume the shared control radius where the semantic role matches.");
-includes(footer, ".bugReportStatus.isError {\n  color: var(--danger);", "Bug Report error feedback must derive from --danger.");
+includes(footer, ".bugReportStatus {\n  min-height: 16px;\n  margin: 0;\n  color: var(--mfl-helper-text-color);\n  font-size: var(--mfl-helper-text-font-size);\n  font-weight: var(--mfl-helper-text-font-weight);\n  line-height: var(--mfl-helper-text-line-height);", "Bug Report ordinary status feedback must consume the shared helper-text foundation.");
+includes(footer, ".bugReportStatus.isError {\n  color: var(--mfl-helper-error-color);\n  font-weight: var(--mfl-helper-error-font-weight);", "Bug Report error feedback must consume the shared helper error foundation.");
 excludes(footer, ".bugReportDialog {\n  display: flex;\n  flex-direction: column;\n  width: min(620px, calc(100vw - 24px));\n  max-height: min(760px, calc(100dvh - 24px));\n  min-width: 0;\n  border: 1px solid var(--border);\n  border-radius: 10px;", "Bug Report must not reintroduce its former 10px dialog radius.");
 
 for (const [name, source] of [
@@ -260,6 +267,7 @@ for (const token of [
   "Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)",
   "Shared section title: `16px` (`--mfl-section-title-font-size`)",
   "Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)",
+  "Ordinary helper/status text size: `12px` (`--mfl-helper-text-font-size`)",
   "Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)",
   "Ring width: `2px` through `--mfl-focus-ring-width`",
   "Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)",
@@ -277,4 +285,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, destructive/error, and dialog ownership contracts.");
+console.log("Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
