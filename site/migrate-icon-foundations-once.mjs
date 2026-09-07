@@ -2,7 +2,6 @@ import { readFile, writeFile } from "node:fs/promises";
 
 const read = async (url) => String(await readFile(url, "utf8")).replace(/\r\n?/g, "\n");
 const write = async (url, source) => writeFile(url, source, "utf8");
-
 const replaceExact = (source, label, from, to) => {
   if (source.includes(to)) return source;
   const count = source.split(from).length - 1;
@@ -10,80 +9,51 @@ const replaceExact = (source, label, from, to) => {
   return source.replace(from, to);
 };
 
-const replaceInBlock = (source, selector, label, replacements) => {
-  const marker = `${selector} {`;
-  const start = source.indexOf(marker);
-  if (start < 0) throw new Error(`${label}: missing ${selector}.`);
-  const end = source.indexOf("\n}", start);
-  if (end < 0) throw new Error(`${label}: unterminated ${selector}.`);
-  let block = source.slice(start, end + 2);
-  for (const [from, to] of replacements) {
-    if (!block.includes(from) && block.includes(to)) continue;
-    const count = block.split(from).length - 1;
-    if (count !== 1) throw new Error(`${label}: expected one ${JSON.stringify(from)} in ${selector}, found ${count}.`);
-    block = block.replace(from, to);
-  }
-  return source.slice(0, start) + block + source.slice(end + 2);
-};
-
-const replaceAllInBlock = (source, selector, label, from, to) => {
-  const marker = `${selector} {`;
-  const start = source.indexOf(marker);
-  if (start < 0) throw new Error(`${label}: missing ${selector}.`);
-  const end = source.indexOf("\n}", start);
-  if (end < 0) throw new Error(`${label}: unterminated ${selector}.`);
-  let block = source.slice(start, end + 2);
-  if (!block.includes(from) && block.includes(to)) return source;
-  if (!block.includes(from)) throw new Error(`${label}: no ${JSON.stringify(from)} remains in ${selector}.`);
-  block = block.split(from).join(to);
-  return source.slice(0, start) + block + source.slice(end + 2);
-};
-
 const stylesPath = new URL("./styles-base.css", import.meta.url);
 let styles = await read(stylesPath);
-styles = replaceInBlock(styles, ".navEmoji", "Base navigation icon", [
-  ["width: 18px;", "width: var(--mfl-icon-size-navigation);"],
-  ["height: 18px;", "height: var(--mfl-icon-size-navigation);"],
-]);
+styles = replaceExact(
+  styles,
+  "Base navigation icon",
+  `.navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: 18px;\n  height: 18px;`,
+  `.navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);`,
+);
 await write(stylesPath, styles);
 
 const controlsPath = new URL("./controls.css", import.meta.url);
 let controls = await read(controlsPath);
-controls = replaceAllInBlock(
+controls = replaceExact(
   controls,
-  "#sidebar .navEmoji",
   "Sidebar navigation icon",
-  "18px",
-  "var(--mfl-icon-size-navigation)",
+  `#sidebar .navEmoji {\n  flex: 0 0 18px;\n  width: 18px;\n  min-width: 18px;\n  max-width: 18px;\n  height: 18px;\n  min-height: 18px;\n  max-height: 18px;\n  color: inherit;\n  font-size: 18px;\n  line-height: 18px;\n}`,
+  `#sidebar .navEmoji {\n  flex: 0 0 var(--mfl-icon-size-navigation);\n  width: var(--mfl-icon-size-navigation);\n  min-width: var(--mfl-icon-size-navigation);\n  max-width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);\n  min-height: var(--mfl-icon-size-navigation);\n  max-height: var(--mfl-icon-size-navigation);\n  color: inherit;\n  font-size: var(--mfl-icon-size-navigation);\n  line-height: var(--mfl-icon-size-navigation);\n}`,
 );
-controls = replaceInBlock(controls, "#sidebar .navJerseyIcon", "Sidebar jersey icon", [
-  ["width: 18px;", "width: var(--mfl-icon-size-navigation);"],
-  ["height: 18px;", "height: var(--mfl-icon-size-navigation);"],
-]);
-controls = replaceAllInBlock(
+controls = replaceExact(
   controls,
-  ".searchButton .searchIcon",
+  "Sidebar jersey icon",
+  `#sidebar .navJerseyIcon {\n  width: 18px;\n  height: 18px;`,
+  `#sidebar .navJerseyIcon {\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);`,
+);
+controls = replaceExact(
+  controls,
   "Search control icon",
-  "17px",
-  "var(--mfl-icon-size-control)",
+  `.searchButton .searchIcon {\n  display: block;\n  flex: 0 0 17px;\n  width: 17px;\n  height: 17px;`,
+  `.searchButton .searchIcon {\n  display: block;\n  flex: 0 0 var(--mfl-icon-size-control);\n  width: var(--mfl-icon-size-control);\n  height: var(--mfl-icon-size-control);`,
 );
-controls = replaceAllInBlock(
+controls = replaceExact(
   controls,
-  ".filtersViewIcon",
   "Filters control icon",
-  "17px",
-  "var(--mfl-icon-size-control)",
+  `.filtersViewIcon {\n  flex: 0 0 17px;\n  align-self: center;\n  width: 17px;\n  height: 17px;`,
+  `.filtersViewIcon {\n  flex: 0 0 var(--mfl-icon-size-control);\n  align-self: center;\n  width: var(--mfl-icon-size-control);\n  height: var(--mfl-icon-size-control);`,
 );
 await write(controlsPath, controls);
 
 const chromePath = new URL("./responsive-sources/chrome-tablet.css.inc", import.meta.url);
 let chrome = await read(chromePath);
-chrome = replaceAllInBlock(
+chrome = replaceExact(
   chrome,
-  ".menuRail .navButton .navEmoji",
   "Mobile navigation icon",
-  "18px",
-  "var(--mfl-icon-size-navigation)",
+  `.menuRail .navButton .navEmoji {\n    flex: 0 0 18px;\n    width: 18px;\n    height: 18px;\n    color: inherit;\n    font-size: 18px;`,
+  `.menuRail .navButton .navEmoji {\n    flex: 0 0 var(--mfl-icon-size-navigation);\n    width: var(--mfl-icon-size-navigation);\n    height: var(--mfl-icon-size-navigation);\n    color: inherit;\n    font-size: var(--mfl-icon-size-navigation);`,
 );
 await write(chromePath, chrome);
 
@@ -91,7 +61,7 @@ const sidebarValidatorPath = new URL("./validate-sidebar-lifecycle-ownership.mjs
 let sidebarValidator = await read(sidebarValidatorPath);
 sidebarValidator = replaceExact(
   sidebarValidator,
-  "Sidebar icon foundation validator",
+  "Sidebar icon validator",
   `.navEmoji {\\n  display: grid;\\n  place-items: center;\\n  align-self: center;\\n  justify-self: center;\\n  width: 18px;\\n  height: 18px;`,
   `.navEmoji {\\n  display: grid;\\n  place-items: center;\\n  align-self: center;\\n  justify-self: center;\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);`,
 );
@@ -105,7 +75,7 @@ const chromeValidatorPath = new URL("./validation/responsive-chrome.mjs", import
 let chromeValidator = await read(chromeValidatorPath);
 chromeValidator = replaceExact(
   chromeValidator,
-  "Responsive navigation icon foundation validator",
+  "Responsive navigation icon validator",
   `.menuRail .navButton .navEmoji {\\n    flex: 0 0 18px;\\n    width: 18px;\\n    height: 18px;`,
   `.menuRail .navButton .navEmoji {\\n    flex: 0 0 var(--mfl-icon-size-navigation);\\n    width: var(--mfl-icon-size-navigation);\\n    height: var(--mfl-icon-size-navigation);`,
 );
@@ -123,7 +93,7 @@ foundationValidator = replaceExact(
   foundationValidator,
   "Icon foundation consumer validation",
   `includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");\n`,
-  `includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");\n\nfor (const token of [\n  ".navEmoji {\\n  display: grid;\\n  place-items: center;\\n  align-self: center;\\n  justify-self: center;\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);",\n]) {\n  includes(stylesBase, token, \`Shared navigation icons must consume the navigation-icon foundation: ${token}\`);\n}\nfor (const token of [\n  "#sidebar .navEmoji {\\n  flex: 0 0 var(--mfl-icon-size-navigation);\\n  width: var(--mfl-icon-size-navigation);",\n  "#sidebar .navJerseyIcon {\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);",\n  ".searchButton .searchIcon {\\n  display: block;\\n  flex: 0 0 var(--mfl-icon-size-control);\\n  width: var(--mfl-icon-size-control);\\n  height: var(--mfl-icon-size-control);",\n  ".filtersViewIcon {\\n  flex: 0 0 var(--mfl-icon-size-control);\\n  align-self: center;\\n  width: var(--mfl-icon-size-control);\\n  height: var(--mfl-icon-size-control);",\n]) {\n  includes(controls, token, \`Equivalent ordinary UI icons must consume the shared semantic icon-size foundation: ${token}\`);\n}\nincludes(stylesBase, ".advancedSettingsIcon {\\n  flex: 0 0 16px;\\n  width: 16px;\\n  height: 16px;", "Advanced Settings icon geometry must remain specialist-owned.");\nincludes(dropdowns, ".accountButtonIcon {\\n  flex: 0 0 auto;\\n  width: 18px;\\n  height: 18px;", "Account icon geometry must remain Account-owned despite matching the navigation size numerically on desktop.");\n`,
+  `includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");\n\nincludes(stylesBase, ".navEmoji {\\n  display: grid;\\n  place-items: center;\\n  align-self: center;\\n  justify-self: center;\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);", "Shared navigation icons must consume the navigation-icon foundation.");\nfor (const token of [\n  "#sidebar .navEmoji {\\n  flex: 0 0 var(--mfl-icon-size-navigation);\\n  width: var(--mfl-icon-size-navigation);",\n  "#sidebar .navJerseyIcon {\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);",\n  ".searchButton .searchIcon {\\n  display: block;\\n  flex: 0 0 var(--mfl-icon-size-control);\\n  width: var(--mfl-icon-size-control);\\n  height: var(--mfl-icon-size-control);",\n  ".filtersViewIcon {\\n  flex: 0 0 var(--mfl-icon-size-control);\\n  align-self: center;\\n  width: var(--mfl-icon-size-control);\\n  height: var(--mfl-icon-size-control);",\n]) {\n  includes(controls, token, \`Equivalent ordinary UI icons must consume the shared semantic icon-size foundation: ${token}\`);\n}\nincludes(stylesBase, ".advancedSettingsIcon {\\n  flex: 0 0 16px;\\n  width: 16px;\\n  height: 16px;", "Advanced Settings icon geometry must remain specialist-owned.");\nincludes(dropdowns, ".accountButtonIcon {\\n  flex: 0 0 auto;\\n  width: 18px;\\n  height: 18px;", "Account icon geometry must remain Account-owned despite matching the navigation size numerically on desktop.");\n`,
 );
 foundationValidator = foundationValidator.replace(
   "Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.",
