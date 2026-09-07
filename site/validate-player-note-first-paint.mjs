@@ -86,12 +86,12 @@ for (const token of [
 for (const token of [
   '@media (min-width: 901px) {',
   '.playerHeroIdentity {\n    flex-basis: clamp(360px, 37vw, 520px);\n    width: clamp(360px, 37vw, 520px);\n    max-width: clamp(360px, 37vw, 520px);',
-  '.playerHeroIdentity .playerTitle {\n    flex-wrap: nowrap;\n  }',
+  '.playerHeroIdentity .playerTitle {\n    align-items: baseline;\n    flex-wrap: nowrap;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;\n    display: grid;\n    place-items: center;\n    flex: 0 0 22px;\n    align-self: center;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-flex;\n    align-items: center;\n    align-self: center;\n    height: 22px;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    display: block;\n    margin: 0;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    line-height: 1;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-grid;\n    grid-template-columns: 14px auto;\n    align-items: baseline;\n    align-self: baseline;\n    height: 22px;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    display: block;\n    align-self: center;\n    margin: 0;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    align-self: baseline;\n    line-height: 1;',
   '.playerNotesInput {\n    min-height: 150px;',
 ]) {
   assert.ok(desktopPlacement.includes(token), `Canonical desktop Player title alignment is missing: ${token}`);
@@ -118,4 +118,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("/player-note.svg"), "Player Note presentation must not depend on the removed external icon asset.");
 }
 
-console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop name-preserving control alignment, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
+console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop name/listing baseline alignment, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
