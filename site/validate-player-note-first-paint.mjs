@@ -5,7 +5,9 @@ const read = (path) => readFileSync(new URL(path, import.meta.url), "utf8").repl
 const playerSource = read("./html-sources/player.html");
 const generatedIndex = read("./index.html");
 const responsive = read("./responsive.css");
-const placementSource = read("./responsive-sources/player-note-placement.css.inc");
+const mobilePlacement = read("./responsive-sources/player-note-tablet.css.inc");
+const desktopPlacement = read("./responsive-sources/player-note-desktop.css.inc");
+const placementSource = mobilePlacement + desktopPlacement;
 
 for (const source of [playerSource, generatedIndex]) {
   assert.ok(
@@ -45,18 +47,29 @@ for (const token of [
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;',
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    order: 1;',
   '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    order: 2;',
-  '@media (max-width: 900px) {',
+]) {
+  assert.ok(desktopPlacement.includes(token), `Desktop Player Note placement is missing: ${token}`);
+  assert.ok(responsive.includes(token), `Generated responsive Player Note placement is missing: ${token}`);
+}
+
+for (const token of [
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:not(:empty) {\n    position: absolute;\n    top: var(--mfl-player-panel-padding);\n    right: var(--mfl-player-panel-padding);',
   'width: 14px;\n    min-width: 14px;\n    max-width: 14px;\n    height: 14px;',
   '.playerHeroIdentity .playerTitle:has(> .playerListingBadge) > .playerTitleNoteIcon:not(:empty) {\n    right: calc(var(--mfl-player-panel-padding) + 22px);',
 ]) {
-  assert.ok(placementSource.includes(token), `Canonical Player Note placement is missing: ${token}`);
+  assert.ok(mobilePlacement.includes(token), `Mobile Player Note placement is missing: ${token}`);
   assert.ok(responsive.includes(token), `Generated responsive Player Note placement is missing: ${token}`);
 }
 
 assert.ok(
   placementSource.includes('.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:empty {\n    display: none;'),
   "An empty note host must not reserve title gap before note data exists.",
+);
+const mobilePlacementIndex = responsive.indexOf('.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:not(:empty) {');
+const phoneBreakpointIndex = responsive.indexOf('@media (max-width: 520px)');
+assert.ok(
+  mobilePlacementIndex >= 0 && phoneBreakpointIndex > mobilePlacementIndex,
+  "Mobile Player Note geometry must live in the shared <=900px cascade before phone/tiny breakpoints.",
 );
 assert.ok(!placementSource.includes("!important"), "Player Note placement must not use !important.");
 assert.ok(!placementSource.includes("transform:"), "Player Note placement must use real layout coordinates rather than transform nudges.");
