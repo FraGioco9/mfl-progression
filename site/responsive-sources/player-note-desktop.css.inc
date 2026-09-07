@@ -1,5 +1,5 @@
 
-/* Desktop Player title controls share one inline slot immediately to the right of the name. */
+/* Desktop Player title controls share the Player-name center line. */
 @media (min-width: 901px) {
   .playerHeroIdentity .playerTitle {
     display: flex;
@@ -10,24 +10,27 @@
 
   .playerHeroIdentity .playerTitle > .playerTitleName {
     order: 0;
+    display: inline-flex;
+    align-items: center;
+    line-height: 1.05;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon {
     position: static;
     order: 1;
-    display: inline-flex;
-    flex: 0 0 18px;
-    align-items: center;
-    justify-content: center;
-    width: 18px;
-    min-width: 18px;
-    max-width: 18px;
-    height: 18px;
-    min-height: 18px;
-    max-height: 18px;
+    display: grid;
+    place-items: center;
+    flex: 0 0 22px;
+    align-self: center;
+    width: 22px;
+    min-width: 22px;
+    max-width: 22px;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
     margin: 0;
     padding: 0;
-    line-height: 18px;
+    line-height: 0;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon:empty {
@@ -36,10 +39,8 @@
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon {
     position: relative;
-    display: inline-flex;
-    flex: 0 0 18px;
-    align-items: center;
-    justify-content: center;
+    display: grid;
+    place-items: center;
     width: 18px;
     min-width: 18px;
     max-width: 18px;
@@ -63,6 +64,7 @@
     height: 18px;
     min-height: 18px;
     max-height: 18px;
+    margin: 0;
     fill: none;
     stroke: currentColor;
     stroke-width: 1.8;
@@ -80,7 +82,22 @@
     top: auto;
     right: auto;
     order: 2;
+    display: inline-flex;
+    align-items: center;
     align-self: center;
-    margin-left: 0;
+    height: 22px;
+    min-height: 22px;
+    max-height: 22px;
+    margin: 0;
+    line-height: 1;
+  }
+
+  .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
+    display: block;
+    margin: 0;
+  }
+
+  .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
+    line-height: 1;
   }
 }
