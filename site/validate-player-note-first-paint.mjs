@@ -89,7 +89,7 @@ for (const token of [
   '.playerHeroIdentity .playerTitle {\n    align-items: baseline;\n    flex-wrap: nowrap;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;\n    display: grid;\n    place-items: center;\n    flex: 0 0 22px;\n    align-self: center;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: relative;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-flex;\n    align-items: center;\n    flex: 0 0 auto;\n    align-self: baseline;\n    width: max-content;\n    min-width: 0;\n    max-width: none;\n    height: 22px;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: relative;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-flex;\n    align-items: center;\n    flex: 0 0 auto;\n    align-self: center;\n    width: max-content;\n    min-width: 0;\n    max-width: none;\n    height: 22px;',
   'padding: 0 5px 0 23px;\n    font-size: 16px;\n    line-height: 1;\n    white-space: nowrap;',
   '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    position: absolute;\n    top: 4px;\n    left: 5px;\n    display: block;\n    width: 14px;\n    height: 14px;\n    margin: 0;',
   '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    display: block;\n    line-height: 1;',
@@ -112,8 +112,9 @@ assert.ok(
   !desktopPlacement.includes('.playerListingBadge::before')
     && desktopPlacement.includes('width: max-content;')
     && desktopPlacement.includes('padding: 0 5px 0 23px;')
-    && desktopPlacement.includes('display: inline-flex;\n    align-items: center;'),
-  "Desktop Listing must use the price as its only in-flow baseline item so the whole content-sized badge follows the price position.",
+    && desktopPlacement.includes('display: inline-flex;\n    align-items: center;')
+    && desktopPlacement.includes('align-self: center;'),
+  "Desktop Listing must preserve its content-sized background while centering the whole badge on the Player-name line.",
 );
 
 for (const source of [mobilePlacement, desktopPlacement]) {
@@ -126,4 +127,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("/player-note.svg"), "Player Note presentation must not depend on the removed external icon asset.");
 }
 
-console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop price-owned whole-badge baseline alignment with content-sized background, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
+console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop content-sized Listing centered on the Player-name line, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
