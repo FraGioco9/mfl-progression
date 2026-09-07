@@ -72,7 +72,9 @@ jobs:
 
       - name: Apply one-time ordinary control-state foundation migration
         if: steps.changes.outputs.quality == 'true'
-        run: node migrate-control-state-foundations-once.mjs
+        run: |
+          node migrate-control-state-foundations-once.mjs
+          node migrate-control-state-ownership-validator-once.mjs
 
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
@@ -110,6 +112,7 @@ jobs:
             site/html-sources/first-paint.html \
             site/validate-ui-foundations.mjs \
             site/validate-static-route-ui.mjs \
+            site/validate-css-ownership-consolidation.mjs \
             site/bootstrap.js \
             site/bootstrap-core.js \
             site/index.html \
