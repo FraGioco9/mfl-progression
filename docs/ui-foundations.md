@@ -75,11 +75,28 @@ Data visualization and game-state colors are intentionally not part of this rule
 - Compact metadata/small-label size: `11px` (`--mfl-metadata-compact-font-size`)
 - Shared metadata weight: `700` (`--mfl-metadata-font-weight`); strong metadata: `800` (`--mfl-metadata-strong-font-weight`)
 - Shared metadata line-height where the semantic role permits it: `1.1` (`--mfl-metadata-line-height`)
+- Ordinary helper/status text size: `12px` (`--mfl-helper-text-font-size`)
+- Ordinary helper/status line-height: `1.25` (`--mfl-helper-text-line-height`)
+- Ordinary status weight: `400` (`--mfl-helper-text-font-weight`)
+- Error feedback weight: `700` (`--mfl-helper-error-font-weight`)
 - Numeric/count values use tabular figures where stable alignment matters
 
 The shared section-title scale is used only where the heading has the same structural role. Settings and Advanced Settings use the standard size; MFL Stats distribution and Privacy cards use the compact size. Player and Evaluation headings remain specialist-owned.
 
 Metadata tokens apply only to true small labels/secondary metadata. Component labels whose geometry controls a row height, and Player/Evaluation-specific labels, may keep locally owned line-height or sizing.
+
+## Helper and status feedback
+
+Ordinary helper/status feedback shares:
+
+- Text color: `var(--text-soft)` through `--mfl-helper-text-color`
+- Error color: `var(--danger)` through `--mfl-helper-error-color`
+- Size: `12px`
+- Line-height: `1.25`
+- Normal status weight: `400`
+- Error feedback weight: `700`
+
+This contract is intentionally narrow. It covers ordinary form/status feedback such as Add Watchlist validation and Bug Report status/error text. Search hints, empty states, table loading/empty states, Player/Evaluation data labels, and domain-specific game-state messages remain locally owned.
 
 ## Layout and chrome
 
@@ -211,6 +228,7 @@ Component-local z-index values stay below the global application layers.
 7. Equivalent ordinary content surfaces consume `--mfl-radius-panel` without collapsing dialog, control, table, Player, or Evaluation radius ownership into one token.
 8. Ordinary keyboard focus consumes shared ring color/width/offset tokens while specialist interaction states remain locally owned.
 9. Repeated small-label and secondary metadata roles consume the shared 12px/11px metadata scale with 700/800 weight variants.
+10. Ordinary form/status feedback uses one 12px/1.25 helper contract with soft normal text and stronger danger-derived error feedback; search hints, empty states, table states, and domain-specific data messages remain separate.
 
 ## What must remain intentionally separate
 
@@ -221,6 +239,7 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - normal controls and tiny steppers/table actions
 - content-panel, control, dialog/popover, table, Player/Evaluation, and pill radii
 - ordinary focus rings and specialist table/dropdown/selected interaction states
+- ordinary helper/status feedback and domain-specific empty/loading/data states
 - tooltip, dropdown, modal, and mobile-navigation shadows
 - topbar/footer chrome and main page-content gutters
 - Player/Evaluation-specific geometry
