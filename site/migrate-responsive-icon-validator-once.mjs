@@ -22,5 +22,11 @@ replaceOnce(
   `  includes(controls, "#sidebar .navJerseyIcon {\\n  width: var(--mfl-icon-size-navigation);\\n  height: var(--mfl-icon-size-navigation);\\n  color: inherit;\\n  fill: none;\\n  stroke: currentColor;\\n  stroke-width: 2;\\n  stroke-linecap: round;\\n  stroke-linejoin: round;", "My Players must render the Lucide shirt as an outline-only currentColor navigation icon.");`,
 );
 
+replaceOnce(
+  "Mobile navigation icon contract",
+  `  includes(responsive, ".menuRail .navButton .navEmoji {\\n    flex: 0 0 18px;\\n    width: 18px;\\n    height: 18px;\\n    color: inherit;\\n    font-size: 18px;\\n    line-height: 18px;", "Mobile navigation icons must keep the same 18px geometry as desktop.");`,
+  `  includes(responsive, ".menuRail .navButton .navEmoji {\\n    flex: 0 0 var(--mfl-icon-size-navigation);\\n    width: var(--mfl-icon-size-navigation);\\n    height: var(--mfl-icon-size-navigation);\\n    color: inherit;\\n    font-size: var(--mfl-icon-size-navigation);\\n    line-height: 18px;", "Mobile navigation icons must consume the same shared navigation-icon geometry as desktop while retaining their mobile line-height contract.");`,
+);
+
 await writeFile(path, source, "utf8");
 console.log("Responsive icon regression contracts migrated to shared semantic sizing.");
