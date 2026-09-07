@@ -70,6 +70,10 @@ jobs:
         if: steps.changes.outputs.quality == 'true'
         run: npm install --no-audit --no-fund
 
+      - name: Apply one-time ordinary control-state foundation migration
+        if: steps.changes.outputs.quality == 'true'
+        run: node migrate-control-state-foundations-once.mjs
+
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
         run: npm run build
@@ -99,6 +103,13 @@ jobs:
         run: |
           set -euo pipefail
           git add -- \
+            docs/ui-foundations.md \
+            site/ui-foundations.css \
+            site/styles-base.css \
+            site/controls.css \
+            site/html-sources/first-paint.html \
+            site/validate-ui-foundations.mjs \
+            site/validate-static-route-ui.mjs \
             site/bootstrap.js \
             site/bootstrap-core.js \
             site/index.html \
