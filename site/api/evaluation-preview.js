@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { queryOne } = require("./_database");
 const { normalizeEvaluationId } = require("./_evaluation-payload");
 const { supabaseConfig } = require("./_supabase");
 const {
@@ -15,6 +16,24 @@ function htmlEscape(value) {
     .replaceAll(">", "&gt;")
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
+}
+
+function cleanPlayerName(value) {
+  return String(value || "").trim().replace(/\s+/g, " ").slice(0, 100);
+}
+
+function publicEvaluationPlayerName(playerIdValue) {
+  const playerId = String(playerIdValue || "").trim();
+  if (!/^\d{1,20}$/.test(playerId)) return "";
+  try {
+    const row = queryOne("SELECT name FROM players WHERE player_id = ? LIMIT 1", [playerId]);
+    return cleanPlayerName(row?.name);
+  } catch (error) {
+    if (!/Database not found/i.test(String(error?.message || error))) {
+      console.warn("Could not read public player identity for Evaluation browser title.", error);
+    }
+    return "";
+  }
 }
 
 function requestOrigin(request) {
@@ -46,6 +65,13 @@ function evaluationPreviewImageUrl(origin, shareId, playerId) {
   return url.toString();
 }
 
+function browserTitleForMetadata(metadata, fallbackPlayerName = "") {
+  const playerName = cleanPlayerName(metadata?.playerName) || cleanPlayerName(fallbackPlayerName);
+  return playerName
+    ? `Evaluation - ${playerName} - MFL Front Office`
+    : "Evaluation - MFL Front Office";
+}
+
 function previewMetadataHtml(metadata, canonicalUrl, imageUrl) {
   const title = htmlEscape(metadata.title);
   const description = htmlEscape(metadata.description);
@@ -69,12 +95,12 @@ function previewMetadataHtml(metadata, canonicalUrl, imageUrl) {
   ].join("\n    ");
 }
 
-function renderPreviewHtml(indexHtml, metadata, canonicalUrl, imageUrl) {
-  const title = htmlEscape(metadata.title);
+function renderPreviewHtml(indexHtml, metadata, canonicalUrl, imageUrl, fallbackPlayerName = "") {
+  const browserTitle = htmlEscape(browserTitleForMetadata(metadata, fallbackPlayerName));
   const meta = previewMetadataHtml(metadata, canonicalUrl, imageUrl);
   return indexHtml.replace(
     "<title>MFL Front Office</title>",
-    `<title>${title}</title>\n    ${meta}`,
+    `<title>${browserTitle}</title>\n    ${meta}`,
   );
 }
 
@@ -91,6 +117,7 @@ module.exports = async function handler(request, response) {
   const requestUrl = new URL(request.url, "http://localhost");
   const shareId = normalizeEvaluationId(requestUrl.searchParams.get("share"));
   const playerId = String(requestUrl.searchParams.get("player") || "").trim();
+  const earlyPlayerName = publicEvaluationPlayerName(playerId);
   const origin = requestOrigin(request);
   const canonicalUrl = evaluationCanonicalUrl(origin, shareId, playerId);
   const imageUrl = evaluationPreviewImageUrl(origin, shareId, playerId);
@@ -106,7 +133,7 @@ module.exports = async function handler(request, response) {
   }
 
   const indexHtml = fs.readFileSync(evaluationShellPath(), "utf8");
-  const html = renderPreviewHtml(indexHtml, metadata, canonicalUrl, imageUrl);
+  const html = renderPreviewHtml(indexHtml, metadata, canonicalUrl, imageUrl, earlyPlayerName);
   response.status(200);
   if (request.method === "HEAD") {
     response.end();
@@ -116,6 +143,9 @@ module.exports = async function handler(request, response) {
 };
 
 module.exports.htmlEscape = htmlEscape;
+module.exports.cleanPlayerName = cleanPlayerName;
+module.exports.publicEvaluationPlayerName = publicEvaluationPlayerName;
+module.exports.browserTitleForMetadata = browserTitleForMetadata;
 module.exports.renderPreviewHtml = renderPreviewHtml;
 module.exports.evaluationShellPath = evaluationShellPath;
 module.exports.evaluationCanonicalUrl = evaluationCanonicalUrl;
