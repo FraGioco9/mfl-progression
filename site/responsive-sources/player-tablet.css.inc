@@ -18,6 +18,7 @@
 }
 
 .playerHero {
+  position: relative;
   display: grid;
   grid-template-columns: var(--mfl-player-hero-media-width) minmax(0, 1fr);
   grid-template-areas:
@@ -58,14 +59,16 @@
 }
 
 .playerTitle .playerListingBadge {
-  flex: 0 0 14px;
+  position: absolute;
+  top: var(--mfl-player-panel-padding);
+  right: var(--mfl-player-panel-padding);
   width: 14px;
   min-width: 14px;
   max-width: 14px;
   height: 14px;
   min-height: 14px;
   max-height: 14px;
-  margin-left: 4px;
+  margin-left: 0;
   padding: 0;
   border-radius: 0;
   background: transparent;
