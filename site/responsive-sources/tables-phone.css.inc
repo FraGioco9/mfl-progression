@@ -1,6 +1,7 @@
 
 @media (max-width: 520px) {
   :root {
+    --mfl-page-gutter-inline: 8px;
     --mfl-page-title-font-size: 18px;
     --mfl-page-section-gap: 5px;
   }
@@ -13,8 +14,6 @@
 
   body > #appShell > main {
     --mfl-footer-page-floor: max(500px, calc(100dvh - var(--mobile-nav-overlay-clearance)));
-    padding-right: max(8px, env(safe-area-inset-right));
-    padding-left: max(8px, env(safe-area-inset-left));
   }
 
   .topbar h1 {
