@@ -1069,8 +1069,8 @@
                 <div class="playerPanel playerNotesPanel" data-mfl-static-player-notes="true">
                   <h3>Notes</h3>
                   <div class="playerNotesInputWrap">
-                    <textarea class="playerNotesInput" style="visibility:hidden" aria-hidden="true" disabled></textarea>
-                    <span class="playerNotesCount" style="visibility:hidden">0/100</span>
+                    <textarea class="playerNotesInput" aria-hidden="true" disabled></textarea>
+                    <span class="playerNotesCount">0/100</span>
                   </div>
                 </div>
               </div>
@@ -1256,6 +1256,22 @@
               const text = String(entry?.display ?? entry?.raw ?? "").trim();
               return text && text.toUpperCase() !== "NULL" ? text : "";
             };
+            const normalizeWalletAddress = (value) => {
+              const address = String(value || "").trim().toLowerCase();
+              return address ? (address.startsWith("0x") ? address : "0x" + address) : "";
+            };
+            const cachedPlayerNote = (() => {
+              if (!playerId || root.dataset.storedWalletOptIn !== "true") return "";
+              try {
+                const wallet = normalizeWalletAddress(localStorage.getItem("mfl-linked-wallet-v1"));
+                if (!wallet) return "";
+                const notes = JSON.parse(localStorage.getItem("mfl-wallet-player-notes-v1:" + wallet) || "{}");
+                if (!notes || typeof notes !== "object" || Array.isArray(notes)) return "";
+                return String(notes[playerId] || "").replace(/\r\n/g, "\n").slice(0, 100).trim();
+              } catch {
+                return "";
+              }
+            })();
             const cachedName = String(firstPaintContext?.name || knownDisplay("name") || "").trim();
             const suppliedPositions = Array.isArray(firstPaintContext?.positions)
               ? firstPaintContext.positions
@@ -1413,6 +1429,28 @@
               }
               setProfileText("Rev Share", formatCachedRevenueShare());
             };
+            const syncCachedNoteIcon = () => {
+              if (!cachedPlayerNote) return;
+              const currentHero = playerDetail?.querySelector(":scope > .playerHero");
+              const noteHost = currentHero?.querySelector(".playerTitleNoteIcon");
+              if (!(noteHost instanceof HTMLElement) || noteHost.querySelector(".playerNoteIcon")) return;
+              const note = document.createElement("span");
+              note.className = "playerNoteIcon";
+              note.setAttribute("aria-label", "Player note");
+              note.textContent = "📝";
+              noteHost.replaceChildren(note);
+            };
+            const syncCachedNotesPanel = () => {
+              const panel = document.querySelector("#playerPage [data-mfl-static-player-notes]");
+              if (!(panel instanceof HTMLElement)) return;
+              const optedIn = root.dataset.storedWalletOptIn === "true";
+              panel.hidden = !optedIn;
+              if (!optedIn) return;
+              const input = panel.querySelector(".playerNotesInput");
+              const count = panel.querySelector(".playerNotesCount");
+              if (input instanceof HTMLTextAreaElement && input.value !== cachedPlayerNote) input.value = cachedPlayerNote;
+              if (count instanceof HTMLElement) count.textContent = cachedPlayerNote.length + "/100";
+            };
             const syncCachedHeroValues = () => {
               const overallValue = cachedAttributeValue("overall");
               const overall = hero?.querySelector(".playerHeroOverall > strong");
@@ -1518,6 +1556,8 @@
             const syncPendingPlayerShell = () => {
               syncPendingName();
               syncPendingAttributeLabels();
+              syncCachedNoteIcon();
+              syncCachedNotesPanel();
             };
             if (playerPage instanceof HTMLElement) playerPage.hidden = false;
             applyFirstPaintHeroActionLayout(hero);
@@ -1538,7 +1578,7 @@
               const external = hero.querySelector(".playerHeroPrimaryAction");
               if (external instanceof HTMLAnchorElement) external.href = "https://app.playmfl.com/players/" + playerId;
             }
-            if (notesPanel instanceof HTMLElement) notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";
+            syncCachedNotesPanel();
 
             const staticAge = document.querySelector("#playerPage [data-mfl-static-player-age]");
             if (staticAge instanceof HTMLElement && playerId) {
