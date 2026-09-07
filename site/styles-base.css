@@ -118,8 +118,10 @@ input[type="checkbox"]:indeterminate {
 
 input[type="checkbox"]:focus-visible {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--primary);
+  border-color: var(--mfl-focus-ring-color);
+  box-shadow:
+    0 0 0 var(--mfl-focus-ring-offset) var(--surface),
+    0 0 0 calc(var(--mfl-focus-ring-offset) + var(--mfl-focus-ring-width)) var(--mfl-focus-ring-color);
 }
 
 input[type="checkbox"]:disabled {
@@ -441,9 +443,9 @@ body[data-page="home"] .topbar .stats {
   align-self: center;
   height: 100%;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
+  line-height: var(--mfl-metadata-line-height);
 }
 
 .changelogMinorSection.is-expanded > .changelogMinorToggle .changelogMinorMeta {
@@ -733,7 +735,7 @@ main > .pageView {
 .homeStats div {
   padding: 10px 14px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -747,8 +749,8 @@ main > .pageView {
   display: block;
   margin-top: 4px;
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -900,8 +902,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .watchlistSwitcherLabel {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   line-height: 1;
   white-space: nowrap;
 }
@@ -1028,8 +1030,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .field.rowsField span {
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   line-height: 40px;
   text-transform: uppercase;
 }
@@ -1059,8 +1061,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 }
 
 .field span {
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   color: var(--text-muted);
   text-transform: uppercase;
 }
@@ -4139,14 +4141,14 @@ button.playerIdText:active {
   margin-bottom: 7px;
   padding: 7px 9px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
 .mflStatsFilters > span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
   text-transform: uppercase;
 }
 
@@ -4180,7 +4182,7 @@ button.playerIdText:active {
 .mflStatsCards article,
 .mflStatsDistribution {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 
@@ -4192,9 +4194,9 @@ button.playerIdText:active {
 .mflStatsCards span {
   display: block;
   color: var(--text-soft);
-  font-size: 11px;
-  font-weight: 800;
-  line-height: 1.1;
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-strong-font-weight);
+  line-height: var(--mfl-metadata-line-height);
   text-transform: uppercase;
 }
 
@@ -4356,15 +4358,15 @@ button.playerIdText:active {
 .settingsIdentity div,
 .settingsSection {
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
   padding: 14px;
 }
 
 .settingsIdentity span {
   color: var(--text-soft);
-  font-size: 12px;
-  font-weight: 700;
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
   text-transform: uppercase;
 }
 
@@ -4436,8 +4438,13 @@ button.playerIdText:active {
   border-color: var(--danger);
 }
 
-.settingsEmailAddressInput:focus {
+.settingsEmailAddressInput:focus:not(:focus-visible) {
   outline: none;
+}
+
+.settingsEmailAddressInput:focus-visible {
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
+  outline-offset: var(--mfl-focus-ring-offset);
 }
 
 .settingsEmailActionButton {
@@ -4985,7 +4992,7 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 }
 
 .siteDatePickerButton:focus-visible {
-  outline: 2px solid var(--primary);
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
   outline-offset: 1px;
 }
 
@@ -5146,7 +5153,7 @@ html.mflInitialChromePreparing body[data-page="player"] #playerDetail .playerAtt
 .privacySection {
   padding: 14px 16px;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-panel);
   background: var(--surface);
 }
 

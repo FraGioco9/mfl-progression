@@ -102,7 +102,8 @@ for (const token of [
   '.siteFooterDetailsCopyright {',
   'justify-self: end;',
   'border-top: 1px solid var(--border);',
-  'outline: 2px solid var(--primary);',
+  'outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);',
+  'outline-offset: var(--mfl-focus-ring-offset);',
 ]) {
   invariant(footer.includes(token), `Canonical single-footer styling is missing: ${token}`);
 }
