@@ -305,11 +305,11 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .menuRail .navButton .navEmoji {
-    flex: 0 0 18px;
-    width: 18px;
-    height: 18px;
+    flex: 0 0 var(--mfl-icon-size-navigation);
+    width: var(--mfl-icon-size-navigation);
+    height: var(--mfl-icon-size-navigation);
     color: inherit;
-    font-size: 18px;
+    font-size: var(--mfl-icon-size-navigation);
     line-height: 18px;
   }
 

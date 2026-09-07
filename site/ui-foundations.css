@@ -20,6 +20,10 @@
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
 
+  /* Shared semantic icon sizing. */
+  --mfl-icon-size-navigation: 18px;
+  --mfl-icon-size-control: 17px;
+
   /* Shared page layout, titles, and vertical rhythm. */
   --mfl-page-gutter-inline: 28px;
   --mfl-page-inset-block-start: 4px;

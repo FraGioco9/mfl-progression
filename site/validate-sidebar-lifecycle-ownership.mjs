@@ -108,8 +108,8 @@ invariant(
   "Sidebar page boxes must keep their 40px height and vertically center their two-cell icon/label grid.",
 );
 invariant(
-  styles.includes(".navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: 18px;\n  height: 18px;"),
-  "Sidebar icons must use a fixed centered 18px cell instead of intrinsic SVG height.",
+  styles.includes(".navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);"),
+  "Sidebar icons must use the shared fixed centered navigation-icon cell instead of intrinsic SVG height.",
 );
 invariant(
   styles.includes(".navText {\n  display: flex;\n  align-items: center;\n  align-self: center;\n  min-height: 20px;\n  max-width: 112px;\n  opacity: 1;\n  line-height: 1.2;\n  white-space: nowrap;")

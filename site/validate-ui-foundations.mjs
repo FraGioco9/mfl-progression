@@ -48,6 +48,8 @@ for (const token of [
   "--mfl-radius-control: 6px;",
   "--mfl-checkbox-size: 16px;",
   "--mfl-radius-checkbox: 4px;",
+  "--mfl-icon-size-navigation: 18px;",
+  "--mfl-icon-size-control: 17px;",
   "--mfl-page-gutter-inline: 28px;",
   "--mfl-page-inset-block-start: 4px;",
   "--mfl-page-inset-block-end: 6px;",
@@ -85,6 +87,18 @@ for (const token of [
 }
 
 includes(stacking, '@import url("/ui-foundations.css");', "Global UI foundations must load before shared stacking/base styles.");
+
+includes(stylesBase, ".navEmoji {\n  display: grid;\n  place-items: center;\n  align-self: center;\n  justify-self: center;\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);", "Shared navigation icons must consume the navigation-icon foundation.");
+for (const token of [
+  "#sidebar .navEmoji {\n  flex: 0 0 var(--mfl-icon-size-navigation);\n  width: var(--mfl-icon-size-navigation);",
+  "#sidebar .navJerseyIcon {\n  width: var(--mfl-icon-size-navigation);\n  height: var(--mfl-icon-size-navigation);",
+  ".searchButton .searchIcon {\n  display: block;\n  flex: 0 0 var(--mfl-icon-size-control);\n  width: var(--mfl-icon-size-control);\n  height: var(--mfl-icon-size-control);",
+  ".filtersViewIcon {\n  flex: 0 0 var(--mfl-icon-size-control);\n  align-self: center;\n  width: var(--mfl-icon-size-control);\n  height: var(--mfl-icon-size-control);",
+]) {
+  includes(controls, token, `Equivalent ordinary UI icons must consume the shared semantic icon-size foundation: ${token}`);
+}
+includes(stylesBase, ".advancedSettingsIcon {\n  flex: 0 0 16px;\n  width: 16px;\n  height: 16px;", "Advanced Settings icon geometry must remain specialist-owned.");
+includes(dropdowns, ".accountButtonIcon {\n  flex: 0 0 auto;\n  width: 18px;\n  height: 18px;", "Account icon geometry must remain Account-owned despite matching the navigation size numerically on desktop.");
 
 for (const duplicate of [
   "--mfl-page-title-font-size: 20px;",
@@ -285,4 +299,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");
+console.log("Global UI foundations validation passed with semantic icon sizing, page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, helper/status feedback, destructive/error, and dialog ownership contracts.");

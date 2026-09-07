@@ -598,8 +598,8 @@ body[data-page="home"] .topbar .stats {
   place-items: center;
   align-self: center;
   justify-self: center;
-  width: 18px;
-  height: 18px;
+  width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
   color: currentColor;
   font-family: "Titillium Web", Arial, Helvetica, sans-serif;
   font-size: 18px;
