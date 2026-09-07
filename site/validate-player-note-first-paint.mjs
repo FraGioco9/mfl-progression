@@ -40,8 +40,8 @@ for (const source of [noteSource, generatedIndex]) {
     source.includes('note.className = "playerNoteIcon";')
       && source.includes('note.dataset.tooltip = cachedPlayerNote;')
       && source.includes('note.setAttribute("aria-label", "Player note");')
-      && source.includes('note.textContent = "📝";'),
-    "A cached Player note must create the shared title-note hook during parser-owned first paint.",
+      && !source.includes('note.textContent = "📝";'),
+    "A cached Player note must create the shared title-note hook without rendering the legacy emoji during first paint.",
   );
   assert.ok(
     source.includes('observer.observe(playerDetail, { childList: true, subtree: true });')
@@ -97,4 +97,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("transform:"), "Player Note placement must use real layout coordinates rather than transform nudges.");
 }
 
-console.log("Player Note redesign, mobile Listing-corner alignment, desktop shared title-control placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
+console.log("Player Note redesign, emoji-free first paint, mobile Listing-corner alignment, desktop shared title-control placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
