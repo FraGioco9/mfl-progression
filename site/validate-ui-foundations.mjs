@@ -7,6 +7,12 @@ const includes = (source, token, message) => {
 const excludes = (source, token, message) => {
   if (source.includes(token)) throw new Error(message);
 };
+const exactRule = (source, selector) => {
+  const start = source.indexOf(`${selector} {`);
+  if (start < 0) return "";
+  const end = source.indexOf("\n}", start);
+  return end > start ? source.slice(start, end + 2) : "";
+};
 
 const [
   foundations,
@@ -55,6 +61,15 @@ for (const token of [
   "--mfl-section-title-compact-font-size: 15px;",
   "--mfl-section-title-line-height: 1.1;",
   "--mfl-section-title-font-weight: 700;",
+  "--mfl-metadata-font-size: 12px;",
+  "--mfl-metadata-compact-font-size: 11px;",
+  "--mfl-metadata-font-weight: 700;",
+  "--mfl-metadata-strong-font-weight: 800;",
+  "--mfl-metadata-line-height: 1.1;",
+  "--mfl-focus-ring-color: var(--primary);",
+  "--mfl-focus-ring-width: 2px;",
+  "--mfl-focus-ring-offset: 2px;",
+  "--mfl-radius-panel: 8px;",
   "--mfl-radius-dialog: 8px;",
   "--mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);",
   "--mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);",
@@ -127,10 +142,8 @@ for (const [selector, sizeToken] of [
   [".mflStatsDistribution h3", "var(--mfl-section-title-compact-font-size)"],
   [".privacySection h3", "var(--mfl-section-title-compact-font-size)"],
 ]) {
-  const start = stylesBase.indexOf(`${selector} {`);
-  if (start < 0) throw new Error(`Expected shared section-title consumer ${selector}.`);
-  const end = stylesBase.indexOf("}", start);
-  const rule = stylesBase.slice(start, end);
+  const rule = exactRule(stylesBase, selector);
+  if (!rule) throw new Error(`Expected shared section-title consumer ${selector}.`);
   includes(rule, `font-size: ${sizeToken};`, `${selector} must consume its shared section-title size.`);
   includes(rule, "font-weight: var(--mfl-section-title-font-weight);", `${selector} must consume the shared section-title weight.`);
   includes(rule, "line-height: var(--mfl-section-title-line-height);", `${selector} must consume the shared section-title line height.`);
@@ -156,6 +169,47 @@ for (const selector of [
 excludes(phoneStatic, ".mflStatsPage .tablePageTitle", "Stats pages must not own a separate phone title size.");
 includes(compact, "--mfl-page-title-font-size: 17px;", "Compact screens must override the shared page-title token.");
 excludes(compact, ".tablePageTitle {\n    font-size: 17px;", "Compact title sizing must use the shared page-title token.");
+
+for (const token of [
+  ".homeStats div {\n  padding: 10px 14px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
+  ".mflStatsFilters {\n  display: grid;\n  gap: 5px;\n  margin-bottom: 7px;\n  padding: 7px 9px;\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".mflStatsCards article,\n.mflStatsDistribution {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".settingsIdentity div,\n.settingsSection {\n  border: 1px solid var(--border-strong);\n  border-radius: var(--mfl-radius-panel);",
+  ".privacySection {\n  padding: 14px 16px;\n  border: 1px solid var(--border);\n  border-radius: var(--mfl-radius-panel);",
+]) {
+  includes(stylesBase, token, `Equivalent page/content surfaces must consume the shared panel radius: ${token}`);
+}
+includes(stylesBase, ".tableShell {\n  position: relative;\n  background: var(--surface);\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Table radius must remain table-owned rather than consuming the generic panel radius.");
+includes(stylesBase, ".playerHero,\n.playerPanel {\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Player surface radius must remain Player-owned.");
+
+for (const [selector, sizeToken, weightToken, lineToken] of [
+  [".changelogMinorMeta", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", "var(--mfl-metadata-line-height)"],
+  [".homeStats label", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".watchlistSwitcherLabel", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".field.rowsField span", "var(--mfl-metadata-compact-font-size)", "var(--mfl-metadata-strong-font-weight)", null],
+  [".field span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+  [".mflStatsFilters > span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-strong-font-weight)", null],
+  [".mflStatsCards span", "var(--mfl-metadata-compact-font-size)", "var(--mfl-metadata-strong-font-weight)", "var(--mfl-metadata-line-height)"],
+  [".settingsIdentity span", "var(--mfl-metadata-font-size)", "var(--mfl-metadata-font-weight)", null],
+]) {
+  const rule = exactRule(stylesBase, selector);
+  if (!rule) throw new Error(`Expected metadata foundation consumer ${selector}.`);
+  includes(rule, `font-size: ${sizeToken};`, `${selector} must consume the shared metadata size.`);
+  includes(rule, `font-weight: ${weightToken};`, `${selector} must consume the shared metadata weight.`);
+  if (lineToken) includes(rule, `line-height: ${lineToken};`, `${selector} must consume the shared metadata line height.`);
+}
+
+const checkboxFocus = exactRule(stylesBase, 'input[type="checkbox"]:focus-visible');
+includes(checkboxFocus, "border-color: var(--mfl-focus-ring-color);", "Checkbox keyboard focus must consume the shared ring color.");
+includes(checkboxFocus, "var(--mfl-focus-ring-offset)", "Checkbox keyboard focus must consume the shared ring offset.");
+includes(checkboxFocus, "var(--mfl-focus-ring-width)", "Checkbox keyboard focus must consume the shared ring width.");
+excludes(checkboxFocus, "0 0 0 4px var(--primary)", "Checkbox focus must not retain the old literal outer ring.");
+
+includes(stylesBase, ".settingsEmailAddressInput:focus:not(:focus-visible) {\n  outline: none;", "Mouse focus on the Settings email field may remain visually quiet.");
+includes(stylesBase, ".settingsEmailAddressInput:focus-visible {\n  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);\n  outline-offset: var(--mfl-focus-ring-offset);", "Settings email keyboard focus must consume the shared ring contract.");
+includes(stylesBase, ".siteDatePickerButton:focus-visible {\n  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);\n  outline-offset: 1px;", "Compact date-picker focus must consume shared ring width/color while preserving its compact offset.");
+includes(footer, "outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);", "Footer keyboard focus must consume the shared focus ring.");
+includes(footer, "outline-offset: var(--mfl-focus-ring-offset);", "Footer keyboard focus must consume the shared focus offset.");
 
 includes(controls, "--mfl-filter-remove-danger: var(--danger);", "Filter removal must derive from the theme-aware global danger token.");
 excludes(controls, "#ff2020", "Filter controls must not retain the old one-off destructive red.");
@@ -205,11 +259,14 @@ for (const token of [
   "Shared page/table title size: `20px` (`--mfl-page-title-font-size`)",
   "Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)",
   "Shared section title: `16px` (`--mfl-section-title-font-size`)",
+  "Standard metadata/small-label size: `12px` (`--mfl-metadata-font-size`)",
+  "Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)",
+  "Ring width: `2px` through `--mfl-focus-ring-width`",
   "Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)",
   "Canonical dialog radius: `8px`",
   "Uniform Width remains the only numeric player-table column-width contract.",
   "Semantic destructive/error UI uses `--danger` end to end.",
-  "Page/table title typography and repeated page-section vertical rhythm use the shared",
+  "Equivalent ordinary content surfaces consume `--mfl-radius-panel`",
   "data visualization/game-state colors",
   "Do not globalize a value merely because two numbers or colors match.",
 ]) {
@@ -220,4 +277,4 @@ for (const source of [foundations, stacking, stylesBase, styles, controls, dropd
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic ownership, shared page layout/title/rhythm and section-title contracts, unified theme-aware destructive/error danger, and the canonical 8px dialog contract.");
+console.log("Global UI foundations validation passed with semantic page layout/title/rhythm, section-title, content-panel, keyboard-focus, metadata, destructive/error, and dialog ownership contracts.");
