@@ -2,6 +2,36 @@
 /* Source: styles.css */
 /* Source: styles-base.css */
 /* Source: stacking.css */
+/* Source: ui-foundations.css */
+/* Canonical cross-site UI foundation tokens for MFL Front Office.
+ *
+ * Keep only values here that represent the same semantic role across domains.
+ * Existing specialist owners remain authoritative for their own contracts:
+ * - theme/layout palette: styles-base.css
+ * - table geometry / Uniform Width: styles.css
+ * - motion: motion.css
+ * - dropdown mechanics: dropdowns.css
+ * - scrollbars: scrollbars.css
+ * - stacking: stacking.css
+ *
+ * Do not move responsive or domain-specific geometry here merely because two
+ * values happen to match numerically. */
+
+:root {
+  /* Shared control language. */
+  --mfl-control-height: 40px;
+  --mfl-control-compact-height: 36px;
+  --mfl-radius-control: 6px;
+  --mfl-checkbox-size: 16px;
+  --mfl-radius-checkbox: 4px;
+
+  /* Shared application surfaces. */
+  --mfl-radius-dialog: 8px;
+  --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
+  --mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);
+  --mfl-shadow-mobile-navigation: 0 10px 28px rgba(0, 0, 0, 0.18);
+}
+
 /* Canonical cross-site stacking-level owner for MFL Front Office.
  *
  * Stacking contract:
@@ -985,13 +1015,13 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: #e06b6b;
+  color: var(--danger);
   font-size: 12px;
   font-weight: 700;
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {
-  border-color: #e06b6b;
+  border-color: var(--danger);
 }
 
 .deleteWatchlistDialog {
@@ -1033,9 +1063,9 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .deleteWatchlistConfirmButton:hover,
 .deleteWatchlistConfirmButton:focus-visible {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .addWatchlistDialog {
@@ -4002,7 +4032,7 @@ button.playerIdText:active {
 .evaluationLoadDeleteButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
@@ -4010,9 +4040,9 @@ button.playerIdText:active {
 .evaluationLoadDeleteButton:focus-visible,
 .evaluationLoadResult .evaluationLoadDeleteButton:hover:not(:disabled),
 .evaluationLoadResult .evaluationLoadDeleteButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 #evaluationSaveButton .evaluationButtonIcon {
@@ -4075,7 +4105,7 @@ button.playerIdText:active {
   gap: 8px;
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .evaluationFooterDeleteButton svg {
@@ -4089,9 +4119,9 @@ button.playerIdText:active {
 
 .evaluationFooterDeleteButton:hover:not(:disabled),
 .evaluationFooterDeleteButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .watchlistChoiceDialog {
@@ -4177,14 +4207,14 @@ button.playerIdText:active {
 .deleteWatchlistConfirmButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .deleteWatchlistConfirmButton:hover:not(:disabled),
 .deleteWatchlistConfirmButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 #tableBody tr:hover .playerNameLink:hover,
@@ -4520,7 +4550,7 @@ button.playerIdText:active {
 }
 
 .settingsEmailAddressInput.invalid {
-  border-color: #e95656;
+  border-color: var(--danger);
 }
 
 .settingsEmailAddressInput:focus {
@@ -4542,15 +4572,15 @@ button.playerIdText:active {
 .settingsEmailDiscardButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
 .settingsEmailDiscardButton:hover:not(:disabled),
 .settingsEmailDiscardButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .settingsEmailActionButton.primary {
@@ -5845,12 +5875,12 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 
 #linkWalletButton.walletOptOut {
   background: transparent;
-  color: #d84b4b;
+  color: var(--danger);
 }
 
 #linkWalletButton.walletOptOut:hover:not(:disabled) {
   background: var(--row-hover);
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .watchlistButton {
@@ -6033,14 +6063,14 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 .watchlistDropdownDelete {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .watchlistDropdownDelete:hover:not(:disabled),
 .watchlistDropdownDelete:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .watchlistDropdownAction:disabled {
@@ -6400,7 +6430,7 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   --mfl-filter-control-height: 36px;
   --mfl-filter-box-font-size: 1em;
   --mfl-filter-box-line-height: 17px;
-  --mfl-filter-remove-danger: #ff2020;
+  --mfl-filter-remove-danger: var(--danger);
 }
 
 :is(
@@ -6569,7 +6599,6 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   height: 40px;
   line-height: 1;
 }
-
 #filterSummary.filtersViewCount {
   display: inline-grid;
   flex: 0 0 18px;
@@ -6875,7 +6904,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   margin: 0;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--mfl-radius-control);
   background: transparent;
   color: var(--mfl-filter-remove-danger);
   box-shadow: none;
@@ -7476,10 +7505,10 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
   max-height: min(760px, calc(100dvh - 24px));
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--mfl-radius-dialog);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--mfl-shadow-modal);
   overflow: hidden;
 }
 
@@ -7514,7 +7543,7 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
   max-height: 260px;
   padding: 11px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--mfl-radius-control);
   background: var(--surface);
   color: var(--text);
   font: inherit;
@@ -7532,7 +7561,7 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 }
 
 .bugReportStatus.isError {
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .bugReportFooter {

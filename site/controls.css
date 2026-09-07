@@ -8,7 +8,7 @@
   --mfl-filter-control-height: 36px;
   --mfl-filter-box-font-size: 1em;
   --mfl-filter-box-line-height: 17px;
-  --mfl-filter-remove-danger: #ff2020;
+  --mfl-filter-remove-danger: var(--danger);
 }
 
 :is(
@@ -177,7 +177,6 @@
   height: 40px;
   line-height: 1;
 }
-
 #filterSummary.filtersViewCount {
   display: inline-grid;
   flex: 0 0 18px;
@@ -483,7 +482,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   margin: 0;
   padding: 0;
   border: 1px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--mfl-radius-control);
   background: transparent;
   color: var(--mfl-filter-remove-danger);
   box-shadow: none;

@@ -920,13 +920,13 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 .addWatchlistError {
   min-height: 18px;
   margin: 6px 0 0;
-  color: #e06b6b;
+  color: var(--danger);
   font-size: 12px;
   font-weight: 700;
 }
 
 #addWatchlistNameInput[aria-invalid="true"] {
-  border-color: #e06b6b;
+  border-color: var(--danger);
 }
 
 .deleteWatchlistDialog {
@@ -968,9 +968,9 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 
 .deleteWatchlistConfirmButton:hover,
 .deleteWatchlistConfirmButton:focus-visible {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .addWatchlistDialog {
@@ -3937,7 +3937,7 @@ button.playerIdText:active {
 .evaluationLoadDeleteButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
 }
 
@@ -3945,9 +3945,9 @@ button.playerIdText:active {
 .evaluationLoadDeleteButton:focus-visible,
 .evaluationLoadResult .evaluationLoadDeleteButton:hover:not(:disabled),
 .evaluationLoadResult .evaluationLoadDeleteButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 #evaluationSaveButton .evaluationButtonIcon {
@@ -4010,7 +4010,7 @@ button.playerIdText:active {
   gap: 8px;
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .evaluationFooterDeleteButton svg {
@@ -4024,9 +4024,9 @@ button.playerIdText:active {
 
 .evaluationFooterDeleteButton:hover:not(:disabled),
 .evaluationFooterDeleteButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .watchlistChoiceDialog {
@@ -4112,14 +4112,14 @@ button.playerIdText:active {
 .deleteWatchlistConfirmButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .deleteWatchlistConfirmButton:hover:not(:disabled),
 .deleteWatchlistConfirmButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 #tableBody tr:hover .playerNameLink:hover,
@@ -4455,7 +4455,7 @@ button.playerIdText:active {
 }
 
 .settingsEmailAddressInput.invalid {
-  border-color: #e95656;
+  border-color: var(--danger);
 }
 
 .settingsEmailAddressInput:focus {
@@ -4477,15 +4477,15 @@ button.playerIdText:active {
 .settingsEmailDiscardButton {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
   transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease, opacity 120ms ease;
 }
 
 .settingsEmailDiscardButton:hover:not(:disabled),
 .settingsEmailDiscardButton:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .settingsEmailActionButton.primary {

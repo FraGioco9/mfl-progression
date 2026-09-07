@@ -350,12 +350,12 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 
 #linkWalletButton.walletOptOut {
   background: transparent;
-  color: #d84b4b;
+  color: var(--danger);
 }
 
 #linkWalletButton.walletOptOut:hover:not(:disabled) {
   background: var(--row-hover);
-  color: #ff6b6b;
+  color: var(--danger);
 }
 
 .watchlistButton {
@@ -538,14 +538,14 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 .watchlistDropdownDelete {
   border-color: var(--border);
   background: var(--surface-muted);
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .watchlistDropdownDelete:hover:not(:disabled),
 .watchlistDropdownDelete:focus-visible:not(:disabled) {
-  border-color: #ff8a8a;
-  background: #c92a2a;
-  color: #fff7f7;
+  border-color: var(--danger);
+  background: var(--danger);
+  color: var(--surface);
 }
 
 .watchlistDropdownAction:disabled {

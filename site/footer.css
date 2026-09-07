@@ -262,10 +262,10 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
   max-height: min(760px, calc(100dvh - 24px));
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: var(--mfl-radius-dialog);
   background: var(--surface);
   color: var(--text);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--mfl-shadow-modal);
   overflow: hidden;
 }
 
@@ -300,7 +300,7 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
   max-height: 260px;
   padding: 11px;
   border: 1px solid var(--border-strong);
-  border-radius: 6px;
+  border-radius: var(--mfl-radius-control);
   background: var(--surface);
   color: var(--text);
   font: inherit;
@@ -318,7 +318,7 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 }
 
 .bugReportStatus.isError {
-  color: #e06b6b;
+  color: var(--danger);
 }
 
 .bugReportFooter {
