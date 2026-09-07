@@ -16,6 +16,7 @@ const [
   controls,
   dropdowns,
   footer,
+  parity,
   phoneTables,
   phoneStatic,
   compact,
@@ -28,6 +29,7 @@ const [
   read("./controls.css"),
   read("./dropdowns.css"),
   read("./footer.css"),
+  read("./responsive-sources/parity.css.inc"),
   read("./responsive-sources/tables-phone.css.inc"),
   read("./responsive-sources/static-phone.css.inc"),
   read("./responsive-sources/compact.css.inc"),
@@ -40,12 +42,19 @@ for (const token of [
   "--mfl-radius-control: 6px;",
   "--mfl-checkbox-size: 16px;",
   "--mfl-radius-checkbox: 4px;",
+  "--mfl-page-gutter-inline: 28px;",
+  "--mfl-page-inset-block-start: 4px;",
+  "--mfl-page-inset-block-end: 6px;",
   "--mfl-page-title-font-size: 20px;",
   "--mfl-page-title-min-height: 32px;",
   "--mfl-page-title-margin-block-start: 6px;",
   "--mfl-page-title-margin-block-end: 8px;",
   "--mfl-page-title-line-height: 1.2;",
   "--mfl-page-section-gap: 6px;",
+  "--mfl-section-title-font-size: 16px;",
+  "--mfl-section-title-compact-font-size: 15px;",
+  "--mfl-section-title-line-height: 1.1;",
+  "--mfl-section-title-font-weight: 700;",
   "--mfl-radius-dialog: 8px;",
   "--mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);",
   "--mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);",
@@ -84,13 +93,50 @@ excludes(
   "First-paint page controls must not duplicate the shared 32px page-title height.",
 );
 
+includes(
+  stylesBase,
+  "padding: var(--mfl-page-inset-block-start) var(--mfl-page-gutter-inline) var(--mfl-page-inset-block-end);",
+  "Desktop main content must consume the shared page gutter and block inset tokens.",
+);
+excludes(stylesBase, "padding: 4px 28px 6px;", "Desktop main content must not retain duplicated page inset/gutter literals.");
+
 for (const token of [
+  "--mfl-page-gutter-inline: 12px;",
+  "--mfl-page-inset-block-end: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));",
+  "padding-right: max(var(--mfl-page-gutter-inline), env(safe-area-inset-right));",
+  "padding-bottom: var(--mfl-page-inset-block-end);",
+  "padding-left: max(var(--mfl-page-gutter-inline), env(safe-area-inset-left));",
+]) {
+  includes(parity, token, `Tablet/mobile page layout must consume the shared page foundation: ${token}`);
+}
+
+for (const token of [
+  "--mfl-page-gutter-inline: 8px;",
   "--mfl-page-title-font-size: 18px;",
   "--mfl-page-section-gap: 5px;",
 ]) {
   includes(phoneTables, token, `Phone page foundations must override the shared semantic token: ${token}`);
 }
 excludes(phoneTables, ".tablePageTitle {\n    font-size: 18px;", "Phone title sizing must use the shared page-title token.");
+excludes(phoneTables, "padding-right: max(8px, env(safe-area-inset-right));", "Phone main gutter must use the shared gutter token.");
+excludes(phoneTables, "padding-left: max(8px, env(safe-area-inset-left));", "Phone main gutter must use the shared gutter token.");
+
+for (const [selector, sizeToken] of [
+  [".advancedSettingsSection h3", "var(--mfl-section-title-font-size)"],
+  [".settingsSection h3", "var(--mfl-section-title-font-size)"],
+  [".mflStatsDistribution h3", "var(--mfl-section-title-compact-font-size)"],
+  [".privacySection h3", "var(--mfl-section-title-compact-font-size)"],
+]) {
+  const start = stylesBase.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`Expected shared section-title consumer ${selector}.`);
+  const end = stylesBase.indexOf("}", start);
+  const rule = stylesBase.slice(start, end);
+  includes(rule, `font-size: ${sizeToken};`, `${selector} must consume its shared section-title size.`);
+  includes(rule, "font-weight: var(--mfl-section-title-font-weight);", `${selector} must consume the shared section-title weight.`);
+  includes(rule, "line-height: var(--mfl-section-title-line-height);", `${selector} must consume the shared section-title line height.`);
+}
+includes(stylesBase, ".evaluationPanel h3 {\n  margin: 0 0 10px;\n  font-size: 18px;", "Evaluation section headings must keep their specialist geometry.");
+includes(stylesBase, ".playerHero h2,\n.playerPanel h3 {\n  margin: 0;", "Player heading geometry must remain Player-owned.");
 
 for (const selector of [
   ".mflStatsViews",
@@ -157,6 +203,8 @@ for (const token of [
   "## Ownership map",
   "`--danger` is the only global destructive/error-color source.",
   "Shared page/table title size: `20px` (`--mfl-page-title-font-size`)",
+  "Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)",
+  "Shared section title: `16px` (`--mfl-section-title-font-size`)",
   "Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)",
   "Canonical dialog radius: `8px`",
   "Uniform Width remains the only numeric player-table column-width contract.",
@@ -168,8 +216,8 @@ for (const token of [
   includes(docs, token, `UI foundations documentation is missing: ${token}`);
 }
 
-for (const source of [foundations, stacking, stylesBase, styles, controls, dropdowns, footer, phoneTables, phoneStatic, compact]) {
+for (const source of [foundations, stacking, stylesBase, styles, controls, dropdowns, footer, parity, phoneTables, phoneStatic, compact]) {
   excludes(source, "!important", "Global UI foundation work must not add !important overrides.");
 }
 
-console.log("Global UI foundations validation passed with semantic ownership, shared page title/rhythm contracts, unified theme-aware destructive/error danger, and the canonical 8px dialog contract.");
+console.log("Global UI foundations validation passed with semantic ownership, shared page layout/title/rhythm and section-title contracts, unified theme-aware destructive/error danger, and the canonical 8px dialog contract.");
