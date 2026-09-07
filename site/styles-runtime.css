@@ -21,6 +21,9 @@
   /* Shared control language. */
   --mfl-control-height: 40px;
   --mfl-control-compact-height: 36px;
+  --mfl-control-label-font-size: 14px;
+  --mfl-control-font-weight: 700;
+  --mfl-control-line-height: 1;
   --mfl-radius-control: 6px;
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
@@ -1018,8 +1021,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
   border-color: var(--border-strong);
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 700;
+  font-size: var(--mfl-control-label-font-size);
+  font-weight: var(--mfl-control-font-weight);
   text-align: center;
   white-space: nowrap;
   line-height: 1;
@@ -6460,7 +6463,7 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  line-height: 1;
+  line-height: var(--mfl-control-line-height);
   text-align: center;
 }
 
@@ -6588,9 +6591,9 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   border-color: var(--border-strong);
   background: var(--surface);
   color: var(--text);
-  font-size: 14px;
-  font-weight: 700;
-  line-height: 1;
+  font-size: var(--mfl-control-label-font-size);
+  font-weight: var(--mfl-control-font-weight);
+  line-height: var(--mfl-control-line-height);
   white-space: nowrap;
 }
 

@@ -16,6 +16,9 @@
   /* Shared control language. */
   --mfl-control-height: 40px;
   --mfl-control-compact-height: 36px;
+  --mfl-control-label-font-size: 14px;
+  --mfl-control-font-weight: 700;
+  --mfl-control-line-height: 1;
   --mfl-radius-control: 6px;
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
