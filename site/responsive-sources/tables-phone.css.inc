@@ -27,7 +27,7 @@
 
   #progressionPage .views {
     --mfl-views-gap: 4px;
-    margin-bottom: var(--mfl-page-section-gap);
+    margin-bottom: 5px;
   }
 
   #progressionPage > .quickFilters {
