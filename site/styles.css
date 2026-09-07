@@ -7,9 +7,6 @@
 
 :root {
   --mfl-pager-block-padding: 12px;
-  --mfl-page-title-margin-block-start: 6px;
-  --mfl-page-title-margin-block-end: 8px;
-  --mfl-page-title-line-height: 1.2;
 
   /* Uniform Width. This is the only numeric column-width contract. */
   --mfl-table-header-height: 38px;
@@ -186,7 +183,7 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 }
 
 #progressionPage .views {
-  margin-bottom: 6px;
+  margin-bottom: var(--mfl-page-section-gap);
   anchor-name: --mfl-table-views;
 }
 
@@ -195,13 +192,13 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 }
 
 .quickFilters {
-  margin-bottom: 6px;
+  margin-bottom: var(--mfl-page-section-gap);
   padding-bottom: 0;
 }
 
 #progressionPage > .controlsBar > .rowsField {
   position: absolute;
-  top: calc(var(--mfl-page-title-margin-block-start) + 32px + var(--mfl-page-title-margin-block-end));
+  top: calc(var(--mfl-page-title-margin-block-start) + var(--mfl-page-title-min-height) + var(--mfl-page-title-margin-block-end));
   right: 0;
   position-anchor: --mfl-table-views;
   top: anchor(top);
@@ -479,10 +476,10 @@ body[data-page="club"] #progressionPage .rowsField {
   width: 100%;
   min-width: 0;
   max-width: 100%;
-  min-height: 32px;
+  min-height: var(--mfl-page-title-min-height);
   margin: var(--mfl-page-title-margin-block-start) 0 var(--mfl-page-title-margin-block-end);
   line-height: var(--mfl-page-title-line-height);
-  font-size: 20px;
+  font-size: var(--mfl-page-title-font-size);
   white-space: pre;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -586,7 +583,7 @@ body[data-page="club"] #progressionPage .rowsField {
   border-radius: 5px;
   background: #171717;
   color: #ffffff;
-  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+  box-shadow: var(--mfl-shadow-tooltip);
   font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
@@ -689,7 +686,7 @@ html:has(body > .modalBackdrop:not([hidden])) body > #appShell > main {
   margin: 0;
   padding: 5px;
   border: 1px solid var(--border-strong);
-  border-radius: 8px;
+  border-radius: var(--mfl-radius-dialog);
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--mfl-dropdown-shadow);

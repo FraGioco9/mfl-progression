@@ -8,7 +8,7 @@ The goal is **shared ownership, not forced sameness**. Responsive geometry, Play
 
 | Foundation | Canonical owner |
 | --- | --- |
-| Cross-site shared control/surface tokens | `site/ui-foundations.css` |
+| Cross-site shared control/surface/page-rhythm tokens | `site/ui-foundations.css` |
 | Theme palette and desktop shell geometry | `site/styles-base.css` |
 | Table geometry and Uniform Width | `site/styles.css` |
 | Motion timings | `site/motion.css` |
@@ -63,10 +63,11 @@ Data visualization and game-state colors are intentionally not part of this rule
 
 - Font: `"Titillium Web", Arial, Helvetica, sans-serif`
 - `font-size-adjust`: `0.500`
-- Table/page title: `20px` desktop
-- Current responsive title scaling remains `18px` / `17px` where intentionally defined
-- Page-title block margins: `6px` before, `8px` after
-- Page-title line-height: `1.2`
+- Shared page/table title size: `20px` (`--mfl-page-title-font-size`)
+- Shared page-title minimum height: `32px` (`--mfl-page-title-min-height`)
+- Phone and compact-phone title scaling override the same token to `18px` / `17px`
+- Page-title block margins: `6px` before / `8px` after (`--mfl-page-title-margin-block-start` / `--mfl-page-title-margin-block-end`)
+- Page-title line-height: `1.2` (`--mfl-page-title-line-height`)
 - Numeric/count values use tabular figures where stable alignment matters
 
 ## Layout and chrome
@@ -74,8 +75,12 @@ Data visualization and game-state colors are intentionally not part of this rule
 - Desktop pinned sidebar: `190px`
 - Desktop topbar: `102px`
 - Mobile navigation: `58px`
+- Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)
+- Phone page-section rhythm: `5px`, expressed by overriding the same shared token
 - Responsive page padding remains breakpoint-owned
 - There is intentionally no global content max-width because table-heavy routes use the available width
+
+The page-rhythm tokens are semantic foundations: use them only when two sections play the same structural role. Component-internal gaps, Player/Evaluation geometry, and deliberate exceptions remain locally owned.
 
 ## Controls
 
@@ -167,6 +172,7 @@ Component-local z-index values stay below the global application layers.
 1. Filter-rule removal uses the theme-aware global `--danger` value instead of hard-coded `#ff2020`.
 2. Bug Report uses the same `8px` dialog radius as the other shared dialogs instead of `10px`.
 3. Semantic destructive/error UI uses `--danger` end to end. This includes Bug Report errors, Watchlist and Evaluation delete actions, Add Watchlist validation, Settings invalid/discard states, wallet opt-out, and destructive hover/focus states that previously used separate fixed reds such as `#e06b6b`, `#ff8a8a`, `#c92a2a`, `#d84b4b`, `#ff6b6b`, and `#e95656`.
+4. Page/table title typography and repeated page-section vertical rhythm use the shared `--mfl-page-title-*` / `--mfl-page-section-gap` contracts. Phone and compact-phone title sizes override the same semantic token instead of redefining `.tablePageTitle`.
 
 ## What must remain intentionally separate
 
@@ -178,6 +184,7 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - control, dialog/popover, and pill radii
 - tooltip, dropdown, modal, and mobile-navigation shadows
 - Player/Evaluation-specific geometry
+- page-level semantic rhythm and component-internal spacing
 - data visualization/game-state colors such as progression, Training deltas, and difficulty/status scales
 
 When a new value is genuinely global, add it to the appropriate canonical owner and update validation so a competing one-off literal cannot silently reappear.

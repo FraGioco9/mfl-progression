@@ -20,6 +20,14 @@
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
 
+  /* Shared page title and vertical rhythm. */
+  --mfl-page-title-font-size: 20px;
+  --mfl-page-title-min-height: 32px;
+  --mfl-page-title-margin-block-start: 6px;
+  --mfl-page-title-margin-block-end: 8px;
+  --mfl-page-title-line-height: 1.2;
+  --mfl-page-section-gap: 6px;
+
   /* Shared application surfaces. */
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);

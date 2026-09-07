@@ -6,17 +6,13 @@
     max-width: 100%;
   }
 
-  .mflStatsPage .tablePageTitle {
-    font-size: 18px;
-  }
-
   .mflStatsViews {
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsFilters {
     gap: 4px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
     padding: 5px 6px;
   }
 
@@ -38,7 +34,7 @@
 
   .mflStatsCards {
     gap: 5px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsCards article {
@@ -62,7 +58,7 @@
 
   .mflStatsDistributionHeader {
     gap: 6px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   .mflStatsDistributionHeader h3 {

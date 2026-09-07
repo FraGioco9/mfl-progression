@@ -1,5 +1,10 @@
 
 @media (max-width: 520px) {
+  :root {
+    --mfl-page-title-font-size: 18px;
+    --mfl-page-section-gap: 5px;
+  }
+
   body > .topbar {
     column-gap: 8px;
     padding-right: max(10px, env(safe-area-inset-right));
@@ -22,7 +27,7 @@
 
   #progressionPage .views {
     --mfl-views-gap: 4px;
-    margin-bottom: 5px;
+    margin-bottom: var(--mfl-page-section-gap);
   }
 
   #progressionPage > .quickFilters {
@@ -129,10 +134,6 @@
   #progressionPage .viewControlsSeparator {
     height: 18px;
     margin-inline: 1px;
-  }
-
-  .tablePageTitle {
-    font-size: 18px;
   }
 
   html:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-table-page="club"] #progressionPage .viewButton[data-view="attributes"]::after {
