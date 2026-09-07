@@ -85,8 +85,7 @@ for (const token of [
 
 for (const token of [
   '@media (min-width: 901px) {',
-  '.playerPage {\n    max-width: 1240px;',
-  '.playerHero {\n    --mfl-player-hero-identity-width: clamp(360px, 37vw, 520px);',
+  '.playerHeroIdentity {\n    flex-basis: clamp(360px, 37vw, 520px);\n    width: clamp(360px, 37vw, 520px);\n    max-width: clamp(360px, 37vw, 520px);',
   '.playerHeroIdentity .playerTitle {\n    flex-wrap: nowrap;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;\n    display: grid;\n    place-items: center;\n    flex: 0 0 22px;\n    align-self: center;',
@@ -104,6 +103,10 @@ assert.ok(
     && !desktopPlacement.includes('.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n    line-height:'),
   "Desktop Note/Listing alignment must not alter the Player name display or line-height geometry.",
 );
+assert.ok(
+  !desktopPlacement.includes('.playerPage {\n    max-width:'),
+  "Long-name title space must come from the existing Player hero width rather than changing the page/table width contract.",
+);
 
 for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(
@@ -115,4 +118,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("/player-note.svg"), "Player Note presentation must not depend on the removed external icon asset.");
 }
 
-console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop name-preserving control alignment, widened desktop Player identity, Notes desktop height, and observer idempotency validation passed.");
+console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop name-preserving control alignment, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
