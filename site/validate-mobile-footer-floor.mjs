@@ -94,11 +94,11 @@ for (const label of ["Nationality", "Height", "Foot", "Seasons", "Agent", "Contr
 }
 assert.ok(!indexHtml.includes('<span class="playerDetailAgeLine">-</span>'), "Static Player first paint must leave pending Age blank instead of showing '-'.");
 for (const token of [
-  'positions.includes("GK")',
+  'positions[0] === "GK"',
   '["Overall", "Goalkeeping"]',
   '["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"]',
   '? ["Overall", "", "", "", "", "", ""]',
-]) assert.ok(indexHtml.includes(token), `Parser-first Player Attribute labels must be position-correct without guessing: ${token}`);
+]) assert.ok(indexHtml.includes(token), `Parser-first Player Attribute labels must match the player's primary position without guessing: ${token}`);
 for (const pitchLine of ["pitchBoxTop", "pitchGoalTop", "pitchArcTop", "pitchBoxBottom", "pitchGoalBottom", "pitchArcBottom"]) {
   assert.ok(indexHtml.includes(`class="pitchLine ${pitchLine}"`), `Static Player first paint must include ${pitchLine}.`);
 }
@@ -135,9 +135,21 @@ assert.ok(
 assert.ok(
   indexHtml.includes('const cachedName = String(firstPaintContext?.name || knownValues?.name?.display || knownValues?.name?.raw || "").trim();')
     && indexHtml.includes('knownValues?.positions?.display ?? knownValues?.positions?.raw ?? ""')
-    && indexHtml.includes('if (titleName instanceof HTMLElement && cachedName) titleName.textContent = cachedName;')
+    && indexHtml.includes('const compactPlayerPageName = (value) => {')
+    && indexHtml.includes('const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;')
+    && indexHtml.includes('titleName.dataset.playerFullName = cachedName;')
+    && indexHtml.includes('titleName.textContent = displayName;')
     && indexHtml.includes('if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");'),
-  "Parser-owned Player hero must project cached identity and raw/display positions before mobile first paint so hero height does not settle later.",
+  "Parser-owned Player hero must project cached identity in the final responsive name format and preserve the full name before mobile first paint.",
+);
+assert.ok(
+  indexHtml.includes('const applyFirstPaintHeroActionLayout = (playerHero) => {')
+    && indexHtml.includes('primary.style.justifyContent = "center";')
+    && indexHtml.includes('primary.style.padding = "0 10px";')
+    && indexHtml.includes('toggle.style.color = "var(--text-soft)";')
+    && indexHtml.includes('toggle.style.opacity = "0.5";')
+    && indexHtml.includes('applyFirstPaintHeroActionLayout(hero);'),
+  "Parser-owned Player actions must use their final text geometry immediately, with the desktop chevron greyed until loading completes.",
 );
 assert.ok(
   buildCore.includes("function normalizePlayerFirstPaintShell(source, canonicalPlayerShell)")
