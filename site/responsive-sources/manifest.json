@@ -2,6 +2,7 @@
   "chrome-tablet.css.inc",
   "tables-tablet.css.inc",
   "filters-tablet.css.inc",
+  "player-note-tablet.css.inc",
   "player-tablet.css.inc",
   "evaluation-tablet.css.inc",
   "static-tablet.css.inc",
@@ -12,5 +13,5 @@
   "compact.css.inc",
   "touch.css.inc",
   "footer.css.inc",
-  "player-note-placement.css.inc"
+  "player-note-desktop.css.inc"
 ]
