@@ -1977,7 +1977,7 @@ function renderPlayerPageOwner(playerId) {
   if (watchButton) {
     const inAnyWatchlist = playerIsInAnyWatchlist(id);
     watchButton.className = `playerWatchlistButton playerHeroActionMenuItem ${inAnyWatchlist ? "active" : ""}`;
-    watchButton.innerHTML = `<span class="watchlistButtonStar" aria-hidden="true">${inAnyWatchlist ? "\u2605" : "\u2606"}</span><span>${inAnyWatchlist ? "In watchlist" : "Add to watchlist")}</span>`;
+    watchButton.innerHTML = `<span class="watchlistButtonStar" aria-hidden="true">${inAnyWatchlist ? "\u2605" : "\u2606"}</span><span>${inAnyWatchlist ? "In watchlist" : "Add to watchlist"}</span>`;
     watchButton.addEventListener("click", () => {
       toggleWatchlistPlayer(id, true);
     });
