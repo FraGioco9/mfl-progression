@@ -1,0 +1,73 @@
+        <script>
+          (() => {
+            const root = document.documentElement;
+            if (root.dataset.initialEntityRoute !== "player") return;
+
+            const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
+            const playerId = routeMatch ? String(routeMatch[1] || "") : "";
+            const playerDetail = document.getElementById("playerDetail");
+            if (!playerId || !(playerDetail instanceof HTMLElement)) return;
+
+            const normalizeWalletAddress = (value) => {
+              const address = String(value || "").trim().toLowerCase();
+              return address ? (address.startsWith("0x") ? address : "0x" + address) : "";
+            };
+            const cachedPlayerNote = (() => {
+              if (root.dataset.storedWalletOptIn !== "true") return "";
+              try {
+                const wallet = normalizeWalletAddress(localStorage.getItem("mfl-linked-wallet-v1"));
+                if (!wallet) return "";
+                const notes = JSON.parse(localStorage.getItem("mfl-wallet-player-notes-v1:" + wallet) || "{}");
+                if (!notes || typeof notes !== "object" || Array.isArray(notes)) return "";
+                return String(notes[playerId] || "").replace(/\r\n/g, "\n").slice(0, 100).trim();
+              } catch {
+                return "";
+              }
+            })();
+
+            const syncFirstPaintNotes = () => {
+              const optedIn = root.dataset.storedWalletOptIn === "true";
+              const panel = document.querySelector("#playerPage [data-mfl-static-player-notes]");
+              if (panel instanceof HTMLElement) {
+                const shouldHide = !optedIn;
+                if (panel.hidden !== shouldHide) panel.hidden = shouldHide;
+                if (optedIn) {
+                  const input = panel.querySelector(".playerNotesInput");
+                  const count = panel.querySelector(".playerNotesCount");
+                  if (input instanceof HTMLTextAreaElement) {
+                    if (input.style.visibility) input.style.removeProperty("visibility");
+                    if (input.value !== cachedPlayerNote) input.value = cachedPlayerNote;
+                  }
+                  if (count instanceof HTMLElement) {
+                    if (count.style.visibility) count.style.removeProperty("visibility");
+                    const nextCount = cachedPlayerNote.length + "/100";
+                    if (count.textContent !== nextCount) count.textContent = nextCount;
+                  }
+                }
+              }
+
+              if (!cachedPlayerNote) return;
+              const noteHost = playerDetail.querySelector(":scope > .playerHero .playerTitleNoteIcon");
+              if (!(noteHost instanceof HTMLElement) || noteHost.querySelector(".playerNoteIcon")) return;
+              const note = document.createElement("span");
+              note.className = "playerNoteIcon";
+              note.dataset.tooltip = cachedPlayerNote;
+              note.setAttribute("aria-label", "Player note");
+              note.textContent = "📝";
+              noteHost.replaceChildren(note);
+            };
+
+            syncFirstPaintNotes();
+            if (typeof MutationObserver === "function") {
+              const observer = new MutationObserver(() => {
+                if (root.dataset.playerFirstPaintContentReady === "true") {
+                  observer.disconnect();
+                  return;
+                }
+                syncFirstPaintNotes();
+              });
+              observer.observe(playerDetail, { childList: true, subtree: true });
+              observer.observe(root, { attributes: true, attributeFilter: ["data-player-first-paint-content-ready"] });
+            }
+          })();
+        </script>
