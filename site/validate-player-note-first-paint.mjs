@@ -65,22 +65,27 @@ for (const token of [
 }
 
 assert.ok(
-  noteSvg.includes('width="14" height="14" viewBox="0 0 24 24"')
+  noteSvg.includes('viewBox="0 0 24 24"')
     && noteSvg.includes('stroke="#000"')
     && noteSvg.includes('stroke-linecap="round"')
-    && noteSvg.includes('stroke-linejoin="round"'),
-  "The compact Player Note asset must remain a 14px monochrome line icon suitable for CSS masking.",
+    && noteSvg.includes('stroke-linejoin="round"')
+    && noteSvg.includes('<path d="M14 2v6h6"/>')
+    && noteSvg.includes('<path d="M8 13h8"/>'),
+  "The Player Note asset must remain a purpose-designed monochrome document/note line icon suitable for CSS masking.",
 );
 
 for (const token of [
   '@media (min-width: 901px) {',
-  '.playerHeroIdentity .playerTitle {\n    display: flex;\n    align-items: center;',
+  '.playerHeroIdentity .playerTitle {\n    display: flex;\n    align-items: center;\n    flex-wrap: nowrap;\n    gap: 8px;',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;',
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    order: 1;\n    margin-left: 0;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    order: 2;\n    margin-left: 0;',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon {',
+  'font-size: 0;',
+  '-webkit-mask: url("/player-note.svg") center / 18px 18px no-repeat;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    align-self: center;\n    margin-left: 0;',
 ]) {
-  assert.ok(desktopPlacement.includes(token), `Canonical desktop Player Note placement is missing: ${token}`);
-  assert.ok(responsive.includes(token), `Generated responsive desktop Player Note placement is missing: ${token}`);
+  assert.ok(desktopPlacement.includes(token), `Canonical desktop Player Note/Listing placement is missing: ${token}`);
+  assert.ok(responsive.includes(token), `Generated responsive desktop Player Note/Listing placement is missing: ${token}`);
 }
 
 for (const source of [mobilePlacement, desktopPlacement]) {
@@ -92,4 +97,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("transform:"), "Player Note placement must use real layout coordinates rather than transform nudges.");
 }
 
-console.log("Player Note redesign, shared Listing-corner placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
+console.log("Player Note redesign, mobile Listing-corner alignment, desktop shared title-control placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
