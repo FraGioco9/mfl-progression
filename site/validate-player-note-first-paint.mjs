@@ -19,6 +19,13 @@ assert.ok(
   "The base Player shell must remain passive until the dedicated Notes first-paint fragment synchronizes it.",
 );
 
+const iconSyncIndex = noteSource.indexOf("const syncPlayerNoteIcons = () => {");
+const initialRouteGuardIndex = noteSource.indexOf('if (root.dataset.initialEntityRoute !== "player") return;');
+assert.ok(
+  iconSyncIndex >= 0 && initialRouteGuardIndex > iconSyncIndex,
+  "The Note icon normalizer must initialize globally before the direct-refresh-only first-paint data branch.",
+);
+
 for (const source of [noteSource, generatedIndex]) {
   assert.ok(
     source.includes('localStorage.getItem("mfl-wallet-player-notes-v1:" + wallet)'),
@@ -35,15 +42,9 @@ for (const source of [noteSource, generatedIndex]) {
       && source.includes('if (count.textContent !== nextCount) count.textContent = nextCount;'),
     "First-paint Notes synchronization must be idempotent so its pending observer cannot self-trigger indefinitely.",
   );
-
-  const iconSyncIndex = source.indexOf("const syncPlayerNoteIcons = () => {");
-  const initialRouteGuardIndex = source.indexOf('if (root.dataset.initialEntityRoute !== "player") return;');
   assert.ok(
-    iconSyncIndex >= 0 && initialRouteGuardIndex > iconSyncIndex,
-    "The Note icon normalizer must initialize globally so hydrated Player routes also replace the legacy renderer output.",
-  );
-  assert.ok(
-    source.includes('const svg = document.createElementNS(namespace, "svg");')
+    source.includes('const syncPlayerNoteIcons = () => {')
+      && source.includes('const svg = document.createElementNS(namespace, "svg");')
       && source.includes('svg.classList.add("playerNoteIconSvg");')
       && source.includes('svg.setAttribute("viewBox", "0 0 24 24");')
       && source.includes('page.setAttribute("d", "M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z");')
