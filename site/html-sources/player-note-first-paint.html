@@ -1,12 +1,48 @@
         <script>
           (() => {
             const root = document.documentElement;
+            const playerDetail = document.getElementById("playerDetail");
+            if (!(playerDetail instanceof HTMLElement)) return;
+
+            const createPlayerNoteSvg = () => {
+              const namespace = "http://www.w3.org/2000/svg";
+              const svg = document.createElementNS(namespace, "svg");
+              svg.classList.add("playerNoteIconSvg");
+              svg.setAttribute("viewBox", "0 0 24 24");
+              svg.setAttribute("fill", "none");
+              svg.setAttribute("aria-hidden", "true");
+              svg.setAttribute("focusable", "false");
+
+              const page = document.createElementNS(namespace, "path");
+              page.setAttribute("d", "M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z");
+              const fold = document.createElementNS(namespace, "path");
+              fold.setAttribute("d", "M13 2v5h5");
+              const lineOne = document.createElementNS(namespace, "path");
+              lineOne.setAttribute("d", "M8 11h6");
+              const lineTwo = document.createElementNS(namespace, "path");
+              lineTwo.setAttribute("d", "M8 15h6");
+              svg.append(page, fold, lineOne, lineTwo);
+              return svg;
+            };
+
+            const syncPlayerNoteIcons = () => {
+              playerDetail.querySelectorAll(".playerNoteIcon").forEach((note) => {
+                if (!(note instanceof HTMLElement) || note.querySelector(":scope > .playerNoteIconSvg")) return;
+                note.replaceChildren(createPlayerNoteSvg());
+              });
+            };
+
+            syncPlayerNoteIcons();
+            if (typeof MutationObserver === "function") {
+              const iconObserver = new MutationObserver(syncPlayerNoteIcons);
+              iconObserver.observe(playerDetail, { childList: true, subtree: true });
+            }
+
             if (root.dataset.initialEntityRoute !== "player") return;
 
             const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
             const playerId = routeMatch ? String(routeMatch[1] || "") : "";
-            const playerDetail = document.getElementById("playerDetail");
-            if (!playerId || !(playerDetail instanceof HTMLElement)) return;
+            if (!playerId) return;
 
             const normalizeWalletAddress = (value) => {
               const address = String(value || "").trim().toLowerCase();
@@ -53,6 +89,7 @@
               note.className = "playerNoteIcon";
               note.dataset.tooltip = cachedPlayerNote;
               note.setAttribute("aria-label", "Player note");
+              note.appendChild(createPlayerNoteSvg());
               noteHost.replaceChildren(note);
             };
 
