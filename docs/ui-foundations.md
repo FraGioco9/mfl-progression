@@ -117,10 +117,13 @@ Page-layout tokens are semantic foundations: use them only when sections play th
 
 ## Content surfaces
 
+- Canonical ordinary panel background: `var(--surface)` (`--mfl-panel-background`)
+- Canonical ordinary panel border: `1px solid var(--border)` (`--mfl-panel-border`)
+- Canonical strong ordinary panel border: `1px solid var(--border-strong)` (`--mfl-panel-border-strong`)
 - Canonical ordinary content-panel radius: `8px` (`--mfl-radius-panel`)
-- The panel radius is for equivalent page/content surfaces such as Home summary cards, MFL Stats content panels, Settings surfaces, and Privacy sections.
+- These panel contracts are for equivalent page/content surfaces such as Home summary cards, MFL Stats content panels, Settings surfaces, and Privacy sections.
 - Dialogs use `--mfl-radius-dialog`; controls use `--mfl-radius-control`.
-- Tables, Player cards, Evaluation surfaces, pills, and specialist visualizations keep their own geometry even when their current numeric radius also happens to be `8px`.
+- Tables, Player cards, Evaluation surfaces, dialogs, dropdowns, controls, pills, and specialist visualizations keep their own surface ownership even when their current border, background, or radius happens to match an ordinary panel value.
 
 ## Keyboard focus
 
@@ -245,6 +248,7 @@ Component-local z-index values stay below the global application layers.
 10. Ordinary form/status feedback uses one 12px/1.25 helper contract with soft normal text and stronger danger-derived error feedback; search hints, empty states, table states, and domain-specific data messages remain separate.
 11. Sidebar/mobile navigation icons consume the shared 18px navigation-icon contract, while Search and Filters consume the shared 17px ordinary-control icon contract; numerically similar specialist icons remain locally owned.
 12. Standard View/Filters controls consume one 14px control-label size and 700 weight, while equivalent selector controls consume the shared line-height foundation without flattening smaller Stats or Player-specific sizes.
+13. Equivalent ordinary Home, Stats, Settings, and Privacy panels consume shared surface background and normal/strong border contracts alongside the shared panel radius; specialist surfaces keep local ownership.
 
 ## What must remain intentionally separate
 

@@ -65,6 +65,9 @@
   --mfl-focus-ring-offset: 2px;
 
   /* Shared application surfaces. */
+  --mfl-panel-background: var(--surface);
+  --mfl-panel-border: 1px solid var(--border);
+  --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
