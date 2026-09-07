@@ -121,7 +121,9 @@
 
   function resolvedPlayerTitle() {
     if (!routeBusy()) {
-      const playerName = textFrom("#playerDetail .playerTitleName");
+      const titleName = document.querySelector("#playerDetail .playerTitleName");
+      const playerName = cleanText(titleName?.dataset.playerFullName)
+        || textFrom("#playerDetail .playerTitleName");
       if (playerName) return withAppName(playerName);
     }
     return withAppName("Player");
@@ -198,7 +200,7 @@
     childList: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["data-page", "data-interaction-busy", "hidden"],
+    attributeFilter: ["data-page", "data-interaction-busy", "data-player-full-name", "hidden"],
   });
 
   window.addEventListener("popstate", scheduleSync);

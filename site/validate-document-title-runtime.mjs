@@ -1,3 +1,4 @@
+import assert from "node:assert/strict";
 import { includes, excludes } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
@@ -49,3 +50,25 @@ excludes(runtime, "fetch(", "Browser-title ownership must never request data sep
 excludes(runtime, "XMLHttpRequest", "Browser-title ownership must never own a second network transport.");
 
 console.log("Document-title runtime validation passed: canonical SPA routes drive browser titles without separate data loading or same-entity view-switch flicker.");
+
+// Exercise the actual title resolver before/after mobile abbreviation and name hydration.
+const playerResolver = runtime.match(/function resolvedPlayerTitle\(\) \{[\s\S]*?\n {2}\}/)?.[0];
+assert.ok(playerResolver, "Player title resolver must remain available.");
+const resolvePlayer = new Function("document", "routeBusy", "cleanText", "textFrom", "withAppName", `${playerResolver}; return resolvedPlayerTitle();`);
+for (const [visible, full, busy, expected] of [
+  ["N. Surname", "Name Surname", false, "Name Surname"],
+  ["Name Surname", "Name Surname", false, "Name Surname"],
+  ["Name Surname", "", false, "Name Surname"],
+  ["N. Surname", "Newname Surname", false, "Newname Surname"],
+  ["N. Surname", "Name Surname", true, "Player"],
+]) {
+  const title = resolvePlayer(
+    { querySelector: () => ({ dataset: { playerFullName: full } }) },
+    () => busy,
+    (value) => String(value || "").trim().replace(/\s+/g, " "),
+    () => visible,
+    (value) => `${value} - MFL Front Office`,
+  );
+  assert.equal(title, `${expected} - MFL Front Office`);
+}
+includes(runtime, '"data-player-full-name"', "Browser titles must resync when full identity changes without changing the abbreviated label.");
