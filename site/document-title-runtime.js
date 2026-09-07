@@ -89,34 +89,23 @@
     return element instanceof HTMLElement ? cleanText(element.textContent) : "";
   }
 
-  function currentAgentAddress() {
-    const match = String(window.location.pathname || "").match(/^\/agents\/([^/]+)/i);
-    if (!match) return "";
-    try {
-      return decodeURIComponent(match[1]).trim().toLowerCase();
-    } catch {
-      return String(match[1] || "").trim().toLowerCase();
-    }
-  }
-
   function resolvedAgentTitle() {
-    const address = currentAgentAddress();
     const tableTitle = routeBusy() ? "" : textFrom("#tablePageTitle");
-    if (tableTitle && (!address || tableTitle.toLowerCase().includes(address))) return tableTitle;
-    return address || withAppName("Agent");
+    if (tableTitle && !GENERIC_TABLE_TITLES.has(tableTitle)) return withAppName(tableTitle);
+    return withAppName("Agent");
   }
 
   function resolvedClubTitle() {
     if (routeBusy()) return withAppName("Club");
     const tableTitle = textFrom("#tablePageTitle");
     if (!tableTitle || GENERIC_TABLE_TITLES.has(tableTitle)) return withAppName("Club");
-    return tableTitle;
+    return withAppName(tableTitle);
   }
 
   function resolvedWatchlistTitle() {
     if (routeBusy()) return withAppName("Watchlist");
     const tableTitle = textFrom("#tablePageTitle");
-    return /^Watchlist(?:\s+-\s+.+)?$/i.test(tableTitle) ? tableTitle : withAppName("Watchlist");
+    return /^Watchlist(?:\s+-\s+.+)?$/i.test(tableTitle) ? withAppName(tableTitle) : withAppName("Watchlist");
   }
 
   function resolvedPlayerTitle() {
@@ -129,15 +118,33 @@
     return withAppName("Player");
   }
 
-  function resolvedEvaluationTitle() {
-    if (!routeBusy()) {
-      const panel = document.getElementById("evaluationPanel");
-      if (panel instanceof HTMLElement && !panel.hidden) {
-        const searchInput = document.getElementById("evaluationSearchInput");
-        const playerName = searchInput instanceof HTMLInputElement ? cleanText(searchInput.value) : "";
-        if (playerName) return `Evaluation - ${playerName}`;
-      }
+  function evaluationRouteHasSelection() {
+    if (window.location.pathname !== "/evaluation") return false;
+    const params = new URLSearchParams(window.location.search);
+    return Boolean(params.get("player") || params.get("saved") || params.get("share"));
+  }
+
+  function primedEvaluationPlayerName() {
+    if (!evaluationRouteHasSelection()) return "";
+    const searchInput = document.getElementById("evaluationSearchInput");
+    const inputName = searchInput instanceof HTMLInputElement ? cleanText(searchInput.value) : "";
+    if (inputName) return inputName;
+
+    const initialName = cleanText(document.documentElement.dataset.initialEvaluationPlayerName);
+    if (initialName) return initialName;
+
+    const currentTitle = cleanText(document.title);
+    const prefix = "Evaluation - ";
+    const suffix = ` - ${APP_NAME}`;
+    if (currentTitle.startsWith(prefix) && currentTitle.endsWith(suffix) && currentTitle !== withAppName("Evaluation")) {
+      return cleanText(currentTitle.slice(prefix.length, -suffix.length));
     }
+    return "";
+  }
+
+  function resolvedEvaluationTitle() {
+    const playerName = primedEvaluationPlayerName();
+    if (playerName) return withAppName(`Evaluation - ${playerName}`);
     return withAppName("Evaluation");
   }
 
@@ -158,6 +165,16 @@
 
     const label = GENERIC_PAGE_LABELS[pageName];
     return label ? withAppName(label) : APP_NAME;
+  }
+
+  function seedStableTitleFromDocument() {
+    const request = currentRouteRequest();
+    const pageName = normalizedPageName(request?.pageName);
+    const currentTitle = cleanText(document.title);
+    const usable = pageName === "home" ? currentTitle === APP_NAME : Boolean(currentTitle && currentTitle !== APP_NAME);
+    if (!usable) return;
+    stableRouteIdentity = routeIdentityForRequest(request);
+    stableTitle = currentTitle;
   }
 
   function sync() {
@@ -200,7 +217,7 @@
     childList: true,
     characterData: true,
     attributes: true,
-    attributeFilter: ["data-page", "data-interaction-busy", "data-player-full-name", "hidden"],
+    attributeFilter: ["data-page", "data-interaction-busy", "data-player-full-name", "data-initial-evaluation-player-name", "hidden"],
   });
 
   window.addEventListener("popstate", scheduleSync);
@@ -214,5 +231,6 @@
     destroy,
   });
 
+  seedStableTitleFromDocument();
   sync();
 })();
