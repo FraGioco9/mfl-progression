@@ -8,7 +8,7 @@ The goal is **shared ownership, not forced sameness**. Responsive geometry, Play
 
 | Foundation | Canonical owner |
 | --- | --- |
-| Cross-site shared control/surface/page-rhythm tokens | `site/ui-foundations.css` |
+| Cross-site shared control/surface/page-layout tokens | `site/ui-foundations.css` |
 | Theme palette and desktop shell geometry | `site/styles-base.css` |
 | Table geometry and Uniform Width | `site/styles.css` |
 | Motion timings | `site/motion.css` |
@@ -68,19 +68,29 @@ Data visualization and game-state colors are intentionally not part of this rule
 - Phone and compact-phone title scaling override the same token to `18px` / `17px`
 - Page-title block margins: `6px` before / `8px` after (`--mfl-page-title-margin-block-start` / `--mfl-page-title-margin-block-end`)
 - Page-title line-height: `1.2` (`--mfl-page-title-line-height`)
+- Shared section title: `16px` (`--mfl-section-title-font-size`)
+- Shared compact section title: `15px` (`--mfl-section-title-compact-font-size`)
+- Shared section-title weight / line-height: `700` / `1.1` (`--mfl-section-title-font-weight` / `--mfl-section-title-line-height`)
 - Numeric/count values use tabular figures where stable alignment matters
+
+The shared section-title scale is used only where the heading has the same structural role. Settings and Advanced Settings use the standard size; MFL Stats distribution and Privacy cards use the compact size. Player and Evaluation headings remain specialist-owned.
 
 ## Layout and chrome
 
 - Desktop pinned sidebar: `190px`
 - Desktop topbar: `102px`
 - Mobile navigation: `58px`
+- Desktop page gutter: `28px` (`--mfl-page-gutter-inline`)
+- Tablet/mobile page gutter at `<=900px`: `12px`, expressed by overriding the same token
+- Phone page gutter at `<=520px`: `8px`, expressed by overriding the same token
+- Desktop page block inset: `4px` top / `6px` bottom (`--mfl-page-inset-block-start` / `--mfl-page-inset-block-end`)
+- Tablet/mobile bottom page inset derives from the mobile-navigation clearance and safe-area inset through `--mfl-page-inset-block-end`
 - Repeated desktop page-section rhythm: `6px` (`--mfl-page-section-gap`)
 - Phone page-section rhythm: `5px`, expressed by overriding the same shared token
-- Responsive page padding remains breakpoint-owned
+- Safe-area calculations remain in the responsive layout owner while consuming the shared page-gutter token
 - There is intentionally no global content max-width because table-heavy routes use the available width
 
-The page-rhythm tokens are semantic foundations: use them only when two sections play the same structural role. Component-internal gaps, Player/Evaluation geometry, and deliberate exceptions remain locally owned.
+Page-layout tokens are semantic foundations: use them only when sections play the same structural role. Topbar/footer chrome, component-internal gaps, table overflow, Player/Evaluation geometry, and deliberate exceptions remain locally owned.
 
 ## Controls
 
@@ -173,6 +183,8 @@ Component-local z-index values stay below the global application layers.
 2. Bug Report uses the same `8px` dialog radius as the other shared dialogs instead of `10px`.
 3. Semantic destructive/error UI uses `--danger` end to end. This includes Bug Report errors, Watchlist and Evaluation delete actions, Add Watchlist validation, Settings invalid/discard states, wallet opt-out, and destructive hover/focus states that previously used separate fixed reds such as `#e06b6b`, `#ff8a8a`, `#c92a2a`, `#d84b4b`, `#ff6b6b`, and `#e95656`.
 4. Page/table title typography and repeated page-section vertical rhythm use the shared `--mfl-page-title-*` / `--mfl-page-section-gap` contracts. Phone and compact-phone title sizes override the same semantic token instead of redefining `.tablePageTitle`.
+5. Main page gutters and block insets use the shared `--mfl-page-gutter-inline` / `--mfl-page-inset-block-*` contracts while responsive safe-area logic remains in the responsive owner.
+6. Equivalent section headings use the shared standard/compact section-title typography contracts; Player and Evaluation keep their domain-specific heading geometry.
 
 ## What must remain intentionally separate
 
@@ -183,6 +195,7 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - normal controls and tiny steppers/table actions
 - control, dialog/popover, and pill radii
 - tooltip, dropdown, modal, and mobile-navigation shadows
+- topbar/footer chrome and main page-content gutters
 - Player/Evaluation-specific geometry
 - page-level semantic rhythm and component-internal spacing
 - data visualization/game-state colors such as progression, Training deltas, and difficulty/status scales
