@@ -116,6 +116,18 @@
               9: "Spark",
               10: "Flint",
             };
+            const contractDivisionColors = {
+              1: "#3be9f8",
+              2: "#13d389",
+              3: "#ffd23e",
+              4: "#dbe4eb",
+              5: "#fd7a00",
+              6: "#865e3f",
+              7: "#b7b09c",
+              8: "#b0cce1",
+              9: "#ffb136",
+              10: "#757061",
+            };
             const applyFirstPaintHeroActionLayout = (playerHero) => {
               if (!(playerHero instanceof HTMLElement)) return;
               const actions = playerHero.querySelector(":scope > .playerHeroActions");
@@ -264,6 +276,14 @@
                 ? contractDivisionNames[division]
                 : knownDisplay("active_contract_club_division");
             };
+            const cachedDivisionColor = () => {
+              const raw = knownRaw("active_contract_club_division");
+              const numericDivision = Number(raw);
+              if (Number.isFinite(numericDivision) && contractDivisionColors[numericDivision]) return contractDivisionColors[numericDivision];
+              const display = knownDisplay("active_contract_club_division").toLowerCase();
+              const divisionKey = Object.keys(contractDivisionNames).find((key) => contractDivisionNames[key].toLowerCase() === display);
+              return divisionKey ? contractDivisionColors[divisionKey] || "" : "";
+            };
             const cachedContractTeamName = () => {
               const clubName = knownDisplay("active_contract_club_name");
               if (clubName) return clubName;
@@ -328,6 +348,8 @@
                     const division = document.createElement("span");
                     division.className = "playerContractDivision";
                     division.textContent = divisionName;
+                    const divisionColor = cachedDivisionColor();
+                    if (divisionColor) division.style.color = divisionColor;
                     line.appendChild(division);
                   }
                   strong.replaceChildren(line);
