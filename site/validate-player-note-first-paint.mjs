@@ -89,11 +89,10 @@ for (const token of [
   '.playerHeroIdentity .playerTitle {\n    align-items: baseline;\n    flex-wrap: nowrap;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;\n  }',
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    position: static;\n    order: 1;\n    display: grid;\n    place-items: center;\n    flex: 0 0 22px;\n    align-self: center;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: static;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-flex;\n    align-items: center;\n    align-self: baseline;\n    height: 22px;',
-  'font-size: 16px;\n    line-height: 1;\n    white-space: nowrap;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge::before {\n    content: "\\200B";\n    flex: 0 0 0;\n    width: 0;\n    overflow: hidden;\n    font: inherit;\n    line-height: 1;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    display: block;\n    align-self: center;\n    margin: 0;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    display: block;\n    align-self: center;\n    line-height: 1;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    position: relative;\n    top: auto;\n    right: auto;\n    order: 2;\n    display: inline-block;\n    flex: 0 0 auto;\n    align-self: baseline;\n    width: max-content;\n    min-width: 0;\n    max-width: none;\n    height: 22px;',
+  'padding: 0 5px 0 23px;\n    font-size: 16px;\n    line-height: 22px;\n    white-space: nowrap;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {\n    position: absolute;\n    top: 4px;\n    left: 5px;\n    display: block;\n    width: 14px;\n    height: 14px;\n    margin: 0;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {\n    display: inline-block;\n    line-height: inherit;',
   '.playerNotesInput {\n    min-height: 150px;',
 ]) {
   assert.ok(desktopPlacement.includes(token), `Canonical desktop Player title alignment is missing: ${token}`);
@@ -110,9 +109,10 @@ assert.ok(
   "Long-name title space must come from the existing Player hero width rather than changing the page/table width contract.",
 );
 assert.ok(
-  !desktopPlacement.includes('vertical-align: baseline;')
-    && !desktopPlacement.includes('.playerListingBadge .listingCellPrice {\n    align-self: baseline;'),
-  "Desktop Listing price must not move independently from its badge; the badge itself owns the shared text baseline.",
+  !desktopPlacement.includes('.playerListingBadge::before')
+    && desktopPlacement.includes('width: max-content;')
+    && desktopPlacement.includes('padding: 0 5px 0 23px;'),
+  "Desktop Listing must recover its price-length-dependent background width without changing the corrected badge position.",
 );
 
 for (const source of [mobilePlacement, desktopPlacement]) {
@@ -125,4 +125,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("/player-note.svg"), "Player Note presentation must not depend on the removed external icon asset.");
 }
 
-console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop badge-owned price baseline alignment, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
+console.log("Player Note inline SVG rendering, first-paint availability, mobile Note/Listing exact shared-box alignment, desktop content-sized Listing background with preserved baseline placement, expanded desktop identity space, Notes desktop height, and observer idempotency validation passed.");
