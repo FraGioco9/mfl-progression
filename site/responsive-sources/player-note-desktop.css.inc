@@ -1,6 +1,14 @@
 
 /* Desktop Player title controls align to the existing Player-name line without changing its geometry. */
 @media (min-width: 901px) {
+  .playerPage {
+    max-width: 1240px;
+  }
+
+  .playerHero {
+    --mfl-player-hero-identity-width: clamp(360px, 37vw, 520px);
+  }
+
   .playerHeroIdentity .playerTitle {
     flex-wrap: nowrap;
   }
