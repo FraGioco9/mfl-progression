@@ -49,6 +49,14 @@
   --mfl-metadata-strong-font-weight: 800;
   --mfl-metadata-line-height: 1.1;
 
+  /* Shared ordinary helper/status feedback. */
+  --mfl-helper-text-font-size: 12px;
+  --mfl-helper-text-line-height: 1.25;
+  --mfl-helper-text-font-weight: 400;
+  --mfl-helper-error-font-weight: 700;
+  --mfl-helper-text-color: var(--text-soft);
+  --mfl-helper-error-color: var(--danger);
+
   /* Shared keyboard-focus language for ordinary interactive controls. */
   --mfl-focus-ring-color: var(--primary);
   --mfl-focus-ring-width: 2px;
