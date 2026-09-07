@@ -56,21 +56,21 @@
 }
 
 #sidebar .navEmoji {
-  flex: 0 0 18px;
-  width: 18px;
-  min-width: 18px;
-  max-width: 18px;
-  height: 18px;
-  min-height: 18px;
-  max-height: 18px;
+  flex: 0 0 var(--mfl-icon-size-navigation);
+  width: var(--mfl-icon-size-navigation);
+  min-width: var(--mfl-icon-size-navigation);
+  max-width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
+  min-height: var(--mfl-icon-size-navigation);
+  max-height: var(--mfl-icon-size-navigation);
   color: inherit;
-  font-size: 18px;
-  line-height: 18px;
+  font-size: var(--mfl-icon-size-navigation);
+  line-height: var(--mfl-icon-size-navigation);
 }
 
 #sidebar .navJerseyIcon {
-  width: 18px;
-  height: 18px;
+  width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
   color: inherit;
   fill: none;
   stroke: currentColor;
@@ -126,9 +126,9 @@
 
 .searchButton .searchIcon {
   display: block;
-  flex: 0 0 17px;
-  width: 17px;
-  height: 17px;
+  flex: 0 0 var(--mfl-icon-size-control);
+  width: var(--mfl-icon-size-control);
+  height: var(--mfl-icon-size-control);
   color: var(--text);
   fill: none;
   stroke: currentColor;
@@ -160,10 +160,10 @@
 }
 
 .filtersViewIcon {
-  flex: 0 0 17px;
+  flex: 0 0 var(--mfl-icon-size-control);
   align-self: center;
-  width: 17px;
-  height: 17px;
+  width: var(--mfl-icon-size-control);
+  height: var(--mfl-icon-size-control);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;

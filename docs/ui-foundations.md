@@ -132,6 +132,17 @@ Ordinary keyboard-focus affordances share:
 
 Equivalent ordinary controls should consume these tokens. Compact controls may keep a deliberately smaller local offset, while table action menus, selected/expanded controls, and other specialist interaction states retain their domain-owned focus behavior.
 
+## Icons
+
+Only equivalent semantic icon roles share dimensions:
+
+- Navigation icon size: `18px` (`--mfl-icon-size-navigation`)
+- Ordinary control icon size: `17px` (`--mfl-icon-size-control`)
+
+The navigation token covers the sidebar/mobile navigation icon cell and its equivalent jersey glyph. The ordinary control token covers Search and Filters icons. Advanced Settings, Account, Evaluation, Player Note/Listing, table actions/markers, branding/social icons, flags, avatars, and game-state/data icons remain specialist-owned even when a numeric size happens to match.
+
+There is intentionally no generic numeric icon scale: new icons should join one of these roles only when their semantic/geometry contract genuinely matches.
+
 ## Controls
 
 Cross-site semantic values live in `ui-foundations.css`:
@@ -229,6 +240,7 @@ Component-local z-index values stay below the global application layers.
 8. Ordinary keyboard focus consumes shared ring color/width/offset tokens while specialist interaction states remain locally owned.
 9. Repeated small-label and secondary metadata roles consume the shared 12px/11px metadata scale with 700/800 weight variants.
 10. Ordinary form/status feedback uses one 12px/1.25 helper contract with soft normal text and stronger danger-derived error feedback; search hints, empty states, table states, and domain-specific data messages remain separate.
+11. Sidebar/mobile navigation icons consume the shared 18px navigation-icon contract, while Search and Filters consume the shared 17px ordinary-control icon contract; numerically similar specialist icons remain locally owned.
 
 ## What must remain intentionally separate
 
@@ -237,6 +249,7 @@ Do not globalize a value merely because two numbers or colors match. In particul
 - desktop / tablet / phone / compact layouts
 - standard `40px` and compact `36px` controls
 - normal controls and tiny steppers/table actions
+- shared navigation/control icons and specialist Account/Evaluation/Player/table/branding/data icons
 - content-panel, control, dialog/popover, table, Player/Evaluation, and pill radii
 - ordinary focus rings and specialist table/dropdown/selected interaction states
 - ordinary helper/status feedback and domain-specific empty/loading/data states

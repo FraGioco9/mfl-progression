@@ -25,6 +25,10 @@
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
 
+  /* Shared semantic icon sizing. */
+  --mfl-icon-size-navigation: 18px;
+  --mfl-icon-size-control: 17px;
+
   /* Shared page layout, titles, and vertical rhythm. */
   --mfl-page-gutter-inline: 28px;
   --mfl-page-inset-block-start: 4px;
@@ -731,8 +735,8 @@ body[data-page="home"] .topbar .stats {
   place-items: center;
   align-self: center;
   justify-self: center;
-  width: 18px;
-  height: 18px;
+  width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
   color: currentColor;
   font-family: "Titillium Web", Arial, Helvetica, sans-serif;
   font-size: 18px;
@@ -6491,21 +6495,21 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 }
 
 #sidebar .navEmoji {
-  flex: 0 0 18px;
-  width: 18px;
-  min-width: 18px;
-  max-width: 18px;
-  height: 18px;
-  min-height: 18px;
-  max-height: 18px;
+  flex: 0 0 var(--mfl-icon-size-navigation);
+  width: var(--mfl-icon-size-navigation);
+  min-width: var(--mfl-icon-size-navigation);
+  max-width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
+  min-height: var(--mfl-icon-size-navigation);
+  max-height: var(--mfl-icon-size-navigation);
   color: inherit;
-  font-size: 18px;
-  line-height: 18px;
+  font-size: var(--mfl-icon-size-navigation);
+  line-height: var(--mfl-icon-size-navigation);
 }
 
 #sidebar .navJerseyIcon {
-  width: 18px;
-  height: 18px;
+  width: var(--mfl-icon-size-navigation);
+  height: var(--mfl-icon-size-navigation);
   color: inherit;
   fill: none;
   stroke: currentColor;
@@ -6561,9 +6565,9 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 
 .searchButton .searchIcon {
   display: block;
-  flex: 0 0 17px;
-  width: 17px;
-  height: 17px;
+  flex: 0 0 var(--mfl-icon-size-control);
+  width: var(--mfl-icon-size-control);
+  height: var(--mfl-icon-size-control);
   color: var(--text);
   fill: none;
   stroke: currentColor;
@@ -6595,10 +6599,10 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 }
 
 .filtersViewIcon {
-  flex: 0 0 17px;
+  flex: 0 0 var(--mfl-icon-size-control);
   align-self: center;
-  width: 17px;
-  height: 17px;
+  width: var(--mfl-icon-size-control);
+  height: var(--mfl-icon-size-control);
   fill: none;
   stroke: currentColor;
   stroke-width: 1.8;
@@ -8774,11 +8778,11 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .menuRail .navButton .navEmoji {
-    flex: 0 0 18px;
-    width: 18px;
-    height: 18px;
+    flex: 0 0 var(--mfl-icon-size-navigation);
+    width: var(--mfl-icon-size-navigation);
+    height: var(--mfl-icon-size-navigation);
     color: inherit;
-    font-size: 18px;
+    font-size: var(--mfl-icon-size-navigation);
     line-height: 18px;
   }
 
