@@ -155,11 +155,17 @@ Cross-site semantic values live in `ui-foundations.css`:
 - Standard View/Filters label size: `14px` (`--mfl-control-label-font-size`)
 - Shared ordinary selector-control weight: `700` (`--mfl-control-font-weight`)
 - Shared ordinary selector-control line-height: `1` (`--mfl-control-line-height`)
+- Ordinary control resting border: `var(--border-strong)` (`--mfl-control-border-color`)
+- Ordinary control resting background: `var(--surface)` (`--mfl-control-background`)
+- Ordinary control resting text: `var(--text)` (`--mfl-control-text-color`)
+- Ordinary control hover border: `var(--primary-hover)` (`--mfl-control-hover-border-color`)
+- Ordinary control hover background: `var(--row-hover)` (`--mfl-control-hover-background`)
+- Ordinary control hover text: `var(--text)` (`--mfl-control-hover-text-color`)
 - Standard control radius: `6px` (`--mfl-radius-control`)
 - Checkbox size: `16px` (`--mfl-checkbox-size`)
 - Checkbox radius: `4px` (`--mfl-radius-checkbox`)
 
-Specialized tiny steppers, table action buttons, mobile-only touch geometry, and other domain-specific controls keep their own sizes. View and Filters share the standard 14px label size and 700 weight; smaller Stats and Player controls retain locally owned font sizes and may share only the selector-control line-height when the interaction role matches.
+Specialized tiny steppers, table action buttons, mobile-only touch geometry, and other domain-specific controls keep their own sizes. View and Filters share the standard 14px label size and 700 weight; View, Filters, Search, and refresh-first-paint View controls share the ordinary resting/hover state language. Smaller Stats and Player controls retain locally owned font sizes, and navigation, Stats, Player, dropdown, destructive, opt-in, and other specialist states remain independently owned even when their current colors match.
 
 ## Dialogs and overlays
 
@@ -249,6 +255,7 @@ Component-local z-index values stay below the global application layers.
 11. Sidebar/mobile navigation icons consume the shared 18px navigation-icon contract, while Search and Filters consume the shared 17px ordinary-control icon contract; numerically similar specialist icons remain locally owned.
 12. Standard View/Filters controls consume one 14px control-label size and 700 weight, while equivalent selector controls consume the shared line-height foundation without flattening smaller Stats or Player-specific sizes.
 13. Equivalent ordinary Home, Stats, Settings, and Privacy panels consume shared surface background and normal/strong border contracts alongside the shared panel radius; specialist surfaces keep local ownership.
+14. View, Filters, Search, and refresh-first-paint View controls consume shared ordinary resting/hover surface-state contracts, while navigation, Stats, Player, dropdown, destructive, opt-in, and other specialist states remain locally owned.
 
 ## What must remain intentionally separate
 
