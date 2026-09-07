@@ -1,18 +1,12 @@
 
-/* Desktop Player title controls share the Player-name center line. */
+/* Desktop Player title controls align to the existing Player-name line without changing its geometry. */
 @media (min-width: 901px) {
   .playerHeroIdentity .playerTitle {
-    display: flex;
-    align-items: center;
     flex-wrap: nowrap;
-    gap: 8px;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleName {
     order: 0;
-    display: inline-flex;
-    align-items: center;
-    line-height: 1.05;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon {
