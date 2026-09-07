@@ -771,7 +771,12 @@ function animateReadyOverallBoxes(container = document) {
   if (!boxes.length) return false;
   rarityPaintPlayerId = playerId;
   detail.dataset.playerOverallRarityPainted = playerId;
-  boxes.forEach((box) => applyLoadedOverallBackground(box, true));
+  const reduceMotion = Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+  boxes.forEach((box) => {
+    applyLoadedOverallBackground(box, reduceMotion);
+    if (reduceMotion) return;
+    box.classList.add("rarityPaintOnce");
+  });
   detail.classList.add("playerOverallRarityPaintComplete");
   return true;
 }
@@ -1972,7 +1977,7 @@ function renderPlayerPageOwner(playerId) {
   if (watchButton) {
     const inAnyWatchlist = playerIsInAnyWatchlist(id);
     watchButton.className = `playerWatchlistButton playerHeroActionMenuItem ${inAnyWatchlist ? "active" : ""}`;
-    watchButton.innerHTML = `<span class="watchlistButtonStar" aria-hidden="true">${inAnyWatchlist ? "\u2605" : "\u2606"}</span><span>${inAnyWatchlist ? "In watchlist" : "Add to watchlist"}</span>`;
+    watchButton.innerHTML = `<span class="watchlistButtonStar" aria-hidden="true">${inAnyWatchlist ? "\u2605" : "\u2606"}</span><span>${inAnyWatchlist ? "In watchlist" : "Add to watchlist")}</span>`;
     watchButton.addEventListener("click", () => {
       toggleWatchlistPlayer(id, true);
     });
