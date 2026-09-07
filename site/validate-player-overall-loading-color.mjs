@@ -39,14 +39,16 @@ for (const value of [
   "overall.style.background = PLAYER_PENDING_OVERALL_BACKGROUND;",
   "const overallLoaded = applyOverallBoxAppearance(overall, context.overall);",
   "function animateReadyOverallBoxes(container = document) {",
+  'const reduceMotion = Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);',
+  "applyLoadedOverallBackground(box, reduceMotion);",
+  'box.classList.add("rarityPaintOnce");',
   'detail.classList.add("playerOverallRarityPaintComplete");',
   "function animateReadyControls(container = document) {",
 ]) includes(playerCore, value, "Canonical Player core");
 
 excludes(playerCore, 'overall.classList.toggle("isPending", !overallLoaded);', "Canonical Player core");
 excludes(playerCore, 'overall.style.setProperty("--rarity-color", rarityColor(context.overall));', "Canonical Player core");
-excludes(playerCore, 'box.classList.add("rarityPaintOnce")', "Canonical Player core first-visible readiness");
-excludes(playerCore, 'controls[0]?.getBoundingClientRect()', "Canonical Player core first-visible readiness");
+excludes(playerCore, 'controls[0]?.getBoundingClientRect()', "Canonical Player core readiness");
 
 const matchingRowIndex = playerCore.indexOf("const matchingRow = payload.rows.find");
 const readyIndex = playerCore.indexOf("readyDetailPlayerId = routePlayerId;");
@@ -58,6 +60,18 @@ const appearanceBody = playerCore.slice(appearanceStart, appearanceEnd);
 const raritySetIndex = appearanceBody.indexOf('box.style.setProperty("--rarity-color", rarityColor(overall));');
 const neutralIndex = appearanceBody.lastIndexOf("box.style.background = PLAYER_PENDING_OVERALL_BACKGROUND;");
 invariant(raritySetIndex >= 0 && neutralIndex > raritySetIndex, "A loaded Overall must remain on the theme surface until the rarity paint explicitly starts.");
+
+const animationStart = playerCore.indexOf("function animateReadyOverallBoxes(container = document) {");
+const animationEnd = playerCore.indexOf("function animateReadyControls(container = document) {", animationStart);
+const animationBody = playerCore.slice(animationStart, animationEnd);
+const reduceMotionIndex = animationBody.indexOf("const reduceMotion = Boolean(");
+const initialPaintIndex = animationBody.indexOf("applyLoadedOverallBackground(box, reduceMotion);");
+const classIndex = animationBody.indexOf('box.classList.add("rarityPaintOnce");');
+const completeIndex = animationBody.indexOf('detail.classList.add("playerOverallRarityPaintComplete");');
+invariant(
+  reduceMotionIndex >= 0 && initialPaintIndex > reduceMotionIndex && classIndex > initialPaintIndex && completeIndex > classIndex,
+  "Player Overall must begin from the empty rarity background, run the one-shot transition, then mark rarity painting complete.",
+);
 
 for (const value of [
   "#playerDetail:not(.playerOverallRarityPaintComplete) .playerHeroOverall:not(.isPending),",
@@ -75,4 +89,4 @@ for (const value of [
 
 excludes(stylesBase.slice(stylesBase.indexOf("@keyframes playerOverallRarityPaint"), stylesBase.indexOf(".playerHeroOverall.rarityPaintOnce,")), "background-size: 100% 0%, 100% 100%;", "Player Overall rarity paint must not expose the dark overlay on its first frame.");
 
-console.log("Canonical Player loading settles rarity and ready controls before the first visible Player frame.");
+console.log("Canonical Player loading preserves cached Overall values while restoring the one-shot rarity transition when authoritative loading finishes.");
