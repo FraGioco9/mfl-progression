@@ -85,8 +85,8 @@ let firstPaint = await read(firstPaintPath);
 firstPaint = replaceOnce(
   firstPaint,
   "First-paint View resting state",
-  `${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--border-strong); background: var(--surface); color: var(--text); }`,
-  `${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--mfl-control-border-color); background: var(--mfl-control-background); color: var(--mfl-control-text-color); }`,
+  `\${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--border-strong); background: var(--surface); color: var(--text); }`,
+  `\${routeSelector} #progressionPage .views > .viewButton:not(:hover) { border-color: var(--mfl-control-border-color); background: var(--mfl-control-background); color: var(--mfl-control-text-color); }`,
 );
 await write(firstPaintPath, firstPaint);
 
