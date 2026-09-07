@@ -416,9 +416,7 @@
       html:not(.mflInitialRouteResolved)[data-initial-entity-route="club"]:not([data-initial-entity-verified="club"]) #progressionPage {
         display: none;
       }
-      html:not(.mflInitialRouteResolved)[data-initial-entity-route="player"]:not([data-initial-entity-verified="player"]) #playerPage,
-      html:not(.mflInitialRouteResolved)[data-initial-entity-route="player"]:not([data-player-first-paint-cues-ready="true"]) #playerPage {
-        visibility: hidden;
+      html:not(.mflInitialRouteResolved)[data-initial-entity-route="player"] #playerPage {
         pointer-events: none;
       }
       html:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-table-page="database"] #sidebar .navButton[data-page="database"],
@@ -1020,31 +1018,31 @@
                 <div class="playerHeroPortraitFrame"><canvas class="playerHeroPortrait" aria-hidden="true"></canvas></div>
               </div>
               <div class="playerHeroIdentity">
-                <button class="playerEyebrow playerIdText" style="visibility:hidden" type="button" disabled>ID #000000</button>
-                <h2 class="tablePageTitle playerTitle"><span class="playerTitleName">&nbsp;</span></h2>
+                <button class="playerEyebrow playerIdText" type="button" disabled>ID #000000</button>
+                <h2 class="playerTitle"><span class="playerTitleName">&nbsp;</span><span class="playerTitleNoteIcon" data-player-note-title-icon></span></h2>
                 <p>&nbsp;</p>
               </div>
-              <div class="playerHeroActions" style="visibility:hidden">
+              <div class="playerHeroActions">
                 <div class="playerHeroActionMenu">
-                  <a class="playerExternalButton playerHeroPrimaryAction" tabindex="-1" aria-hidden="true">Open link</a>
-                  <button class="playerHeroActionMenuButton" type="button" disabled aria-hidden="true"><svg class="playerHeroChevronIcon" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></button>
+                  <a class="playerExternalButton playerHeroPrimaryAction" tabindex="-1" aria-hidden="true" aria-disabled="true">Open link</a>
+                  <button class="playerHeroActionMenuButton" type="button" disabled aria-hidden="true" aria-disabled="true"><svg class="playerHeroChevronIcon" viewBox="0 0 24 24"><path d="m7 10 5 5 5-5"></path></svg></button>
                   <div class="playerHeroActionMenuDropdown" hidden></div>
                 </div>
               </div>
             </section>
-            <section class="playerGrid" aria-hidden="true">
+            <section class="playerGrid playerGridPending" data-mfl-static-player-grid="true" aria-hidden="true">
               <div class="playerStack">
                 <div class="playerPanel playerInfoPanel">
                   <h3>Profile</h3>
                   <div class="detailGrid">
-                    <div><span>Nationality</span><strong>-</strong></div>
-                    <div><span>Age</span><strong>-</strong></div>
-                    <div><span>Height</span><strong>-</strong></div>
-                    <div><span>Foot</span><strong>-</strong></div>
-                    <div><span>Seasons</span><strong>-</strong></div>
-                    <div><span>Agent</span><strong>-</strong></div>
-                    <div class="contractDetailCard playerInfoFullWidthCard"><span>Contract</span><strong>-</strong></div>
-                    <div class="revShareDetailCard playerInfoFullWidthCard"><span>Rev Share</span><strong>-</strong></div>
+                    <div class="nationalityDetailCard"><span>Nationality</span><strong>&nbsp;</strong></div>
+                    <div><span>Age</span><strong data-mfl-static-player-age><span class="playerDetailAgeLine">&nbsp;</span></strong></div>
+                    <div><span>Height</span><strong>&nbsp;</strong></div>
+                    <div><span>Foot</span><strong>&nbsp;</strong></div>
+                    <div><span>Seasons</span><strong>&nbsp;</strong></div>
+                    <div><span>Agent</span><strong>&nbsp;</strong></div>
+                    <div class="contractDetailCard playerInfoFullWidthCard"><span>Contract</span><strong>&nbsp;</strong></div>
+                    <div class="revShareDetailCard playerInfoFullWidthCard"><span>Rev Share</span><strong>&nbsp;</strong></div>
                   </div>
                 </div>
                 <div class="playerPanel attributesPanel">
@@ -1058,14 +1056,14 @@
                       <button class="playerAttributeViewButton" type="button" data-view="all" disabled>All Time</button>
                     </div>
                   </div>
-                  <div class="attributeGrid">
-                    <div class="playerAttributeCard featured fullWidth"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
-                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>-</strong></div>
+                  <div class="attributeGrid" data-mfl-static-player-attributes>
+                    <div class="playerAttributeCard featured fullWidth"><span>Overall</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
+                    <div class="playerAttributeCard"><span>&nbsp;</span><strong>&nbsp;</strong></div>
                   </div>
                 </div>
                 <div class="playerPanel playerNotesPanel" data-mfl-static-player-notes="true">
@@ -1076,7 +1074,16 @@
                   </div>
                 </div>
               </div>
-              <div class="playerPanel pitchPanel"><h3>Positions</h3><div class="pitch"></div></div>
+              <div class="playerPanel pitchPanel"><h3>Positions</h3><div class="pitch">
+                <span class="pitchLine pitchBoxTop"></span><span class="pitchLine pitchGoalTop"></span><span class="pitchLine pitchArcTop"></span><span class="pitchLine pitchBoxBottom"></span><span class="pitchLine pitchGoalBottom"></span><span class="pitchLine pitchArcBottom"></span>
+                <div class="pitchRow pitchRow1" style="--pitch-columns: 1"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow3" style="--pitch-columns: 3"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow1" style="--pitch-columns: 1"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow3" style="--pitch-columns: 3"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow3" style="--pitch-columns: 3"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow3" style="--pitch-columns: 3"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+                <div class="pitchRow pitchRow1" style="--pitch-columns: 1"><div class="pitchPositionSlot" style="cursor:default;user-select:none;-webkit-user-select:none"><span class="pitchPositionBlank" aria-hidden="true"></span></div></div>
+              </div></div>
             </section>
           </div>
         </section>
@@ -1084,11 +1091,506 @@
           (() => {
             const root = document.documentElement;
             if (root.dataset.initialEntityRoute !== "player") return;
+            root.dataset.playerFirstPaintContentReady = "false";
+            root.dataset.playerFirstPaintCuesReady = "false";
             const playerPage = document.getElementById("playerPage");
+            const playerDetail = document.getElementById("playerDetail");
+            const hero = playerDetail?.querySelector(":scope > .playerHero.playerHeroPending");
             const notesPanel = document.querySelector("#playerPage [data-mfl-static-player-notes]");
             const views = document.querySelector("#playerPage .playerAttributeViews");
+            const staticAttributes = document.querySelector("#playerPage [data-mfl-static-player-attributes]");
+            const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
+            const playerId = routeMatch ? String(routeMatch[1] || "") : "";
+            const compactPlayerPageName = (value) => {
+              const fullName = String(value || "").trim().replace(/\s+/g, " ");
+              if (!fullName) return "";
+              return fullName.replace(/^(\S)[^\s]*\s+(?:.*\s)?(\S+)$/, "$1. $2");
+            };
+            const normalizePositions = (value) => String(value || "")
+              .split(",")
+              .map((position) => String(position || "").trim().toUpperCase())
+              .filter((position) => position && position !== "NO POSITIONS");
+            const attributeLabels = (positions) => positions[0] === "GK"
+              ? ["Overall", "Goalkeeping"]
+              : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"];
+            const attributeColumns = (positions) => positions[0] === "GK"
+              ? ["overall", "goalkeeping"]
+              : ["overall", "pace", "dribbling", "shooting", "defense", "passing", "physical"];
+            const contractDivisionNames = {
+              1: "Diamond",
+              2: "Platinum",
+              3: "Gold",
+              4: "Silver",
+              5: "Bronze",
+              6: "Iron",
+              7: "Stone",
+              8: "Ice",
+              9: "Spark",
+              10: "Flint",
+            };
+            const contractDivisionColors = {
+              1: "#3be9f8",
+              2: "#13d389",
+              3: "#ffd23e",
+              4: "#dbe4eb",
+              5: "#fd7a00",
+              6: "#865e3f",
+              7: "#b7b09c",
+              8: "#b0cce1",
+              9: "#ffb136",
+              10: "#757061",
+            };
+            const nationalityFlagCodes = {
+              ALBANIA: "AL", ALGERIA: "DZ", ARGENTINA: "AR", AUSTRALIA: "AU", AUSTRIA: "AT",
+              BELGIUM: "BE", BOSNIA_AND_HERZEGOVINA: "BA", BRAZIL: "BR", CAMEROON: "CM",
+              CANADA: "CA", CAPE_VERDE_ISLANDS: "CV", CHILE: "CL", COLOMBIA: "CO", CONGO_DR: "CD",
+              COSTA_RICA: "CR", COTE_D_IVOIRE: "CI", CROATIA: "HR", CURACAO: "CW", CZECH_REPUBLIC: "CZ",
+              CZECHIA: "CZ", DENMARK: "DK", ECUADOR: "EC", EGYPT: "EG",
+              ENGLAND: "1f3f4-e0067-e0062-e0065-e006e-e0067-e007f", FINLAND: "FI", FRANCE: "FR",
+              GEORGIA: "GE", GERMANY: "DE", GHANA: "GH", HAITI: "HT", HUNGARY: "HU", IRAN: "IR",
+              IRAQ: "IQ", ITALY: "IT", IVORY_COAST: "CI", JAPAN: "JP", JORDAN: "JO",
+              KOREA_REPUBLIC: "KR", MEXICO: "MX", MOROCCO: "MA", NETHERLANDS: "NL", NEW_ZEALAND: "NZ",
+              NIGERIA: "NG", NORWAY: "NO", PANAMA: "PA", PARAGUAY: "PY", PERU: "PE", POLAND: "PL",
+              PORTUGAL: "PT", QATAR: "QA", REPUBLIC_OF_IRELAND: "IE", ROMANIA: "RO", RUSSIA: "RU",
+              SAUDI_ARABIA: "SA", SCOTLAND: "1f3f4-e0067-e0062-e0073-e0063-e0074-e007f", SENEGAL: "SN",
+              SERBIA: "RS", SLOVAKIA: "SK", SLOVENIA: "SI", SOUTH_AFRICA: "ZA", SOUTH_KOREA: "KR",
+              SPAIN: "ES", SWEDEN: "SE", SWITZERLAND: "CH", TUNISIA: "TN", TURKEY: "TR", UKRAINE: "UA",
+              UNITED_KINGDOM: "GB", UNITED_STATES: "US", UNITED_STATES_OF_AMERICA: "US", URUGUAY: "UY",
+              USA: "US", UZBEKISTAN: "UZ", WALES: "1f3f4-e0067-e0062-e0077-e006c-e0073-e0074-e007f",
+            };
+            const applyFirstPaintHeroActionLayout = (playerHero) => {
+              if (!(playerHero instanceof HTMLElement)) return;
+              const actions = playerHero.querySelector(":scope > .playerHeroActions");
+              const wrapper = actions?.querySelector(":scope > .playerHeroActionMenu");
+              const primary = wrapper?.querySelector(":scope > .playerHeroPrimaryAction");
+              const toggle = wrapper?.querySelector(":scope > .playerHeroActionMenuButton");
+              if (!(actions instanceof HTMLElement) || !(wrapper instanceof HTMLElement)) return;
+
+              actions.style.gap = "0";
+              actions.style.alignSelf = "var(--mfl-player-hero-actions-align-self, center)";
+              actions.style.marginLeft = "var(--mfl-player-hero-actions-margin-left, auto)";
+              const menuWidth = "var(--mfl-player-hero-action-menu-width, 190px)";
+              wrapper.style.position = "relative";
+              wrapper.style.display = "inline-flex";
+              wrapper.style.alignItems = "stretch";
+              wrapper.style.gap = "var(--mfl-player-hero-action-gap, 4px)";
+              wrapper.style.flex = "0 0 " + menuWidth;
+              wrapper.style.width = menuWidth;
+              wrapper.style.minWidth = menuWidth;
+              wrapper.style.maxWidth = menuWidth;
+
+              if (primary instanceof HTMLElement) {
+                const width = "var(--mfl-player-hero-primary-action-width, 152px)";
+                const height = "var(--mfl-player-hero-action-height, 40px)";
+                primary.style.boxSizing = "border-box";
+                primary.style.display = "inline-flex";
+                primary.style.alignItems = "center";
+                primary.style.justifyContent = "center";
+                primary.style.flex = "0 0 " + width;
+                primary.style.width = width;
+                primary.style.minWidth = width;
+                primary.style.maxWidth = width;
+                primary.style.height = height;
+                primary.style.minHeight = height;
+                primary.style.maxHeight = height;
+                primary.style.padding = "0 10px";
+                primary.style.fontSize = "var(--mfl-player-hero-action-font-size, 16px)";
+                primary.style.lineHeight = "1";
+                primary.style.whiteSpace = "nowrap";
+                primary.style.textDecoration = "none";
+                primary.style.color = "var(--text-soft)";
+                primary.style.opacity = "0.5";
+                primary.style.cursor = "default";
+                primary.style.pointerEvents = "none";
+              }
+
+              if (toggle instanceof HTMLElement) {
+                const width = "var(--mfl-player-hero-action-chevron-width, 34px)";
+                const height = "var(--mfl-player-hero-action-height, 40px)";
+                toggle.style.boxSizing = "border-box";
+                toggle.style.display = "grid";
+                toggle.style.placeItems = "center";
+                toggle.style.flex = "0 0 " + width;
+                toggle.style.width = width;
+                toggle.style.minWidth = width;
+                toggle.style.maxWidth = width;
+                toggle.style.height = height;
+                toggle.style.minHeight = height;
+                toggle.style.maxHeight = height;
+                toggle.style.padding = "0";
+                toggle.style.color = "var(--text-soft)";
+                toggle.style.opacity = "0.5";
+                toggle.style.cursor = "default";
+                const icon = toggle.querySelector(".playerHeroChevronIcon");
+                if (icon instanceof SVGElement) {
+                  const iconSize = "var(--mfl-player-hero-chevron-icon-size, 16px)";
+                  icon.style.width = iconSize;
+                  icon.style.height = iconSize;
+                  icon.style.fill = "none";
+                  icon.style.stroke = "currentColor";
+                  icon.style.strokeWidth = "2";
+                  icon.style.strokeLinecap = "round";
+                  icon.style.strokeLinejoin = "round";
+                }
+              }
+            };
+            let firstPaintContext = null;
+            if (playerId) {
+              try {
+                const value = JSON.parse(sessionStorage.getItem("mfl-player-first-paint-v1:" + playerId) || "null");
+                firstPaintContext = value && typeof value === "object" && !Array.isArray(value) ? value : null;
+              } catch {}
+            }
+            const knownValues = firstPaintContext?.knownValues && typeof firstPaintContext.knownValues === "object" ? firstPaintContext.knownValues : null;
+            const knownEntry = (column) => {
+              const entry = knownValues?.[column];
+              if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+              return entry;
+            };
+            const knownRaw = (column) => {
+              const entry = knownEntry(column);
+              return entry ? entry.raw : "";
+            };
+            const knownDisplay = (column) => {
+              const entry = knownEntry(column);
+              const text = String(entry?.display ?? entry?.raw ?? "").trim();
+              return text && text.toUpperCase() !== "NULL" ? text : "";
+            };
+            const cachedName = String(firstPaintContext?.name || knownDisplay("name") || "").trim();
+            const suppliedPositions = Array.isArray(firstPaintContext?.positions)
+              ? firstPaintContext.positions
+              : String(firstPaintContext?.positions || "").split(",");
+            const cachedPositionText = knownDisplay("positions");
+            const cachedPositions = normalizePositions(
+              suppliedPositions.some((position) => String(position || "").trim())
+                ? suppliedPositions.join(",")
+                : cachedPositionText,
+            );
+            const cachedAttributeValue = (column) => {
+              if (column === "overall") {
+                const overall = knownDisplay("overall") || String(firstPaintContext?.overall || "").trim();
+                return overall.replace(/\s*\([+-]?\d+(?:\.\d+)?\)\s*$/, "").trim();
+              }
+              return knownDisplay(column);
+            };
+            const cachedNationalityFlagCodepoints = () => {
+              const rawNationality = String(knownRaw("nationality") || knownDisplay("nationality") || "").trim();
+              if (!rawNationality) return "";
+              const key = rawNationality
+                .toUpperCase()
+                .replace(/[^A-Z0-9]+/g, "_")
+                .replace(/^_+|_+$/g, "");
+              const code = nationalityFlagCodes[key] || "";
+              if (!code) return "";
+              if (code.includes("-")) return code;
+              return code
+                .toUpperCase()
+                .split("")
+                .map((character) => (127397 + character.charCodeAt(0)).toString(16))
+                .join("-");
+            };
+            const profileStrong = (label) => Array.from(document.querySelectorAll("#playerPage .playerInfoPanel .detailGrid > div"))
+              .find((card) => String(card.querySelector(":scope > span")?.textContent || "").trim() === label)
+              ?.querySelector(":scope > strong") || null;
+            const setProfileText = (label, text) => {
+              const strong = profileStrong(label);
+              if (!(strong instanceof HTMLElement) || !text) return;
+              if (strong.textContent !== text) strong.textContent = text;
+            };
+            const formatCachedHeight = () => {
+              const value = knownDisplay("height");
+              if (!value) return "";
+              return /\bcm\b/i.test(value) ? value : value + " cm";
+            };
+            const formatCachedFoot = () => {
+              const value = knownDisplay("preferred_foot");
+              if (!value) return "";
+              return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+            };
+            const formatCachedRevenueShare = () => {
+              const raw = knownRaw("active_contract_revenue_share");
+              if (raw === null || raw === undefined || raw === "" || String(raw).toUpperCase() === "NULL") return knownDisplay("active_contract_revenue_share");
+              const percentage = Number(raw) / 100;
+              return Number.isFinite(percentage)
+                ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(percentage) + "%"
+                : knownDisplay("active_contract_revenue_share");
+            };
+            const formatCachedDivision = () => {
+              const raw = knownRaw("active_contract_club_division");
+              const division = Number(raw);
+              return Number.isFinite(division) && contractDivisionNames[division]
+                ? contractDivisionNames[division]
+                : knownDisplay("active_contract_club_division");
+            };
+            const cachedDivisionColor = () => {
+              const raw = knownRaw("active_contract_club_division");
+              const numericDivision = Number(raw);
+              if (Number.isFinite(numericDivision) && contractDivisionColors[numericDivision]) return contractDivisionColors[numericDivision];
+              const display = knownDisplay("active_contract_club_division").toLowerCase();
+              const divisionKey = Object.keys(contractDivisionNames).find((key) => contractDivisionNames[key].toLowerCase() === display);
+              return divisionKey ? contractDivisionColors[divisionKey] || "" : "";
+            };
+            const cachedContractTeamName = () => {
+              const clubName = knownDisplay("active_contract_club_name");
+              if (clubName) return clubName;
+              const rawStatus = String(knownRaw("contract_status") || knownDisplay("contract_status") || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+              if (rawStatus === "free_agent") return "Free Agent";
+              if (rawStatus === "development_center") return "Development Center";
+              return "";
+            };
+            const syncCachedProfileValues = () => {
+              const nationality = knownDisplay("nationality");
+              if (nationality) {
+                const strong = profileStrong("Nationality");
+                if (strong instanceof HTMLElement) {
+                  const text = document.createElement("span");
+                  text.className = "playerNationalityText";
+                  text.textContent = nationality;
+                  const codepoints = cachedNationalityFlagCodepoints();
+                  if (codepoints) {
+                    const flag = document.createElement("img");
+                    flag.className = "flagImage";
+                    flag.src = "https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/" + codepoints + ".svg";
+                    flag.alt = "";
+                    flag.setAttribute("aria-label", nationality);
+                    strong.replaceChildren(flag, text);
+                  } else if (strong.textContent !== nationality || strong.querySelector(".flagImage")) {
+                    strong.replaceChildren(text);
+                  }
+                }
+              }
+              setProfileText("Height", formatCachedHeight());
+              setProfileText("Foot", formatCachedFoot());
+              setProfileText("Seasons", knownDisplay("player_seasons"));
+
+              const agentName = knownDisplay("wallet_name");
+              if (agentName) {
+                const strong = profileStrong("Agent");
+                if (strong instanceof HTMLElement && strong.textContent !== agentName) {
+                  const walletAddress = String(knownRaw("wallet_address") || "").trim();
+                  if (walletAddress) {
+                    const link = document.createElement("a");
+                    link.className = "agentTableLink playerAgentLink";
+                    link.href = "/agents/" + encodeURIComponent(walletAddress) + "/attributes";
+                    link.textContent = agentName;
+                    strong.replaceChildren(link);
+                  } else {
+                    strong.textContent = agentName;
+                  }
+                }
+              }
+
+              const teamName = cachedContractTeamName();
+              if (teamName) {
+                const strong = profileStrong("Contract");
+                if (strong instanceof HTMLElement && !strong.querySelector(".playerContractLine")) {
+                  const line = document.createElement("span");
+                  line.className = "playerContractLine";
+                  const clubId = String(knownRaw("active_contract_club_id") || "").trim();
+                  let team;
+                  if (clubId && !/^(free agent|development center)$/i.test(teamName)) {
+                    team = document.createElement("a");
+                    team.className = "playerContractTeam playerContractTeamLink clubPageLink";
+                    team.href = "/clubs/" + encodeURIComponent(clubId) + "/squad";
+                    team.dataset.clubId = clubId;
+                  } else {
+                    team = document.createElement("span");
+                    team.className = "playerContractTeam";
+                  }
+                  team.textContent = teamName;
+                  line.appendChild(team);
+                  const divisionName = formatCachedDivision();
+                  if (divisionName && !/^(free agent|development center)$/i.test(teamName)) {
+                    const division = document.createElement("span");
+                    division.className = "playerContractDivision";
+                    division.textContent = divisionName;
+                    const divisionColor = cachedDivisionColor();
+                    if (divisionColor) division.style.color = divisionColor;
+                    line.appendChild(division);
+                  }
+                  strong.replaceChildren(line);
+                }
+              }
+              setProfileText("Rev Share", formatCachedRevenueShare());
+            };
+            const syncCachedHeroValues = () => {
+              const overallValue = cachedAttributeValue("overall");
+              const overall = hero?.querySelector(".playerHeroOverall > strong");
+              if (overall instanceof HTMLElement && overallValue && overall.textContent !== overallValue) overall.textContent = overallValue;
+
+              const listingRaw = knownRaw("listing_price");
+              const listingValue = listingRaw === null || listingRaw === undefined || listingRaw === "" ? Number.NaN : Number(listingRaw);
+              const title = hero?.querySelector(".playerTitle");
+              if (title instanceof HTMLElement && Number.isFinite(listingValue) && !title.querySelector(".listingCellContent")) {
+                const priceText = "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(listingValue);
+                const listing = document.createElement("span");
+                listing.className = "listingCellContent playerListingBadge";
+                listing.setAttribute("aria-label", "For Sale at " + priceText);
+                const icon = document.createElement("img");
+                icon.className = "listingCellIcon";
+                icon.src = "/listing-shopping-bag.svg";
+                icon.width = 12;
+                icon.height = 12;
+                icon.alt = "";
+                icon.setAttribute("aria-hidden", "true");
+                const price = document.createElement("span");
+                price.className = "listingCellPrice";
+                price.textContent = priceText;
+                listing.append(icon, price);
+                const noteIcon = title.querySelector(".playerTitleNoteIcon");
+                title.insertBefore(listing, noteIcon instanceof Node ? noteIcon : null);
+              }
+            };
+            const syncPendingName = () => {
+              if (root.dataset.playerFirstPaintContentReady === "true") return;
+              const currentHero = playerDetail?.querySelector(":scope > .playerHero");
+              const titleName = currentHero?.querySelector(".playerTitleName");
+              if (!(titleName instanceof HTMLElement)) return;
+              const rendered = String(titleName.textContent || "").replace(/\u00a0/g, " ").trim().replace(/\s+/g, " ");
+              let fullName = String(titleName.dataset.playerFullName || "").trim() || cachedName;
+              if (rendered && rendered !== compactPlayerPageName(fullName)) fullName = rendered;
+              if (!fullName) return;
+              const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(fullName) : fullName;
+              titleName.dataset.playerFullName = fullName;
+              if (titleName.textContent !== displayName) titleName.textContent = displayName;
+              titleName.setAttribute("aria-label", fullName);
+            };
+            const syncPendingAttributeLabels = () => {
+              if (root.dataset.playerFirstPaintContentReady === "true" || !(staticAttributes instanceof HTMLElement)) return;
+              const currentHero = playerDetail?.querySelector(":scope > .playerHero");
+              const livePositions = normalizePositions(currentHero?.querySelector(".playerHeroIdentity > p")?.textContent || "");
+              const positions = livePositions.length ? livePositions : cachedPositions;
+              if (!positions.length) {
+                const overallCard = staticAttributes.querySelector(":scope > .playerAttributeCard");
+                const overallStrong = overallCard?.querySelector(":scope > strong");
+                const overallValue = cachedAttributeValue("overall");
+                if (overallStrong instanceof HTMLElement && overallValue) {
+                  let value = overallStrong.querySelector(":scope > .attributeValueText");
+                  if (!(value instanceof HTMLElement)) {
+                    value = document.createElement("span");
+                    value.className = "attributeValueText";
+                    overallStrong.replaceChildren(value);
+                  }
+                  if (value.textContent !== overallValue) value.textContent = overallValue;
+                }
+                return;
+              }
+              const labels = attributeLabels(positions);
+              const columns = attributeColumns(positions);
+              const goalkeeper = labels.length === 2;
+              const cards = Array.from(staticAttributes.children).filter((card) => card instanceof HTMLElement);
+              if (cards.length !== labels.length) {
+                staticAttributes.replaceChildren(...labels.map((label, index) => {
+                  const card = document.createElement("div");
+                  card.className = "playerAttributeCard"
+                    + (index === 0 ? " featured" : "")
+                    + (index === 0 || goalkeeper ? " fullWidth" : "");
+                  const name = document.createElement("span");
+                  name.textContent = label;
+                  const strong = document.createElement("strong");
+                  const value = document.createElement("span");
+                  value.className = "attributeValueText";
+                  value.textContent = cachedAttributeValue(columns[index]) || "\u00a0";
+                  strong.appendChild(value);
+                  card.append(name, strong);
+                  return card;
+                }));
+                return;
+              }
+              cards.forEach((card, index) => {
+                card.className = "playerAttributeCard"
+                  + (index === 0 ? " featured" : "")
+                  + (index === 0 || goalkeeper ? " fullWidth" : "");
+                const name = card.querySelector(":scope > span");
+                if (name instanceof HTMLElement && name.textContent !== labels[index]) name.textContent = labels[index];
+                const strong = card.querySelector(":scope > strong");
+                if (!(strong instanceof HTMLElement)) return;
+                let value = strong.querySelector(":scope > .attributeValueText");
+                if (!(value instanceof HTMLElement)) {
+                  value = document.createElement("span");
+                  value.className = "attributeValueText";
+                  strong.replaceChildren(value);
+                }
+                const nextValue = cachedAttributeValue(columns[index]) || "\u00a0";
+                if (value.textContent !== nextValue) value.textContent = nextValue;
+              });
+            };
+            const syncPendingPlayerShell = () => {
+              syncPendingName();
+              syncPendingAttributeLabels();
+            };
             if (playerPage instanceof HTMLElement) playerPage.hidden = false;
+            applyFirstPaintHeroActionLayout(hero);
+            if (hero instanceof HTMLElement && playerId) {
+              hero.dataset.playerShellId = playerId;
+              const idButton = hero.querySelector(".playerIdText");
+              if (idButton instanceof HTMLElement) idButton.textContent = "ID #" + playerId;
+              if (cachedName) {
+                const titleName = hero.querySelector(".playerTitleName");
+                if (titleName instanceof HTMLElement) {
+                  titleName.dataset.playerFullName = cachedName;
+                  titleName.textContent = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;
+                  titleName.setAttribute("aria-label", cachedName);
+                }
+              }
+              const positionsText = hero.querySelector(".playerHeroIdentity > p");
+              if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");
+              const external = hero.querySelector(".playerHeroPrimaryAction");
+              if (external instanceof HTMLAnchorElement) external.href = "https://app.playmfl.com/players/" + playerId;
+            }
             if (notesPanel instanceof HTMLElement) notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";
+
+            const staticAge = document.querySelector("#playerPage [data-mfl-static-player-age]");
+            if (staticAge instanceof HTMLElement && playerId) {
+              const ageEntry = knownEntry("age");
+              const retirementEntry = knownEntry("retirement_years");
+              const ageText = String(ageEntry?.display ?? ageEntry?.raw ?? "").trim() || "\u00a0";
+              const line = document.createElement("span");
+              line.className = "playerDetailAgeLine";
+              line.appendChild(document.createTextNode(ageText));
+              const retirementYears = retirementEntry?.raw === null || retirementEntry?.raw === undefined || retirementEntry?.raw === ""
+                ? Number.NaN
+                : Number(retirementEntry.raw);
+              if (Number.isFinite(retirementYears) && [0, 1, 2, 3].includes(retirementYears)) {
+                const marker = document.createElement("i");
+                marker.classList.add("retirementMarker", "playerAgeMarker");
+                if (retirementYears === 0) {
+                  marker.classList.add("retirementMarker--retired");
+                  marker.dataset.tooltip = "Retired";
+                  marker.setAttribute("aria-label", "Retired");
+                  const image = document.createElement("img");
+                  image.src = "/retirement-calendar-x-2.svg";
+                  image.width = 16;
+                  image.height = 16;
+                  image.alt = "";
+                  image.setAttribute("aria-hidden", "true");
+                  marker.appendChild(image);
+                } else {
+                  const label = retirementYears + " year" + (retirementYears === 1 ? "" : "s") + " left";
+                  marker.classList.add("retirementMarker--retiring-" + retirementYears);
+                  marker.dataset.tooltip = label;
+                  marker.setAttribute("aria-label", label);
+                }
+                line.appendChild(marker);
+              }
+              staticAge.replaceChildren(line);
+            }
+
+            syncCachedHeroValues();
+            syncCachedProfileValues();
+            syncPendingPlayerShell();
+            if (playerDetail instanceof HTMLElement && typeof MutationObserver === "function") {
+              const pendingObserver = new MutationObserver(() => {
+                if (root.dataset.playerFirstPaintContentReady === "true") {
+                  pendingObserver.disconnect();
+                  return;
+                }
+                syncPendingPlayerShell();
+              });
+              pendingObserver.observe(playerDetail, { childList: true, subtree: true, characterData: true });
+              pendingObserver.observe(root, { attributes: true, attributeFilter: ["data-player-first-paint-content-ready"] });
+            }
+
             if (views instanceof HTMLElement) {
               const progressionAccess = root.dataset.storedProgressionAccess === "true";
               views.querySelectorAll(":scope > .playerAttributeViewButton[data-view]").forEach((button) => {
@@ -1107,9 +1609,22 @@
                 shell.appendChild(views);
               }
 
+              const renderedItems = Array.from(views.children).filter((child) => {
+                if (!(child instanceof HTMLElement) || child.hidden) return false;
+                const style = getComputedStyle(child);
+                return style.display !== "none" && style.position !== "absolute" && child.getClientRects().length > 0;
+              });
+              const viewStyle = getComputedStyle(views);
+              const gap = Number.parseFloat(viewStyle.columnGap || viewStyle.gap) || 0;
+              const contentWidth = renderedItems.reduce((total, item) => {
+                const style = getComputedStyle(item);
+                return total + item.getBoundingClientRect().width
+                  + (Number.parseFloat(style.marginLeft) || 0)
+                  + (Number.parseFloat(style.marginRight) || 0);
+              }, 0) + gap * Math.max(0, renderedItems.length - 1);
               const overflowing = window.matchMedia("(max-width: 900px)").matches
                 && views.getClientRects().length > 0
-                && views.scrollWidth - views.clientWidth > 2;
+                && contentWidth - views.clientWidth > 2;
               views.classList.toggle("mflViewsOverflowing", overflowing);
               let arrow = shell.querySelector(":scope > .viewsScrollButton.viewsScrollButtonRight");
               if (overflowing && !(arrow instanceof HTMLButtonElement)) {
@@ -1133,7 +1648,7 @@
                 if (!overflowing && arrow.dataset.mflFirstPaintScrollButton === "true") arrow.remove();
               }
             }
-            root.dataset.playerFirstPaintCuesReady = "true";
+            root.dataset.playerFirstPaintCuesReady = "false";
           })();
         </script>
 

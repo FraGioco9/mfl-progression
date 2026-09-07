@@ -136,7 +136,7 @@
     const playerId = normalizePlayerId(source.playerId);
     const knownValues = normalizeKnownValues(source.knownValues);
     const suppliedPositions = normalizePositions(source.positions);
-    const cachedPositions = normalizePositions(knownValues.positions?.display || "");
+    const cachedPositions = normalizePositions(knownValues.positions?.display || knownValues.positions?.raw || "");
     const suppliedOverall = source.overall === null || source.overall === undefined ? "" : String(source.overall).trim();
     return {
       playerId,
@@ -369,7 +369,7 @@ function applyOverallBoxAppearance(box, overall) {
     const sourceHeight = Math.max(1, Number(sourceHeightValue || PLAYER_PORTRAIT_CROP_HEIGHT_PX));
     const sourceCropHeight = Math.max(1, Math.min(PLAYER_PORTRAIT_CROP_HEIGHT_PX, sourceHeight));
     const displayHeight = portraitDisplayHeight();
-    const displayWidth = sourceWidth * (displayHeight / sourceCropHeight);
+    const displayWidth = PLAYER_PORTRAIT_SOURCE_WIDTH_PX * (displayHeight / PLAYER_PORTRAIT_CROP_HEIGHT_PX);
 
     frame.style.position = "relative";
     frame.style.flex = "0 0 " + displayWidth + "px";
@@ -786,35 +786,16 @@ function animateReadyControls(container = document) {
   if (!playerId || readyTransitionPlayerId !== playerId) return false;
   const controls = Array.from(container?.querySelectorAll?.(".playerHeroActionMenuButton, .playerAttributeViewButton") || [])
     .filter((control) => control instanceof HTMLElement);
-  controls.forEach((control) => {
-    control.style.transition = "none";
-    control.style.opacity = "0.5";
-    control.style.color = "var(--text-soft)";
-    if (control.classList.contains("playerAttributeViewButton")) {
-      control.style.backgroundColor = "var(--surface-muted)";
-      control.style.borderColor = "var(--border-strong)";
-    }
-  });
-  controls[0]?.getBoundingClientRect();
-  if (playerAttributeLoadingActive(playerId)) {
-    scheduleReadyControlsAfterLoading(playerId);
-    return false;
-  }
   readyTransitionPlayerId = "";
   const rarityPainted = animateReadyOverallBoxes(container);
-  if (!controls.length) return rarityPainted;
-  window.requestAnimationFrame(() => {
-    controls.forEach((control) => {
-      control.style.transition = PLAYER_READY_TRANSITION;
-      control.style.opacity = "1";
-      control.style.removeProperty("color");
-      if (control.classList.contains("playerAttributeViewButton")) {
-        control.style.removeProperty("background-color");
-        control.style.removeProperty("border-color");
-      }
-    });
+  controls.forEach((control) => {
+    control.style.opacity = "1";
+    control.style.removeProperty("color");
+    control.style.removeProperty("background-color");
+    control.style.removeProperty("border-color");
+    control.style.transition = PLAYER_READY_TRANSITION;
   });
-  return true;
+  return Boolean(controls.length) || rarityPainted;
 }
 
 
@@ -1110,9 +1091,10 @@ function pendingAttributeValue(context, column) {
     const grid = document.createElement("div");
     grid.className = "attributeGrid";
     const columns = pendingAttributeColumns(context);
-    const goalkeeper = columns.length === 2;
-    columns.forEach((column) => {
-      const label = column === "goalkeeping" ? "Goalkeeping" : columnLabels[column];
+    const structuralColumns = context.positions.length ? columns : ["overall", "", "", "", "", "", ""];
+    const goalkeeper = context.positions.length > 0 && columns.length === 2;
+    structuralColumns.forEach((column) => {
+      const label = !column ? "" : (column === "goalkeeping" ? "Goalkeeping" : columnLabels[column]);
       const card = document.createElement("div");
       const fullWidth = column === "overall" || (goalkeeper && column === "goalkeeping");
       card.className = "playerAttributeCard" + (column === "overall" ? " featured" : "") + (fullWidth ? " fullWidth" : "");
@@ -1122,7 +1104,7 @@ function pendingAttributeValue(context, column) {
       const strong = document.createElement("strong");
       const value = document.createElement("span");
       value.className = "attributeValueText";
-      value.textContent = pendingAttributeValue(context, column) || loadingBlank();
+      value.textContent = column ? (pendingAttributeValue(context, column) || loadingBlank()) : loadingBlank();
       strong.appendChild(value);
       card.append(name, strong);
       grid.appendChild(card);
@@ -1130,9 +1112,6 @@ function pendingAttributeValue(context, column) {
     panel.append(header, grid);
     return panel;
   }
-
-let readyControlsAfterLoadingFrame = 0;
-let readyControlsAfterLoadingPlayerId = "";
 
 function playerAttributeLoadingActive(playerIdValue = playerIdFromLocation()) {
   const playerId = normalizePlayerId(playerIdValue);
@@ -1146,32 +1125,6 @@ function playerAttributeLoadingActive(playerIdValue = playerIdFromLocation()) {
 
 function attributeViewForRender(selectedView, playerIdValue = playerIdFromLocation()) {
   return playerAttributeLoadingActive(playerIdValue) ? "attributes" : selectedView;
-}
-
-function scheduleReadyControlsAfterLoading(playerIdValue) {
-  const playerId = normalizePlayerId(playerIdValue);
-  if (!playerId) return false;
-  if (readyControlsAfterLoadingFrame && readyControlsAfterLoadingPlayerId === playerId) return true;
-  if (readyControlsAfterLoadingFrame) window.cancelAnimationFrame(readyControlsAfterLoadingFrame);
-  readyControlsAfterLoadingPlayerId = playerId;
-  const run = () => {
-    readyControlsAfterLoadingFrame = 0;
-    if (playerIdFromLocation() !== playerId || readyTransitionPlayerId !== playerId) {
-      readyControlsAfterLoadingPlayerId = "";
-      return;
-    }
-    if (playerAttributeLoadingActive(playerId)) {
-      readyControlsAfterLoadingFrame = window.requestAnimationFrame(run);
-      return;
-    }
-    readyControlsAfterLoadingPlayerId = "";
-    const owner = window.__mflRenderPlayerPageOwner;
-    if (typeof owner === "function") owner(playerId);
-    const detail = document.getElementById("playerDetail");
-    if (detail instanceof HTMLElement) animateReadyControls(detail);
-  };
-  readyControlsAfterLoadingFrame = window.requestAnimationFrame(run);
-  return true;
 }
 
 function stableAttributePanelHtml(row) {
@@ -1305,7 +1258,9 @@ function stableAttributePanelHtml(row) {
       updatePendingHero(existingHero, context);
       const existingGrid = detail.querySelector(":scope > .playerGridPending");
       const nextSignature = pendingGridSignature(context);
-      if (!(existingGrid instanceof HTMLElement) || existingGrid.dataset.playerPendingSignature !== nextSignature) {
+      if (existingGrid instanceof HTMLElement && existingGrid.dataset.mflStaticPlayerGrid === "true") {
+        existingGrid.dataset.playerPendingSignature = nextSignature;
+      } else if (!(existingGrid instanceof HTMLElement) || existingGrid.dataset.playerPendingSignature !== nextSignature) {
         const nextGrid = createPendingPlayerGrid(context);
         if (existingGrid instanceof HTMLElement) existingGrid.replaceWith(nextGrid);
         else detail.appendChild(nextGrid);
@@ -2119,6 +2074,7 @@ function renderPlayerPageOwner(playerId) {
     });
   }
   playerDetailRenderReuse.commit(renderSignature);
+  document.documentElement.dataset.playerFirstPaintContentReady = "true";
 }
 
 function renderPlayerPageWithStableContractLinkOwner(playerId) {

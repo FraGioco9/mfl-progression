@@ -366,8 +366,16 @@
   const initialRouteToken = window.__mflInteractionBusy.begin(INITIAL_ROUTE_BOOTSTRAP_REASON);
   let initialRouteFinished = false;
   let initialRouteFinishFrame = 0;
+  let initialPlayerViewCueReadyFrames = 0;
   let startupStateObserver = null;
   let startupFailureRecoveryRunning = false;
+
+  function initialPlayerFirstPaintContentReady() {
+    const root = document.documentElement;
+    return root.dataset.initialEntityRoute !== "player"
+      || document.body?.dataset.page === "notfound"
+      || root.dataset.playerFirstPaintContentReady === "true";
+  }
 
   function initialPlayerViewCueReady() {
     const root = document.documentElement;
@@ -400,17 +408,50 @@
       && Boolean(views.style.boxShadow);
   }
 
+  function scheduleInitialRouteFinishFrame() {
+    if (initialRouteFinishFrame) return;
+    initialRouteFinishFrame = requestAnimationFrame(() => {
+      initialRouteFinishFrame = 0;
+      finishInitialRoute();
+    });
+  }
+
   const finishInitialRoute = () => {
     if (initialRouteFinished) return;
-    if (!initialPlayerViewCueReady()) {
-      if (!initialRouteFinishFrame) {
-        initialRouteFinishFrame = requestAnimationFrame(() => {
-          initialRouteFinishFrame = 0;
-          finishInitialRoute();
-        });
+    const root = document.documentElement;
+    const playerRoute = root.dataset.initialEntityRoute === "player"
+      && document.body?.dataset.page !== "notfound";
+
+    if (playerRoute) {
+      if (!initialPlayerFirstPaintContentReady()) {
+        initialPlayerViewCueReadyFrames = 0;
+        scheduleInitialRouteFinishFrame();
+        return;
       }
-      return;
+      root.dataset.playerFirstPaintCuesReady = "false";
+      window.__mflSharedTableUiRuntime?.syncRouteHorizontalCuesNow?.();
+      if (!initialPlayerViewCueReady()) {
+        initialPlayerViewCueReadyFrames = 0;
+        scheduleInitialRouteFinishFrame();
+        return;
+      }
+      if (initialPlayerViewCueReadyFrames < 1) {
+        initialPlayerViewCueReadyFrames += 1;
+        scheduleInitialRouteFinishFrame();
+        return;
+      }
+      window.__mflSharedTableUiRuntime?.syncRouteHorizontalCuesNow?.();
+      if (!initialPlayerViewCueReady()) {
+        initialPlayerViewCueReadyFrames = 0;
+        scheduleInitialRouteFinishFrame();
+        return;
+      }
+      root.dataset.playerFirstPaintCuesReady = "true";
+    } else if (root.dataset.initialEntityRoute === "player") {
+      root.dataset.playerFirstPaintContentReady = "true";
+      root.dataset.playerFirstPaintCuesReady = "true";
     }
+
     initialRouteFinished = true;
     if (initialRouteFinishFrame) cancelAnimationFrame(initialRouteFinishFrame);
     initialRouteFinishFrame = 0;

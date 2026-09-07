@@ -16,6 +16,8 @@ const [responsive, styles, bootstrap, staticUi, player, sharedTableUi, scrollbar
 
 const invariant = (condition, message) => { if (!condition) throw new Error(message); };
 invariant(!styles.includes(".playerPage {\n  max-width: 1180px;\n  min-height: 0;"), "Player page must retain its natural block height so mobile Notes and Pitch contribute to footer placement.");
+invariant(styles.includes(".playerDetail {\n  display: grid;\n  gap: 6px;\n  margin-top: 0;\n}"), "Desktop Player first paint must start at the same zero top offset as settled runtime.");
+invariant(responsive.includes(".playerDetail {\n  gap: var(--mfl-player-panel-gap);\n  margin-top: 0;\n}"), "Mobile Player first paint must start at the same zero top offset as settled runtime.");
 const includes = (source, value, message) => invariant(source.includes(value), message);
 
 for (const required of [
@@ -60,14 +62,19 @@ for (const required of [
   "height: var(--mfl-player-training-control-size);",
   "width: var(--mfl-player-training-reset-width);",
   ".playerAttributeViews.mflViewsOverflowing {",
+  "box-shadow: inset -96px 0 96px -69px var(--page-bg);",
   "overscroll-behavior-x: none;",
   "touch-action: pan-x pan-y;",
   "height: var(--mfl-player-attribute-view-height);",
   "min-height: var(--mfl-player-attribute-view-height);",
   "max-height: var(--mfl-player-attribute-view-height);",
   "--mfl-player-portrait-height: clamp(66px, 17vw, 96px);",
-  "--mfl-player-hero-media-width: clamp(182px, 47vw, 265px);",
+  "--mfl-player-portrait-width: calc(var(--mfl-player-portrait-height) * 1.824);",
+  "--mfl-player-hero-media-width: calc(var(--mfl-player-hero-overall-size) + var(--mfl-player-hero-media-gap) + var(--mfl-player-portrait-width));",
   "grid-template-columns: var(--mfl-player-hero-media-width) minmax(0, 1fr);",
+  "grid-template-rows: minmax(max(var(--mfl-player-portrait-height), var(--mfl-player-hero-overall-size)), auto) var(--mfl-player-hero-action-height);",
+  "column-gap: var(--mfl-player-hero-section-gap);",
+  "row-gap: var(--mfl-player-hero-section-gap);",
   "grid-template-columns: repeat(2, minmax(0, 1fr));",
   "height: var(--mfl-player-box-height);",
   "min-height: var(--mfl-player-box-height);",
@@ -82,6 +89,20 @@ for (const required of [
   ".playerPage,\n.playerDetail,\n.playerGrid,\n.playerStack,\n.playerPanel,\n.detailGrid,\n.attributeGrid {",
   "max-width: 100%;",
 ]) includes(responsive, required, "Unified Player mobile geometry is missing " + required);
+
+const mobileHeroStart = responsive.indexOf(".playerHero {");
+const mobileHeroEnd = mobileHeroStart >= 0 ? responsive.indexOf("}", mobileHeroStart) : -1;
+invariant(mobileHeroStart >= 0 && mobileHeroEnd > mobileHeroStart, "Mobile Player hero geometry block is missing.");
+const mobileHeroBlock = responsive.slice(mobileHeroStart, mobileHeroEnd + 1);
+invariant(mobileHeroBlock.includes("display: grid;") && mobileHeroBlock.includes("grid-template-rows: minmax(max(var(--mfl-player-portrait-height), var(--mfl-player-hero-overall-size)), auto) var(--mfl-player-hero-action-height);") && mobileHeroBlock.includes("column-gap: var(--mfl-player-hero-section-gap);") && mobileHeroBlock.includes("row-gap: var(--mfl-player-hero-section-gap);"), "Player hero first paint and hydrated runtime must reserve the same responsive media/action rows and section gaps.");
+invariant(!mobileHeroBlock.includes("column-gap: clamp(8px, 2vw, 14px);"), "Player hero first paint must not retain a larger pre-hydration column gap than settled runtime.");
+invariant(responsive.includes("--mfl-player-portrait-width: calc(var(--mfl-player-portrait-height) * 1.824);"), "Mobile parser portrait width must use the exact 912:500 runtime crop proportion.");
+invariant(responsive.includes("--mfl-player-hero-media-width: calc(var(--mfl-player-hero-overall-size) + var(--mfl-player-hero-media-gap) + var(--mfl-player-portrait-width));"), "Mobile Player hero media column must be derived from the same children that runtime sizes, not an independent approximate clamp.");
+const mobileViewsOverflowStart = responsive.indexOf(".playerAttributeViews.mflViewsOverflowing {");
+const mobileViewsOverflowEnd = mobileViewsOverflowStart >= 0 ? responsive.indexOf("}", mobileViewsOverflowStart) : -1;
+invariant(mobileViewsOverflowStart >= 0 && mobileViewsOverflowEnd > mobileViewsOverflowStart, "Mobile Player overflow styling block is missing.");
+const mobileViewsOverflowBlock = responsive.slice(mobileViewsOverflowStart, mobileViewsOverflowEnd + 1);
+invariant(mobileViewsOverflowBlock.includes("box-shadow: inset -96px 0 96px -69px var(--page-bg);"), "Player Attribute view fading must already be painted by the parser-owned overflow class before shared runtime hydration.");
 
 invariant(!responsive.includes(".attributeGrid:has(.trainingCard) .playerAttributeCard"), "Training must not change the mobile Attribute card width contract.");
 invariant(!responsive.includes(".playerAttributeCard.trainingCard {"), "Training cards must use the same mobile outer-card geometry as every other Attribute view.");
@@ -244,4 +265,4 @@ invariant(!player.includes('matchMedia("(max-width:'), "Player sizing must stay 
 invariant(!sharedTableUi.includes("setViewScrollButtonVisible(button, false);\n    setViewScrollButtonVisible(leftButton, false);\n    const overflowing"), "Horizontal view cues must not be transiently hidden before every direction recomputation, otherwise arrows/fades visibly reappear after Player hydration or view switches.");
 invariant(player.includes('return countryFlagHtml(rawNationality).replace(/\\sdata-tooltip="[^"]*"/, "");'), "Individual Player nationality flags must suppress the shared visual tooltip while keeping shared flag rendering elsewhere.");
 
-console.log("Player mobile layout keeps final Profile ordering while inheriting desktop Profile vertical alignment unchanged: desktop card padding, strong-row flex centering, Nationality layout, Age-marker placement, and Contract baseline alignment stays canonical; Player flags have no visual tooltip, nationality spacing matches Age-to-icon spacing, and mobile only scales sizes, widths, and requested horizontal gaps.");
+console.log("Player mobile layout keeps first-paint hero media geometry mathematically identical to runtime while preserving final Profile ordering and desktop-owned vertical alignment; mobile only scales sizes, widths, and requested horizontal gaps.");
