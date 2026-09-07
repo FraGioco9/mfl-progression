@@ -772,7 +772,12 @@ function animateReadyOverallBoxes(container = document) {
   if (!boxes.length) return false;
   rarityPaintPlayerId = playerId;
   detail.dataset.playerOverallRarityPainted = playerId;
-  boxes.forEach((box) => applyLoadedOverallBackground(box, true));
+  const reduceMotion = Boolean(window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches);
+  boxes.forEach((box) => {
+    applyLoadedOverallBackground(box, reduceMotion);
+    if (reduceMotion) return;
+    box.classList.add("rarityPaintOnce");
+  });
   detail.classList.add("playerOverallRarityPaintComplete");
   return true;
 }
