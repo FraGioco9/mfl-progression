@@ -8,6 +8,7 @@ const generatedIndex = read("./index.html");
 const responsive = read("./responsive.css");
 const mobilePlacement = read("./responsive-sources/player-note-tablet.css.inc");
 const desktopPlacement = read("./responsive-sources/player-note-desktop.css.inc");
+const noteSvg = read("./player-note.svg");
 
 assert.ok(
   playerSource.includes('if (notesPanel instanceof HTMLElement) notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";'),
@@ -40,7 +41,7 @@ for (const source of [noteSource, generatedIndex]) {
       && source.includes('note.dataset.tooltip = cachedPlayerNote;')
       && source.includes('note.setAttribute("aria-label", "Player note");')
       && source.includes('note.textContent = "📝";'),
-    "A cached Player note must create the same title note glyph during parser-owned first paint.",
+    "A cached Player note must create the shared title-note hook during parser-owned first paint.",
   );
   assert.ok(
     source.includes('observer.observe(playerDetail, { childList: true, subtree: true });')
@@ -54,16 +55,29 @@ for (const token of [
   '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon:not(:empty) {\n    position: absolute;\n    top: var(--mfl-player-panel-padding);\n    right: var(--mfl-player-panel-padding);',
   'width: 14px;\n    min-width: 14px;\n    max-width: 14px;\n    height: 14px;',
   '.playerHeroIdentity .playerTitle:has(> .playerListingBadge) > .playerTitleNoteIcon:not(:empty) {\n    right: calc(var(--mfl-player-panel-padding) + 22px);',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon {',
+  'font-size: 0;',
+  '-webkit-mask: url("/player-note.svg") center / 14px 14px no-repeat;',
+  'mask: url("/player-note.svg") center / 14px 14px no-repeat;',
 ]) {
-  assert.ok(mobilePlacement.includes(token), `Canonical mobile Player Note placement is missing: ${token}`);
-  assert.ok(responsive.includes(token), `Generated responsive mobile Player Note placement is missing: ${token}`);
+  assert.ok(mobilePlacement.includes(token), `Canonical mobile Player Note placement/redesign is missing: ${token}`);
+  assert.ok(responsive.includes(token), `Generated responsive mobile Player Note placement/redesign is missing: ${token}`);
 }
+
+assert.ok(
+  noteSvg.includes('width="14" height="14" viewBox="0 0 24 24"')
+    && noteSvg.includes('stroke="#000"')
+    && noteSvg.includes('stroke-linecap="round"')
+    && noteSvg.includes('stroke-linejoin="round"'),
+  "The compact Player Note asset must remain a 14px monochrome line icon suitable for CSS masking.",
+);
 
 for (const token of [
   '@media (min-width: 901px) {',
+  '.playerHeroIdentity .playerTitle {\n    display: flex;\n    align-items: center;',
   '.playerHeroIdentity .playerTitle > .playerTitleName {\n    order: 0;',
-  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    order: 1;',
-  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    order: 2;',
+  '.playerHeroIdentity .playerTitle > .playerTitleNoteIcon {\n    order: 1;\n    margin-left: 0;',
+  '.playerHeroIdentity .playerTitle > .playerListingBadge {\n    order: 2;\n    margin-left: 0;',
 ]) {
   assert.ok(desktopPlacement.includes(token), `Canonical desktop Player Note placement is missing: ${token}`);
   assert.ok(responsive.includes(token), `Generated responsive desktop Player Note placement is missing: ${token}`);
@@ -78,4 +92,4 @@ for (const source of [mobilePlacement, desktopPlacement]) {
   assert.ok(!source.includes("transform:"), "Player Note placement must use real layout coordinates rather than transform nudges.");
 }
 
-console.log("Player Note placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
+console.log("Player Note redesign, shared Listing-corner placement, isolated first-paint Notes hydration, and observer idempotency validation passed.");
