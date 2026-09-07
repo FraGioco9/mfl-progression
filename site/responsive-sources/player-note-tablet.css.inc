@@ -9,6 +9,7 @@
     top: var(--mfl-player-panel-padding);
     display: grid;
     place-items: center;
+    box-sizing: border-box;
     width: 14px;
     min-width: 14px;
     max-width: 14px;
@@ -50,6 +51,7 @@
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon > .playerNoteIconSvg,
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
     display: block;
+    place-self: center;
     width: 14px;
     min-width: 14px;
     max-width: 14px;
@@ -66,6 +68,11 @@
     stroke-width: 1.8;
     stroke-linecap: round;
     stroke-linejoin: round;
+  }
+
+  .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
+    object-fit: contain;
+    object-position: center;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon[data-tooltip]::after {
