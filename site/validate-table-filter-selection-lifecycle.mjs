@@ -137,4 +137,49 @@ invariant(
   "Generated shared/Table runtimes must exactly match their canonical sources.",
 );
 
+const precedenceEvaluatorContract = `function rowMatchesRules(row, rules) {
+  if (!rules.length) {
+    return true;
+  }
+
+  let result = false;
+  let andGroupResult = ruleMatches(row, rules[0]);`;
+invariant(
+  tableCore.includes(precedenceEvaluatorContract)
+    && tableCore.includes('result = result || andGroupResult;\n      andGroupResult = current;')
+    && tableCore.includes('andGroupResult = andGroupResult && current;')
+    && tableCore.includes('return result || andGroupResult;')
+    && generatedTable.includes(precedenceEvaluatorContract)
+    && generatedTable.includes('return result || andGroupResult;'),
+  "The shared Table filter evaluator must resolve contiguous AND groups before OR-ing those groups together in both canonical and generated runtime code.",
+);
+invariant(
+  !tableCore.includes('result = result || current;')
+    && !tableCore.includes('result = result && current;'),
+  "Mixed filter connectors must not fall back to the retired left-to-right boolean fold.",
+);
+
+function evaluateBooleanRuleChain(matches, connectors) {
+  if (!matches.length) return true;
+  let result = false;
+  let andGroupResult = Boolean(matches[0]);
+  for (let index = 1; index < matches.length; index += 1) {
+    const current = Boolean(matches[index]);
+    if (connectors[index] === "or") {
+      result = result || andGroupResult;
+      andGroupResult = current;
+    } else {
+      andGroupResult = andGroupResult && current;
+    }
+  }
+  return result || andGroupResult;
+}
+
+invariant(evaluateBooleanRuleChain([true, false, false], ["and", "or", "and"]) === true, "A OR (B AND C) must stay true when A is true even if B and C are false.");
+invariant(evaluateBooleanRuleChain([false, true, true], ["and", "or", "and"]) === true, "A OR (B AND C) must be true when the second AND group matches.");
+invariant(evaluateBooleanRuleChain([false, true, false], ["and", "or", "and"]) === false, "A OR (B AND C) must be false when neither A nor the complete B/C group matches.");
+invariant(evaluateBooleanRuleChain([true, true, false, true], ["and", "and", "or", "and"]) === true, "(A AND B) OR (C AND D) must preserve independent AND groups.");
+invariant(evaluateBooleanRuleChain([true, true, true], ["and", "and", "and"]) === true, "Pure AND chains must retain their existing semantics.");
+invariant(evaluateBooleanRuleChain([false, false, true], ["and", "or", "or"]) === true, "Pure OR chains must retain their existing semantics.");
+
 console.log("Source-owned page filter isolation, live quick-filter preservation, request-time player reset, and view/filter selection lifecycle validation passed.");

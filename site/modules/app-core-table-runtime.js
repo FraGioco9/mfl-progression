@@ -1979,19 +1979,21 @@ function rowMatchesRules(row, rules) {
     return true;
   }
 
-  let result = ruleMatches(row, rules[0]);
+  let result = false;
+  let andGroupResult = ruleMatches(row, rules[0]);
 
   for (let index = 1; index < rules.length; index += 1) {
     const current = ruleMatches(row, rules[index]);
 
     if (rules[index].connector === "or") {
-      result = result || current;
+      result = result || andGroupResult;
+      andGroupResult = current;
     } else {
-      result = result && current;
+      andGroupResult = andGroupResult && current;
     }
   }
 
-  return result;
+  return result || andGroupResult;
 }
 
 function rowIsHiddenFromTableAsMflPlayer(row) {
