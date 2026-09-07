@@ -28,6 +28,8 @@ export function validateResponsivePlayer(context) {
   excludes(appCore, "function compactPlayerPageName(value) {", "Responsive Player presentation must not regrow the canonical Player core.");
   excludes(appCore, "function syncPlayerPageDetails() {", "Responsive Player presentation must remain outside the canonical Player core ownership budget.");
 
+  includes(responsive, ".playerHeroIdentity .playerTitle {\n  flex-wrap: nowrap;", "The mobile title must keep its name, listing icon and note icon in one flex row so icons cannot create another row.");
+  includes(responsive, ".playerHeroIdentity .playerTitleName {\n  min-width: 0;\n}", "Long mobile Player names must wrap within their available width while title icons stay alongside them.");
   includes(responsive, ".playerTitle .playerListingBadge {\n  flex: 0 0 14px;", "Mobile Player titles must reduce the Listing badge to the Listing icon box immediately after the name.");
   includes(responsive, "margin-left: 4px;", "The mobile Listing icon must sit directly to the right of the compact Player name.");
   includes(responsive, "background: transparent;", "The mobile Listing control must render the Listing icon only without the desktop price badge background.");

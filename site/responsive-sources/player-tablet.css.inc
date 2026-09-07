@@ -44,7 +44,15 @@
   margin-right: 0;
 }
 
-.playerHeroIdentity .playerTitle,
+.playerHeroIdentity .playerTitle {
+  flex-wrap: nowrap;
+  overflow-wrap: anywhere;
+}
+
+.playerHeroIdentity .playerTitleName {
+  min-width: 0;
+}
+
 .playerHeroIdentity > p {
   overflow-wrap: anywhere;
 }
