@@ -48,19 +48,26 @@
     max-height: 18px;
     margin: 0;
     padding: 0;
+    overflow: visible;
     color: var(--text-soft);
     font-size: 0;
     line-height: 0;
   }
 
-  .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon::before {
-    content: "";
+  .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon > .playerNoteIconSvg {
     display: block;
+    flex: 0 0 18px;
     width: 18px;
+    min-width: 18px;
+    max-width: 18px;
     height: 18px;
-    background: currentColor;
-    -webkit-mask: url("/player-note.svg") center / 18px 18px no-repeat;
-    mask: url("/player-note.svg") center / 18px 18px no-repeat;
+    min-height: 18px;
+    max-height: 18px;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.8;
+    stroke-linecap: round;
+    stroke-linejoin: round;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon > .playerNoteIcon[data-tooltip]::after {
