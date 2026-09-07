@@ -70,6 +70,10 @@ jobs:
         if: steps.changes.outputs.quality == 'true'
         run: npm install --no-audit --no-fund
 
+      - name: Apply one-time helper/status foundation migration
+        if: steps.changes.outputs.quality == 'true'
+        run: node migrate-helper-status-foundation-once.mjs
+
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
         run: npm run build
@@ -99,6 +103,8 @@ jobs:
         run: |
           set -euo pipefail
           git add -- \
+            site/styles-base.css \
+            site/validate-ui-foundations.mjs \
             site/bootstrap.js \
             site/bootstrap-core.js \
             site/index.html \
