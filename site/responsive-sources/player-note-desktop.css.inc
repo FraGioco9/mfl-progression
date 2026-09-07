@@ -100,4 +100,8 @@
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
     line-height: 1;
   }
+
+  .playerNotesInput {
+    min-height: 150px;
+  }
 }
