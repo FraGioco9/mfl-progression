@@ -10560,6 +10560,11 @@ html:not(.mflInitialRouteResolved):is(
  * gain a second, competing mobile implementation in a runtime or base style.
  */
 @media (max-width: 900px) {
+  :root {
+    --mfl-page-gutter-inline: 12px;
+    --mfl-page-inset-block-end: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
+  }
+
   html,
   body {
     width: 100%;
@@ -10584,9 +10589,9 @@ html:not(.mflInitialRouteResolved):is(
 
   body > #appShell > main {
     min-width: 0;
-    padding-right: max(12px, env(safe-area-inset-right));
-    padding-bottom: max(calc(var(--mobile-nav-height) + 18px), env(safe-area-inset-bottom));
-    padding-left: max(12px, env(safe-area-inset-left));
+    padding-right: max(var(--mfl-page-gutter-inline), env(safe-area-inset-right));
+    padding-bottom: var(--mfl-page-inset-block-end);
+    padding-left: max(var(--mfl-page-gutter-inline), env(safe-area-inset-left));
   }
 
   #progressionPage,
