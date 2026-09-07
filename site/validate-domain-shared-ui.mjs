@@ -8,6 +8,7 @@ const validators = [
   "validate-active-filter-control.mjs",
   "validate-table-hover-scroll.mjs",
   "validate-control-style-ownership.mjs",
+  "validate-ui-foundations.mjs",
   "validate-evaluation-mfl-usd-focus.mjs",
   "validate-css-ownership-consolidation.mjs",
   "validate-global-escape-ownership.mjs",

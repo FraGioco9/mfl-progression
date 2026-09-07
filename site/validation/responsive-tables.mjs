@@ -20,7 +20,7 @@ export function validateResponsiveTables(context) {
   includes(controls, ".filtersDialog .filterRule input[type=\"date\"]::-webkit-datetime-edit {\n  display: flex;\n  align-items: center;\n}", "Date filter text must be vertically centered inside the 36px box.");
   includes(controls, ".filtersDialog .filtersHeader .popupCloseButton {\n  flex: 0 0 var(--mfl-popup-close-size);\n  width: var(--mfl-popup-close-size);", "The Filters header close control must keep the canonical touch target while its glyph scales responsively.");
   includes(controls, ".filtersDialog select option {\n  font-size: inherit;\n}", "Filters select options must keep the same size as normal box text.");
-  includes(controls, "--mfl-filter-remove-danger: #ff2020;", "Filter-rule removal must use canonical #ff2020 danger red.");
+  includes(controls, "--mfl-filter-remove-danger: var(--danger);", "Filter-rule removal must derive from the canonical theme-aware danger color.");
   includes(controls, "width: var(--mfl-filter-remove-size, 28px);\n  inline-size: var(--mfl-filter-remove-size, 28px);\n  min-width: var(--mfl-filter-remove-size, 28px);", "The rendered filter remove button must use the same responsive size variable as the spacing geometry instead of retaining the desktop 28px box.");
   includes(controls, "width: min(12px, calc(var(--mfl-filter-remove-size, 28px) - 2px));", "The remove glyph must remain centered inside the actual responsive remove-button box.");
   includes(controls, ".filtersDialog .addFilterRow {\n  width: 100%;\n  padding-bottom: 0;\n  border-bottom: 0;\n}", "Add filter must not show a divider when no rules exist.");
