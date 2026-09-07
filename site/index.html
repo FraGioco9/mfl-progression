@@ -1651,6 +1651,115 @@
             root.dataset.playerFirstPaintCuesReady = "false";
           })();
         </script>
+        <script>
+          (() => {
+            const root = document.documentElement;
+            const playerDetail = document.getElementById("playerDetail");
+            if (!(playerDetail instanceof HTMLElement)) return;
+
+            const createPlayerNoteSvg = () => {
+              const namespace = "http://www.w3.org/2000/svg";
+              const svg = document.createElementNS(namespace, "svg");
+              svg.classList.add("playerNoteIconSvg");
+              svg.setAttribute("viewBox", "0 0 24 24");
+              svg.setAttribute("fill", "none");
+              svg.setAttribute("aria-hidden", "true");
+              svg.setAttribute("focusable", "false");
+
+              const page = document.createElementNS(namespace, "path");
+              page.setAttribute("d", "M6 2h7l5 5v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2Z");
+              const fold = document.createElementNS(namespace, "path");
+              fold.setAttribute("d", "M13 2v5h5");
+              const lineOne = document.createElementNS(namespace, "path");
+              lineOne.setAttribute("d", "M8 11h6");
+              const lineTwo = document.createElementNS(namespace, "path");
+              lineTwo.setAttribute("d", "M8 15h6");
+              svg.append(page, fold, lineOne, lineTwo);
+              return svg;
+            };
+
+            const syncPlayerNoteIcons = () => {
+              playerDetail.querySelectorAll(".playerNoteIcon").forEach((note) => {
+                if (!(note instanceof HTMLElement) || note.querySelector(":scope > .playerNoteIconSvg")) return;
+                note.replaceChildren(createPlayerNoteSvg());
+              });
+            };
+
+            syncPlayerNoteIcons();
+            if (typeof MutationObserver === "function") {
+              const iconObserver = new MutationObserver(syncPlayerNoteIcons);
+              iconObserver.observe(playerDetail, { childList: true, subtree: true });
+            }
+
+            if (root.dataset.initialEntityRoute !== "player") return;
+
+            const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
+            const playerId = routeMatch ? String(routeMatch[1] || "") : "";
+            if (!playerId) return;
+
+            const normalizeWalletAddress = (value) => {
+              const address = String(value || "").trim().toLowerCase();
+              return address ? (address.startsWith("0x") ? address : "0x" + address) : "";
+            };
+            const cachedPlayerNote = (() => {
+              if (root.dataset.storedWalletOptIn !== "true") return "";
+              try {
+                const wallet = normalizeWalletAddress(localStorage.getItem("mfl-linked-wallet-v1"));
+                if (!wallet) return "";
+                const notes = JSON.parse(localStorage.getItem("mfl-wallet-player-notes-v1:" + wallet) || "{}");
+                if (!notes || typeof notes !== "object" || Array.isArray(notes)) return "";
+                return String(notes[playerId] || "").replace(/\r\n/g, "\n").slice(0, 100).trim();
+              } catch {
+                return "";
+              }
+            })();
+
+            const syncFirstPaintNotes = () => {
+              const optedIn = root.dataset.storedWalletOptIn === "true";
+              const panel = document.querySelector("#playerPage [data-mfl-static-player-notes]");
+              if (panel instanceof HTMLElement) {
+                const shouldHide = !optedIn;
+                if (panel.hidden !== shouldHide) panel.hidden = shouldHide;
+                if (optedIn) {
+                  const input = panel.querySelector(".playerNotesInput");
+                  const count = panel.querySelector(".playerNotesCount");
+                  if (input instanceof HTMLTextAreaElement) {
+                    if (input.style.visibility) input.style.removeProperty("visibility");
+                    if (input.value !== cachedPlayerNote) input.value = cachedPlayerNote;
+                  }
+                  if (count instanceof HTMLElement) {
+                    if (count.style.visibility) count.style.removeProperty("visibility");
+                    const nextCount = cachedPlayerNote.length + "/100";
+                    if (count.textContent !== nextCount) count.textContent = nextCount;
+                  }
+                }
+              }
+
+              if (!cachedPlayerNote) return;
+              const noteHost = playerDetail.querySelector(":scope > .playerHero .playerTitleNoteIcon");
+              if (!(noteHost instanceof HTMLElement) || noteHost.querySelector(".playerNoteIcon")) return;
+              const note = document.createElement("span");
+              note.className = "playerNoteIcon";
+              note.dataset.tooltip = cachedPlayerNote;
+              note.setAttribute("aria-label", "Player note");
+              note.appendChild(createPlayerNoteSvg());
+              noteHost.replaceChildren(note);
+            };
+
+            syncFirstPaintNotes();
+            if (typeof MutationObserver === "function") {
+              const observer = new MutationObserver(() => {
+                if (root.dataset.playerFirstPaintContentReady === "true") {
+                  observer.disconnect();
+                  return;
+                }
+                syncFirstPaintNotes();
+              });
+              observer.observe(playerDetail, { childList: true, subtree: true });
+              observer.observe(root, { attributes: true, attributeFilter: ["data-player-first-paint-content-ready"] });
+            }
+          })();
+        </script>
 
         <section id="settingsPage" class="pageView settingsPage" hidden>
           <h2 class="tablePageTitle">Settings</h2>
