@@ -25,13 +25,22 @@
   --mfl-checkbox-size: 16px;
   --mfl-radius-checkbox: 4px;
 
-  /* Shared page title and vertical rhythm. */
+  /* Shared page layout, titles, and vertical rhythm. */
+  --mfl-page-gutter-inline: 28px;
+  --mfl-page-inset-block-start: 4px;
+  --mfl-page-inset-block-end: 6px;
   --mfl-page-title-font-size: 20px;
   --mfl-page-title-min-height: 32px;
   --mfl-page-title-margin-block-start: 6px;
   --mfl-page-title-margin-block-end: 8px;
   --mfl-page-title-line-height: 1.2;
   --mfl-page-section-gap: 6px;
+
+  /* Shared section-title typography. */
+  --mfl-section-title-font-size: 16px;
+  --mfl-section-title-compact-font-size: 15px;
+  --mfl-section-title-line-height: 1.1;
+  --mfl-section-title-font-weight: 700;
 
   /* Shared application surfaces. */
   --mfl-radius-dialog: 8px;
