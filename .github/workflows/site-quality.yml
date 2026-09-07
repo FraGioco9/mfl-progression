@@ -74,6 +74,10 @@ jobs:
         if: steps.changes.outputs.quality == 'true'
         run: node migrate-ui-foundations-once.mjs
 
+      - name: Apply one-time footer foundation validator migration
+        if: steps.changes.outputs.quality == 'true'
+        run: node migrate-footer-foundation-validator-once.mjs
+
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
         run: npm run build
@@ -104,6 +108,7 @@ jobs:
           set -euo pipefail
           git add -- \
             site/styles-base.css \
+            site/validate-footer-redesign.mjs \
             site/bootstrap.js \
             site/bootstrap-core.js \
             site/index.html \
