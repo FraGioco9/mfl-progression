@@ -12606,41 +12606,39 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge {
-    position: static;
+    position: relative;
     top: auto;
     right: auto;
     order: 2;
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
+    flex: 0 0 auto;
     align-self: baseline;
+    width: max-content;
+    min-width: 0;
+    max-width: none;
     height: 22px;
     min-height: 22px;
     max-height: 22px;
     margin: 0;
+    padding: 0 5px 0 23px;
     font-size: 16px;
-    line-height: 1;
+    line-height: 22px;
     white-space: nowrap;
   }
 
-  .playerHeroIdentity .playerTitle > .playerListingBadge::before {
-    content: "\200B";
-    flex: 0 0 0;
-    width: 0;
-    overflow: hidden;
-    font: inherit;
-    line-height: 1;
-  }
-
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
+    position: absolute;
+    top: 4px;
+    left: 5px;
     display: block;
-    align-self: center;
+    width: 14px;
+    height: 14px;
     margin: 0;
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
-    display: block;
-    align-self: center;
-    line-height: 1;
+    display: inline-block;
+    line-height: inherit;
   }
 
   .playerNotesInput {
