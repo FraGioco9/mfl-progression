@@ -75,6 +75,7 @@ jobs:
         run: |
           node fix-icon-migration-escaping-once.mjs
           node migrate-icon-foundations-once.mjs
+          node migrate-responsive-icon-validator-once.mjs
 
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
