@@ -4182,26 +4182,26 @@ html:not(.mflInitialRouteResolved):is(
     top: auto;
     right: auto;
     order: 2;
-    display: inline-grid;
-    grid-template-columns: 14px auto;
-    align-items: baseline;
+    display: inline-block;
     align-self: baseline;
     height: 22px;
     min-height: 22px;
     max-height: 22px;
     margin: 0;
-    line-height: 1;
+    line-height: 22px;
+    white-space: nowrap;
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
-    display: block;
-    align-self: center;
-    margin: 0;
+    display: inline-block;
+    margin: 0 4px 0 0;
+    vertical-align: middle;
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
-    align-self: baseline;
+    display: inline-block;
     line-height: 1;
+    vertical-align: baseline;
   }
 
   .playerNotesInput {
