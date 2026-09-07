@@ -8,6 +8,7 @@
   }
 
   .playerHeroIdentity .playerTitle {
+    align-items: baseline;
     flex-wrap: nowrap;
   }
 
@@ -82,9 +83,10 @@
     top: auto;
     right: auto;
     order: 2;
-    display: inline-flex;
-    align-items: center;
-    align-self: center;
+    display: inline-grid;
+    grid-template-columns: 14px auto;
+    align-items: baseline;
+    align-self: baseline;
     height: 22px;
     min-height: 22px;
     max-height: 22px;
@@ -94,10 +96,12 @@
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellIcon {
     display: block;
+    align-self: center;
     margin: 0;
   }
 
   .playerHeroIdentity .playerTitle > .playerListingBadge .listingCellPrice {
+    align-self: baseline;
     line-height: 1;
   }
 
