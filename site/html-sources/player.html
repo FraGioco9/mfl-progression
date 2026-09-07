@@ -101,6 +101,21 @@
             const attributeLabels = (positions) => positions[0] === "GK"
               ? ["Overall", "Goalkeeping"]
               : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"];
+            const attributeColumns = (positions) => positions[0] === "GK"
+              ? ["overall", "goalkeeping"]
+              : ["overall", "pace", "dribbling", "shooting", "defense", "passing", "physical"];
+            const contractDivisionNames = {
+              1: "Diamond",
+              2: "Platinum",
+              3: "Gold",
+              4: "Silver",
+              5: "Bronze",
+              6: "Iron",
+              7: "Stone",
+              8: "Ice",
+              9: "Spark",
+              10: "Flint",
+            };
             const applyFirstPaintHeroActionLayout = (playerHero) => {
               if (!(playerHero instanceof HTMLElement)) return;
               const actions = playerHero.querySelector(":scope > .playerHeroActions");
@@ -185,16 +200,169 @@
               } catch {}
             }
             const knownValues = firstPaintContext?.knownValues && typeof firstPaintContext.knownValues === "object" ? firstPaintContext.knownValues : null;
-            const cachedName = String(firstPaintContext?.name || knownValues?.name?.display || knownValues?.name?.raw || "").trim();
+            const knownEntry = (column) => {
+              const entry = knownValues?.[column];
+              if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+              return entry;
+            };
+            const knownRaw = (column) => {
+              const entry = knownEntry(column);
+              return entry ? entry.raw : "";
+            };
+            const knownDisplay = (column) => {
+              const entry = knownEntry(column);
+              const text = String(entry?.display ?? entry?.raw ?? "").trim();
+              return text && text.toUpperCase() !== "NULL" ? text : "";
+            };
+            const cachedName = String(firstPaintContext?.name || knownDisplay("name") || "").trim();
             const suppliedPositions = Array.isArray(firstPaintContext?.positions)
               ? firstPaintContext.positions
               : String(firstPaintContext?.positions || "").split(",");
-            const cachedPositionText = String(knownValues?.positions?.display ?? knownValues?.positions?.raw ?? "");
+            const cachedPositionText = knownDisplay("positions");
             const cachedPositions = normalizePositions(
               suppliedPositions.some((position) => String(position || "").trim())
                 ? suppliedPositions.join(",")
                 : cachedPositionText,
             );
+            const cachedAttributeValue = (column) => {
+              if (column === "overall") {
+                const overall = knownDisplay("overall") || String(firstPaintContext?.overall || "").trim();
+                return overall.replace(/\s*\([+-]?\d+(?:\.\d+)?\)\s*$/, "").trim();
+              }
+              return knownDisplay(column);
+            };
+            const profileStrong = (label) => Array.from(document.querySelectorAll("#playerPage .playerInfoPanel .detailGrid > div"))
+              .find((card) => String(card.querySelector(":scope > span")?.textContent || "").trim() === label)
+              ?.querySelector(":scope > strong") || null;
+            const setProfileText = (label, text) => {
+              const strong = profileStrong(label);
+              if (!(strong instanceof HTMLElement) || !text) return;
+              if (strong.textContent !== text) strong.textContent = text;
+            };
+            const formatCachedHeight = () => {
+              const value = knownDisplay("height");
+              if (!value) return "";
+              return /\bcm\b/i.test(value) ? value : value + " cm";
+            };
+            const formatCachedFoot = () => {
+              const value = knownDisplay("preferred_foot");
+              if (!value) return "";
+              return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+            };
+            const formatCachedRevenueShare = () => {
+              const raw = knownRaw("active_contract_revenue_share");
+              if (raw === null || raw === undefined || raw === "" || String(raw).toUpperCase() === "NULL") return knownDisplay("active_contract_revenue_share");
+              const percentage = Number(raw) / 100;
+              return Number.isFinite(percentage)
+                ? new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(percentage) + "%"
+                : knownDisplay("active_contract_revenue_share");
+            };
+            const formatCachedDivision = () => {
+              const raw = knownRaw("active_contract_club_division");
+              const division = Number(raw);
+              return Number.isFinite(division) && contractDivisionNames[division]
+                ? contractDivisionNames[division]
+                : knownDisplay("active_contract_club_division");
+            };
+            const cachedContractTeamName = () => {
+              const clubName = knownDisplay("active_contract_club_name");
+              if (clubName) return clubName;
+              const rawStatus = String(knownRaw("contract_status") || knownDisplay("contract_status") || "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+              if (rawStatus === "free_agent") return "Free Agent";
+              if (rawStatus === "development_center") return "Development Center";
+              return "";
+            };
+            const syncCachedProfileValues = () => {
+              const nationality = knownDisplay("nationality");
+              if (nationality) {
+                const strong = profileStrong("Nationality");
+                if (strong instanceof HTMLElement && strong.textContent !== nationality) {
+                  const text = document.createElement("span");
+                  text.className = "playerNationalityText";
+                  text.textContent = nationality;
+                  strong.replaceChildren(text);
+                }
+              }
+              setProfileText("Height", formatCachedHeight());
+              setProfileText("Foot", formatCachedFoot());
+              setProfileText("Seasons", knownDisplay("player_seasons"));
+
+              const agentName = knownDisplay("wallet_name");
+              if (agentName) {
+                const strong = profileStrong("Agent");
+                if (strong instanceof HTMLElement && strong.textContent !== agentName) {
+                  const walletAddress = String(knownRaw("wallet_address") || "").trim();
+                  if (walletAddress) {
+                    const link = document.createElement("a");
+                    link.className = "agentTableLink playerAgentLink";
+                    link.href = "/agents/" + encodeURIComponent(walletAddress) + "/attributes";
+                    link.textContent = agentName;
+                    strong.replaceChildren(link);
+                  } else {
+                    strong.textContent = agentName;
+                  }
+                }
+              }
+
+              const teamName = cachedContractTeamName();
+              if (teamName) {
+                const strong = profileStrong("Contract");
+                if (strong instanceof HTMLElement && !strong.querySelector(".playerContractLine")) {
+                  const line = document.createElement("span");
+                  line.className = "playerContractLine";
+                  const clubId = String(knownRaw("active_contract_club_id") || "").trim();
+                  let team;
+                  if (clubId && !/^(free agent|development center)$/i.test(teamName)) {
+                    team = document.createElement("a");
+                    team.className = "playerContractTeam playerContractTeamLink clubPageLink";
+                    team.href = "/clubs/" + encodeURIComponent(clubId) + "/squad";
+                    team.dataset.clubId = clubId;
+                  } else {
+                    team = document.createElement("span");
+                    team.className = "playerContractTeam";
+                  }
+                  team.textContent = teamName;
+                  line.appendChild(team);
+                  const divisionName = formatCachedDivision();
+                  if (divisionName && !/^(free agent|development center)$/i.test(teamName)) {
+                    const division = document.createElement("span");
+                    division.className = "playerContractDivision";
+                    division.textContent = divisionName;
+                    line.appendChild(division);
+                  }
+                  strong.replaceChildren(line);
+                }
+              }
+              setProfileText("Rev Share", formatCachedRevenueShare());
+            };
+            const syncCachedHeroValues = () => {
+              const overallValue = cachedAttributeValue("overall");
+              const overall = hero?.querySelector(".playerHeroOverall > strong");
+              if (overall instanceof HTMLElement && overallValue && overall.textContent !== overallValue) overall.textContent = overallValue;
+
+              const listingRaw = knownRaw("listing_price");
+              const listingValue = listingRaw === null || listingRaw === undefined || listingRaw === "" ? Number.NaN : Number(listingRaw);
+              const title = hero?.querySelector(".playerTitle");
+              if (title instanceof HTMLElement && Number.isFinite(listingValue) && !title.querySelector(".listingCellContent")) {
+                const priceText = "$" + new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(listingValue);
+                const listing = document.createElement("span");
+                listing.className = "listingCellContent playerListingBadge";
+                listing.setAttribute("aria-label", "For Sale at " + priceText);
+                const icon = document.createElement("img");
+                icon.className = "listingCellIcon";
+                icon.src = "/listing-shopping-bag.svg";
+                icon.width = 12;
+                icon.height = 12;
+                icon.alt = "";
+                icon.setAttribute("aria-hidden", "true");
+                const price = document.createElement("span");
+                price.className = "listingCellPrice";
+                price.textContent = priceText;
+                listing.append(icon, price);
+                const noteIcon = title.querySelector(".playerTitleNoteIcon");
+                title.insertBefore(listing, noteIcon instanceof Node ? noteIcon : null);
+              }
+            };
             const syncPendingName = () => {
               if (root.dataset.playerFirstPaintContentReady === "true") return;
               const currentHero = playerDetail?.querySelector(":scope > .playerHero");
@@ -214,8 +382,23 @@
               const currentHero = playerDetail?.querySelector(":scope > .playerHero");
               const livePositions = normalizePositions(currentHero?.querySelector(".playerHeroIdentity > p")?.textContent || "");
               const positions = livePositions.length ? livePositions : cachedPositions;
-              if (!positions.length) return;
+              if (!positions.length) {
+                const overallCard = staticAttributes.querySelector(":scope > .playerAttributeCard");
+                const overallStrong = overallCard?.querySelector(":scope > strong");
+                const overallValue = cachedAttributeValue("overall");
+                if (overallStrong instanceof HTMLElement && overallValue) {
+                  let value = overallStrong.querySelector(":scope > .attributeValueText");
+                  if (!(value instanceof HTMLElement)) {
+                    value = document.createElement("span");
+                    value.className = "attributeValueText";
+                    overallStrong.replaceChildren(value);
+                  }
+                  if (value.textContent !== overallValue) value.textContent = overallValue;
+                }
+                return;
+              }
               const labels = attributeLabels(positions);
+              const columns = attributeColumns(positions);
               const goalkeeper = labels.length === 2;
               const cards = Array.from(staticAttributes.children).filter((card) => card instanceof HTMLElement);
               if (cards.length !== labels.length) {
@@ -226,9 +409,12 @@
                     + (index === 0 || goalkeeper ? " fullWidth" : "");
                   const name = document.createElement("span");
                   name.textContent = label;
-                  const value = document.createElement("strong");
-                  value.textContent = "\u00a0";
-                  card.append(name, value);
+                  const strong = document.createElement("strong");
+                  const value = document.createElement("span");
+                  value.className = "attributeValueText";
+                  value.textContent = cachedAttributeValue(columns[index]) || "\u00a0";
+                  strong.appendChild(value);
+                  card.append(name, strong);
                   return card;
                 }));
                 return;
@@ -239,6 +425,16 @@
                   + (index === 0 || goalkeeper ? " fullWidth" : "");
                 const name = card.querySelector(":scope > span");
                 if (name instanceof HTMLElement && name.textContent !== labels[index]) name.textContent = labels[index];
+                const strong = card.querySelector(":scope > strong");
+                if (!(strong instanceof HTMLElement)) return;
+                let value = strong.querySelector(":scope > .attributeValueText");
+                if (!(value instanceof HTMLElement)) {
+                  value = document.createElement("span");
+                  value.className = "attributeValueText";
+                  strong.replaceChildren(value);
+                }
+                const nextValue = cachedAttributeValue(columns[index]) || "\u00a0";
+                if (value.textContent !== nextValue) value.textContent = nextValue;
               });
             };
             const syncPendingPlayerShell = () => {
@@ -261,13 +457,15 @@
               }
               const positionsText = hero.querySelector(".playerHeroIdentity > p");
               if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");
+              const external = hero.querySelector(".playerHeroPrimaryAction");
+              if (external instanceof HTMLAnchorElement) external.href = "https://app.playmfl.com/players/" + playerId;
             }
             if (notesPanel instanceof HTMLElement) notesPanel.hidden = root.dataset.storedWalletOptIn !== "true";
 
             const staticAge = document.querySelector("#playerPage [data-mfl-static-player-age]");
             if (staticAge instanceof HTMLElement && playerId) {
-              const ageEntry = knownValues?.age;
-              const retirementEntry = knownValues?.retirement_years;
+              const ageEntry = knownEntry("age");
+              const retirementEntry = knownEntry("retirement_years");
               const ageText = String(ageEntry?.display ?? ageEntry?.raw ?? "").trim() || "\u00a0";
               const line = document.createElement("span");
               line.className = "playerDetailAgeLine";
@@ -300,6 +498,8 @@
               staticAge.replaceChildren(line);
             }
 
+            syncCachedHeroValues();
+            syncCachedProfileValues();
             syncPendingPlayerShell();
             if (playerDetail instanceof HTMLElement && typeof MutationObserver === "function") {
               const pendingObserver = new MutationObserver(() => {
