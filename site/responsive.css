@@ -78,11 +78,11 @@ html:not(.mflInitialRouteResolved):is(
     --mfl-player-training-reset-font-size: calc(var(--mfl-player-training-control-size) * 0.55);
     --mfl-player-hero-overall-size: clamp(58px, 15vw, 84px);
     --mfl-player-portrait-height: clamp(66px, 17vw, 96px);
-    --mfl-player-portrait-width: clamp(120px, 31vw, 175px);
+    --mfl-player-portrait-width: calc(var(--mfl-player-portrait-height) * 1.824);
     --mfl-player-portrait-radius: clamp(4px, 1vw, 6px);
     --mfl-player-card-radius: var(--mfl-player-panel-radius);
     --mfl-player-hero-media-gap: clamp(4px, 1vw, 6px);
-    --mfl-player-hero-media-width: clamp(182px, 47vw, 265px);
+    --mfl-player-hero-media-width: calc(var(--mfl-player-hero-overall-size) + var(--mfl-player-hero-media-gap) + var(--mfl-player-portrait-width));
     --mfl-player-hero-identity-width: 100%;
     --mfl-player-hero-identity-action-gap: 0px;
     --mfl-player-hero-identity-align-self: center;

@@ -1019,7 +1019,7 @@
               </div>
               <div class="playerHeroIdentity">
                 <button class="playerEyebrow playerIdText" type="button" disabled>ID #000000</button>
-                <h2 class="tablePageTitle playerTitle"><span class="playerTitleName">&nbsp;</span><span class="playerTitleNoteIcon" data-player-note-title-icon></span></h2>
+                <h2 class="playerTitle"><span class="playerTitleName">&nbsp;</span><span class="playerTitleNoteIcon" data-player-note-title-icon></span></h2>
                 <p>&nbsp;</p>
               </div>
               <div class="playerHeroActions">
@@ -1098,6 +1098,7 @@
             const hero = playerDetail?.querySelector(":scope > .playerHero.playerHeroPending");
             const notesPanel = document.querySelector("#playerPage [data-mfl-static-player-notes]");
             const views = document.querySelector("#playerPage .playerAttributeViews");
+            const staticAttributes = document.querySelector("#playerPage [data-mfl-static-player-attributes]");
             const routeMatch = String(window.location.pathname || "").match(/^\/players\/(\d{1,20})\/?$/i);
             const playerId = routeMatch ? String(routeMatch[1] || "") : "";
             const compactPlayerPageName = (value) => {
@@ -1105,6 +1106,13 @@
               if (!fullName) return "";
               return fullName.replace(/^(\S)[^\s]*\s+(?:.*\s)?(\S+)$/, "$1. $2");
             };
+            const normalizePositions = (value) => String(value || "")
+              .split(",")
+              .map((position) => String(position || "").trim().toUpperCase())
+              .filter((position) => position && position !== "NO POSITIONS");
+            const attributeLabels = (positions) => positions[0] === "GK"
+              ? ["Overall", "Goalkeeping"]
+              : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"];
             const applyFirstPaintHeroActionLayout = (playerHero) => {
               if (!(playerHero instanceof HTMLElement)) return;
               const actions = playerHero.querySelector(":scope > .playerHeroActions");
@@ -1188,27 +1196,80 @@
                 firstPaintContext = value && typeof value === "object" && !Array.isArray(value) ? value : null;
               } catch {}
             }
+            const knownValues = firstPaintContext?.knownValues && typeof firstPaintContext.knownValues === "object" ? firstPaintContext.knownValues : null;
+            const cachedName = String(firstPaintContext?.name || knownValues?.name?.display || knownValues?.name?.raw || "").trim();
+            const suppliedPositions = Array.isArray(firstPaintContext?.positions)
+              ? firstPaintContext.positions
+              : String(firstPaintContext?.positions || "").split(",");
+            const cachedPositionText = String(knownValues?.positions?.display ?? knownValues?.positions?.raw ?? "");
+            const cachedPositions = normalizePositions(
+              suppliedPositions.some((position) => String(position || "").trim())
+                ? suppliedPositions.join(",")
+                : cachedPositionText,
+            );
+            const syncPendingName = () => {
+              if (root.dataset.playerFirstPaintContentReady === "true") return;
+              const currentHero = playerDetail?.querySelector(":scope > .playerHero");
+              const titleName = currentHero?.querySelector(".playerTitleName");
+              if (!(titleName instanceof HTMLElement)) return;
+              const rendered = String(titleName.textContent || "").replace(/\u00a0/g, " ").trim().replace(/\s+/g, " ");
+              let fullName = String(titleName.dataset.playerFullName || "").trim() || cachedName;
+              if (rendered && rendered !== compactPlayerPageName(fullName)) fullName = rendered;
+              if (!fullName) return;
+              const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(fullName) : fullName;
+              titleName.dataset.playerFullName = fullName;
+              if (titleName.textContent !== displayName) titleName.textContent = displayName;
+              titleName.setAttribute("aria-label", fullName);
+            };
+            const syncPendingAttributeLabels = () => {
+              if (root.dataset.playerFirstPaintContentReady === "true" || !(staticAttributes instanceof HTMLElement)) return;
+              const currentHero = playerDetail?.querySelector(":scope > .playerHero");
+              const livePositions = normalizePositions(currentHero?.querySelector(".playerHeroIdentity > p")?.textContent || "");
+              const positions = livePositions.length ? livePositions : cachedPositions;
+              if (!positions.length) return;
+              const labels = attributeLabels(positions);
+              const goalkeeper = labels.length === 2;
+              const cards = Array.from(staticAttributes.children).filter((card) => card instanceof HTMLElement);
+              if (cards.length !== labels.length) {
+                staticAttributes.replaceChildren(...labels.map((label, index) => {
+                  const card = document.createElement("div");
+                  card.className = "playerAttributeCard"
+                    + (index === 0 ? " featured" : "")
+                    + (index === 0 || goalkeeper ? " fullWidth" : "");
+                  const name = document.createElement("span");
+                  name.textContent = label;
+                  const value = document.createElement("strong");
+                  value.textContent = "\u00a0";
+                  card.append(name, value);
+                  return card;
+                }));
+                return;
+              }
+              cards.forEach((card, index) => {
+                card.className = "playerAttributeCard"
+                  + (index === 0 ? " featured" : "")
+                  + (index === 0 || goalkeeper ? " fullWidth" : "");
+                const name = card.querySelector(":scope > span");
+                if (name instanceof HTMLElement && name.textContent !== labels[index]) name.textContent = labels[index];
+              });
+            };
+            const syncPendingPlayerShell = () => {
+              syncPendingName();
+              syncPendingAttributeLabels();
+            };
             if (playerPage instanceof HTMLElement) playerPage.hidden = false;
             applyFirstPaintHeroActionLayout(hero);
             if (hero instanceof HTMLElement && playerId) {
               hero.dataset.playerShellId = playerId;
               const idButton = hero.querySelector(".playerIdText");
               if (idButton instanceof HTMLElement) idButton.textContent = "ID #" + playerId;
-              const knownValues = firstPaintContext?.knownValues && typeof firstPaintContext.knownValues === "object" ? firstPaintContext.knownValues : null;
-              const cachedName = String(firstPaintContext?.name || knownValues?.name?.display || knownValues?.name?.raw || "").trim();
-              const suppliedPositions = Array.isArray(firstPaintContext?.positions)
-                ? firstPaintContext.positions
-                : String(firstPaintContext?.positions || "").split(",");
-              const cachedPositionText = String(knownValues?.positions?.display ?? knownValues?.positions?.raw ?? "");
-              const cachedPositions = (suppliedPositions.some((position) => String(position || "").trim()) ? suppliedPositions : cachedPositionText.split(","))
-                .map((position) => String(position || "").trim())
-                .filter(Boolean);
-              const titleName = hero.querySelector(".playerTitleName");
-              if (titleName instanceof HTMLElement && cachedName) {
-                const displayName = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;
-                titleName.dataset.playerFullName = cachedName;
-                titleName.textContent = displayName;
-                titleName.setAttribute("aria-label", cachedName);
+              if (cachedName) {
+                const titleName = hero.querySelector(".playerTitleName");
+                if (titleName instanceof HTMLElement) {
+                  titleName.dataset.playerFullName = cachedName;
+                  titleName.textContent = window.matchMedia("(max-width: 900px)").matches ? compactPlayerPageName(cachedName) : cachedName;
+                  titleName.setAttribute("aria-label", cachedName);
+                }
               }
               const positionsText = hero.querySelector(".playerHeroIdentity > p");
               if (positionsText instanceof HTMLElement && cachedPositions.length) positionsText.textContent = cachedPositions.join(", ");
@@ -1217,10 +1278,8 @@
 
             const staticAge = document.querySelector("#playerPage [data-mfl-static-player-age]");
             if (staticAge instanceof HTMLElement && playerId) {
-              const context = firstPaintContext;
-              const known = context?.knownValues && typeof context.knownValues === "object" ? context.knownValues : null;
-              const ageEntry = known?.age;
-              const retirementEntry = known?.retirement_years;
+              const ageEntry = knownValues?.age;
+              const retirementEntry = knownValues?.retirement_years;
               const ageText = String(ageEntry?.display ?? ageEntry?.raw ?? "").trim() || "\u00a0";
               const line = document.createElement("span");
               line.className = "playerDetailAgeLine";
@@ -1253,38 +1312,17 @@
               staticAge.replaceChildren(line);
             }
 
-            const staticAttributes = document.querySelector("#playerPage [data-mfl-static-player-attributes]");
-            if (staticAttributes instanceof HTMLElement && playerId) {
-              const context = firstPaintContext;
-              const known = context?.knownValues && typeof context.knownValues === "object" ? context.knownValues : null;
-              const positionEntry = known?.positions;
-              const suppliedPositions = Array.isArray(context?.positions)
-                ? context.positions
-                : String(context?.positions || "").split(",");
-              const cachedPositionText = String(positionEntry?.display ?? positionEntry?.raw ?? "");
-              const positions = (suppliedPositions.some((position) => String(position || "").trim())
-                ? suppliedPositions
-                : cachedPositionText.split(","))
-                .map((position) => String(position || "").trim().toUpperCase())
-                .filter(Boolean);
-              const labels = !positions.length
-                ? ["Overall", "", "", "", "", "", ""]
-                : (positions[0] === "GK"
-                  ? ["Overall", "Goalkeeping"]
-                  : ["Overall", "Pace", "Dribbling", "Shooting", "Defense", "Passing", "Physical"]);
-              const goalkeeper = labels.length === 2;
-              staticAttributes.replaceChildren(...labels.map((label, index) => {
-                const card = document.createElement("div");
-                card.className = "playerAttributeCard"
-                  + (index === 0 ? " featured" : "")
-                  + (index === 0 || goalkeeper ? " fullWidth" : "");
-                const name = document.createElement("span");
-                name.textContent = label || "\u00a0";
-                const value = document.createElement("strong");
-                value.textContent = "\u00a0";
-                card.append(name, value);
-                return card;
-              }));
+            syncPendingPlayerShell();
+            if (playerDetail instanceof HTMLElement && typeof MutationObserver === "function") {
+              const pendingObserver = new MutationObserver(() => {
+                if (root.dataset.playerFirstPaintContentReady === "true") {
+                  pendingObserver.disconnect();
+                  return;
+                }
+                syncPendingPlayerShell();
+              });
+              pendingObserver.observe(playerDetail, { childList: true, subtree: true, characterData: true });
+              pendingObserver.observe(root, { attributes: true, attributeFilter: ["data-player-first-paint-content-ready"] });
             }
 
             if (views instanceof HTMLElement) {
