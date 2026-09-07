@@ -2,9 +2,9 @@
 /* Desktop Player title controls align to the existing Player-name line without changing its geometry. */
 @media (min-width: 901px) {
   .playerHeroIdentity {
-    flex-basis: clamp(360px, 37vw, 520px);
-    width: clamp(360px, 37vw, 520px);
-    max-width: clamp(360px, 37vw, 520px);
+    flex: 1 1 360px;
+    width: auto;
+    max-width: 600px;
   }
 
   .playerHeroIdentity .playerTitle {
@@ -14,6 +14,8 @@
 
   .playerHeroIdentity .playerTitle > .playerTitleName {
     order: 0;
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .playerHeroIdentity .playerTitle > .playerTitleNoteIcon {
