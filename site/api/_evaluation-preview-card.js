@@ -83,8 +83,12 @@ function px(value) {
 }
 
 function cardText(value) {
-  return String(value ?? "")
-    .replace(/[\u0000-\u001f\u007f]/g, "")
+  return [...String(value ?? "")]
+    .filter((character) => {
+      const code = character.charCodeAt(0);
+      return code >= 32 && code !== 127;
+    })
+    .join("")
     .replace(/\s+/g, " ")
     .trim();
 }
