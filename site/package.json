@@ -9,7 +9,7 @@
     "build:styles": "node build-styles.mjs",
     "build": "npm run build:html && npm run build:responsive && npm run build:config && npm run build:core && npm run build:styles",
     "lint": "eslint bootstrap.js bootstrap-core.js build-*.mjs style-bundle.mjs validation-text.mjs vercel-config-source.mjs ci-quality-scope.mjs sync-release-projections.mjs modules api *-runtime.js validate*.mjs validation/*.mjs",
-    "typecheck": "tsc -p jsconfig.json --noEmit",
+    "typecheck": "tsc -p jsconfig.json --noEmit && tsc -p jsconfig.core.json --noEmit",
     "verify:generated": "git diff --exit-code -- vercel.json vercel.production.json styles-runtime.css table-width-runtime.js \":(glob)modules/app-core*-runtime.js\" index.html responsive.css",
     "validate": "node validate-all.mjs",
     "check": "npm run lint && npm run typecheck && npm run build && npm run verify:generated && npm run validate",
