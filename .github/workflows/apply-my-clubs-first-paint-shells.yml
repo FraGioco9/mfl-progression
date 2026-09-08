@@ -1,0 +1,116 @@
+name: Apply My Clubs first-paint shells
+
+on:
+  push:
+    branches:
+      - feat/205-my-clubs-data
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Apply first-paint shells and typography
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(old) < count:
+                  raise SystemExit(f"Expected pattern not found in {path}: {old[:120]!r}")
+              file.write_text(text.replace(old, new, count))
+
+          path = "site/modules/core-sources/my-clubs.js"
+          replace(path,
+          '''  const CLUB_DISPLAY_DATA_STORAGE_KEY = "mfl-club-display-data-v1";\n''',
+          '''  const CLUB_DISPLAY_DATA_STORAGE_KEY = "mfl-club-display-data-v1";\n  const MY_CLUBS_COUNT_STORAGE_KEY = "mfl-my-clubs-count-v1";\n''')
+
+          replace(path,
+          '''  function clubColor(value) {\n    const color = String(value || "").trim();\n    return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : "";\n  }\n\n''',
+          '''  function clubColor(value) {\n    const color = String(value || "").trim();\n    return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : "";\n  }\n\n  function storedClubCount(wallet = walletAddress()) {\n    const normalizedWallet = normalizeWalletAddress(wallet || "").toLowerCase();\n    if (!normalizedWallet) return 0;\n    try {\n      const stored = JSON.parse(localStorage.getItem(MY_CLUBS_COUNT_STORAGE_KEY) || "{}");\n      const value = Number(stored?.[normalizedWallet]);\n      return Number.isInteger(value) && value >= 0 ? value : 0;\n    } catch {\n      return 0;\n    }\n  }\n\n  function saveClubCount(wallet, count) {\n    const normalizedWallet = normalizeWalletAddress(wallet || "").toLowerCase();\n    const normalizedCount = Number(count);\n    if (!normalizedWallet || !Number.isInteger(normalizedCount) || normalizedCount < 0) return;\n    try {\n      const stored = JSON.parse(localStorage.getItem(MY_CLUBS_COUNT_STORAGE_KEY) || "{}");\n      const next = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};\n      next[normalizedWallet] = normalizedCount;\n      localStorage.setItem(MY_CLUBS_COUNT_STORAGE_KEY, JSON.stringify(next));\n    } catch {\n      // First-paint shells are an enhancement; data loading remains authoritative.\n    }\n  }\n\n  function loadingCard() {\n    const card = document.createElement("div");\n    card.className = "myClubCard myClubCardLoading";\n    card.setAttribute("aria-hidden", "true");\n\n    const logoFrame = document.createElement("div");\n    logoFrame.className = "myClubLogoFrame myClubLogoFrameLoading";\n    const logo = document.createElement("div");\n    logo.className = "myClubLoadingLogo";\n    logoFrame.appendChild(logo);\n\n    const body = document.createElement("div");\n    body.className = "myClubCardBody";\n    const idLine = document.createElement("span");\n    idLine.className = "myClubLoadingLine myClubLoadingId";\n    const nameLine = document.createElement("span");\n    nameLine.className = "myClubLoadingLine myClubLoadingName";\n    const metaLine = document.createElement("span");\n    metaLine.className = "myClubLoadingLine myClubLoadingMeta";\n    body.append(idLine, nameLine, metaLine);\n    card.append(logoFrame, body);\n    return card;\n  }\n\n  function renderLoadingCards(count = storedClubCount()) {\n    if (!grid || grid.childElementCount || count <= 0) return false;\n    const fragment = document.createDocumentFragment();\n    for (let index = 0; index < count; index += 1) fragment.appendChild(loadingCard());\n    grid.appendChild(fragment);\n    setStatus("");\n    return true;\n  }\n\n''')
+
+          replace(path,
+          '''    const titleRow = document.createElement("div");\n    titleRow.className = "myClubTitleRow";\n\n    const title = document.createElement("h3");\n''',
+          '''    const titleBlock = document.createElement("div");\n    titleBlock.className = "myClubTitleBlock";\n\n    const title = document.createElement("h3");\n''')
+
+          replace(path,
+          '''    id.className = "myClubId";\n    id.textContent = clubId ? `#${clubId}` : "";\n    titleRow.append(title, id);\n\n''',
+          '''    id.className = "myClubId";\n    id.textContent = clubId ? `#${clubId}` : "";\n    titleBlock.append(id, title);\n\n''')
+
+          replace(path,
+          '''    body.append(titleRow, meta);\n''',
+          '''    body.append(titleBlock, meta);\n''')
+
+          replace(path,
+          '''    cacheWallet = wallet;\n    const sequence = ++requestSequence;\n    setStatus("Loading...");\n''',
+          '''    cacheWallet = wallet;\n    const sequence = ++requestSequence;\n    const hasLoadingCards = renderLoadingCards(storedClubCount(wallet));\n    setStatus(hasLoadingCards ? "" : "Loading...");\n''')
+
+          replace(path,
+          '''        cacheClubs = Array.isArray(payload?.clubs) ? payload.clubs : [];\n        renderCards(cacheClubs);\n''',
+          '''        cacheClubs = Array.isArray(payload?.clubs) ? payload.clubs : [];\n        saveClubCount(wallet, cacheClubs.length);\n        renderCards(cacheClubs);\n''')
+
+          path = "site/my-clubs.css"
+          replace(path,
+          '''.myClubTitleRow {\n  display: flex;\n  align-items: baseline;\n  gap: 8px;\n  min-width: 0;\n}\n''',
+          '''.myClubTitleBlock {\n  display: flex;\n  flex-direction: column;\n  align-items: flex-start;\n  gap: 3px;\n  min-width: 0;\n}\n''')
+
+          replace(path,
+          '''  font-size: var(--mfl-section-title-font-size);\n  font-weight: var(--mfl-section-title-font-weight);\n  line-height: var(--mfl-section-title-line-height);\n''',
+          '''  font-size: 20px;\n  font-weight: var(--mfl-section-title-font-weight);\n  line-height: 1.2;\n''')
+
+          replace(path,
+          '''  font-size: var(--mfl-metadata-compact-font-size);\n  font-weight: var(--mfl-metadata-font-weight);\n  line-height: var(--mfl-metadata-line-height);\n''',
+          '''  font-size: 13px;\n  font-weight: var(--mfl-metadata-font-weight);\n  line-height: 1.2;\n''', 1)
+
+          replace(path,
+          '''  margin-top: 6px;\n  color: var(--text-soft);\n  font-size: var(--mfl-metadata-font-size);\n  font-weight: var(--mfl-metadata-font-weight);\n  line-height: var(--mfl-metadata-line-height);\n}\n''',
+          '''  margin-top: 9px;\n  color: var(--text-soft);\n  font-size: 14px;\n  font-weight: var(--mfl-metadata-font-weight);\n  line-height: 1.3;\n}\n\n.myClubCardLoading {\n  pointer-events: none;\n}\n\n.myClubLogoFrameLoading {\n  background: var(--surface-muted);\n}\n\n.myClubLoadingLogo {\n  width: 82px;\n  height: 82px;\n  border-radius: var(--mfl-radius-control);\n  background: var(--border);\n  opacity: 0.55;\n}\n\n.myClubLoadingLine {\n  display: block;\n  border-radius: var(--mfl-radius-control);\n  background: var(--border);\n  opacity: 0.55;\n}\n\n.myClubLoadingId {\n  width: 42px;\n  height: 12px;\n}\n\n.myClubLoadingName {\n  width: min(78%, 210px);\n  height: 21px;\n  margin-top: 5px;\n}\n\n.myClubLoadingMeta {\n  width: min(64%, 170px);\n  height: 14px;\n  margin-top: 11px;\n}\n''')
+
+          path = "site/responsive-sources/my-clubs-tablet.css.inc"
+          replace(path,
+          '''  .myClubCardBody {\n    padding: 11px 12px;\n  }\n\n''',
+          '''  .myClubCardBody {\n    padding: 11px 12px;\n  }\n\n  .myClubName {\n    font-size: 18px;\n  }\n\n  .myClubId {\n    font-size: 12px;\n  }\n\n  .myClubMeta {\n    font-size: 13px;\n  }\n\n  .myClubLoadingLogo {\n    width: 66px;\n    height: 66px;\n  }\n\n''')
+
+          path = "site/responsive-sources/my-clubs-phone.css.inc"
+          replace(path,
+          '''  .myClubName {\n    font-size: var(--mfl-section-title-compact-font-size);\n  }\n\n  .myClubMeta {\n    font-size: var(--mfl-metadata-compact-font-size);\n  }\n\n''',
+          '''  .myClubName {\n    font-size: 19px;\n  }\n\n  .myClubId {\n    font-size: 12px;\n  }\n\n  .myClubMeta {\n    font-size: 14px;\n  }\n\n  .myClubLoadingLogo {\n    width: 72px;\n    height: 72px;\n  }\n\n''')
+
+          path = "site/validate-my-clubs-route.mjs"
+          replace(path,
+          '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\n''',
+          '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\nassert.match(coreSource, /MY_CLUBS_COUNT_STORAGE_KEY = "mfl-my-clubs-count-v1"/u, "My Clubs must persist a wallet-scoped club count for first-paint card shells.");\nassert.match(coreSource, /function renderLoadingCards\\(count = storedClubCount\\(\\)\\)/u, "My Clubs must render the known number of card shells before club data hydration.");\nassert.match(coreSource, /saveClubCount\\(wallet, cacheClubs\\.length\\)/u, "My Clubs must refresh its persisted shell count from authoritative loaded club data.");\nassert.match(coreSource, /titleBlock\\.append\\(id, title\\)/u, "My Clubs must render the club ID above the club name.");\nassert.match(pageStyles, /\\.myClubName \\{[\\s\\S]*?font-size: 20px;/u, "Desktop club names must use the enlarged card typography.");\nassert.match(pageStyles, /\\.myClubMeta \\{[\\s\\S]*?font-size: 14px;/u, "Desktop club metadata must use the enlarged card typography.");\nassert.match(pageStyles, /\\.myClubCardLoading \\{/u, "My Clubs must style first-paint card shells with the same card geometry.");\n''')
+
+          replace(path,
+          '''assert.match(pageStyles, /\\.myClubName \\{[\\s\\S]*?font-size: var\\(--mfl-section-title-font-size\\);[\\s\\S]*?font-weight: var\\(--mfl-section-title-font-weight\\);[\\s\\S]*?line-height: var\\(--mfl-section-title-line-height\\);/u, "Club names must consume shared section-title typography.");\n''',
+          '''assert.match(pageStyles, /\\.myClubName \\{[\\s\\S]*?font-size: 20px;[\\s\\S]*?font-weight: var\\(--mfl-section-title-font-weight\\);[\\s\\S]*?line-height: 1\\.2;/u, "Club names must use enlarged route-owned sizing while retaining shared section-title weight.");\n''')
+
+          replace(path,
+          '''assert.match(pageStyles, /\\.myClubMeta \\{[\\s\\S]*?font-size: var\\(--mfl-metadata-font-size\\);[\\s\\S]*?font-weight: var\\(--mfl-metadata-font-weight\\);[\\s\\S]*?line-height: var\\(--mfl-metadata-line-height\\);/u, "Club metadata must consume shared metadata typography.");\n''',
+          '''assert.match(pageStyles, /\\.myClubMeta \\{[\\s\\S]*?font-size: 14px;[\\s\\S]*?font-weight: var\\(--mfl-metadata-font-weight\\);[\\s\\S]*?line-height: 1\\.3;/u, "Club metadata must use enlarged route-owned sizing while retaining shared metadata weight.");\n''')
+
+          replace(path,
+          '''assert.match(pageStyles, /\\.myClubId \\{[\\s\\S]*?font-size: var\\(--mfl-metadata-compact-font-size\\);/u, "Club IDs beside names must consume compact shared metadata sizing.");\n''',
+          '''assert.match(pageStyles, /\\.myClubId \\{[\\s\\S]*?font-size: 13px;/u, "Club IDs above names must use the enlarged compact card sizing.");\n''')
+          PY
+      - name: Validate My Clubs source contract
+        working-directory: site
+        run: node validate-my-clubs-route.mjs
+      - name: Commit changes and remove helper
+        shell: bash
+        run: |
+          git config user.name "FraGioco9"
+          git config user.email "giocolifrancesco@gmail.com"
+          git rm .github/workflows/apply-my-clubs-first-paint-shells.yml
+          git add site/modules/core-sources/my-clubs.js site/my-clubs.css site/responsive-sources/my-clubs-tablet.css.inc site/responsive-sources/my-clubs-phone.css.inc site/validate-my-clubs-route.mjs
+          git commit -m "Show My Clubs shells on first paint"
+          git push origin HEAD:feat/205-my-clubs-data
