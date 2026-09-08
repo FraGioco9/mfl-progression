@@ -70,10 +70,15 @@ function validateRefreshNavigationOwnership(source, label) {
   includes(source, 'const authoritativeTarget = pageTargetFromPath(`${location.pathname}${location.search}`);', `${label} startup must re-read the canonical route after its dependency barrier.`);
   includes(source, "await showHomeShell(authoritativeTarget.pageName, false, authoritativeTarget.options);", `${label} refresh must execute the authoritative route through the same normal setPage transition used by in-app navigation.`);
   const startAppStartIndex = source.indexOf("async function startApp() {");
-  const startAppEndIndex = source.indexOf("\n}\n\n(() => {", startAppStartIndex);
-  const startAppSection = startAppStartIndex >= 0 && startAppEndIndex > startAppStartIndex
+  const startAppTailIndex = source.indexOf(
+    "void Promise.allSettled([startupSummaryPromise, startupWalletPreferencesPromise]).then(() => {",
+    startAppStartIndex,
+  );
+  const startAppEndIndex = source.indexOf("\n}", startAppTailIndex);
+  const startAppSection = startAppStartIndex >= 0 && startAppTailIndex > startAppStartIndex && startAppEndIndex > startAppTailIndex
     ? source.slice(startAppStartIndex, startAppEndIndex + 2)
     : "";
+  invariant(startAppSection, `${label} startup validation must isolate the startApp function independently from whichever compatibility block follows it.`);
   excludes(startAppSection, "skipNavigationTransition: true,", `${label} refresh must not bypass the normal navigation transition lifecycle.`);
   excludes(source, "await showHomeShell(initialTarget.pageName, false, initialTarget.options);", `${label} refresh startup must never replay the route captured before its dependency barrier.`);
 

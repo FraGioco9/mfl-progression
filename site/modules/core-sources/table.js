@@ -2752,6 +2752,9 @@ async function tableSetViewOwner(viewName) {
   }
 
   state.view = viewName;
+  if (state.currentPage === "watchlist" && state.currentWatchlistId) {
+    state.watchlistViews[state.currentWatchlistId] = viewName;
+  }
   state.page = 1;
   if (pageKey) {
     updatePageUrl(pageKey, { updateUrl: true, view: viewName });
@@ -2773,6 +2776,7 @@ state.sortDirection = targetSortState.sortDirection;
   buildHeader();
 
   applyFilters();
+  if (state.currentPage === "watchlist") saveTableState();
 }
 
 function copyDelegatedPlayerId(button, event) {

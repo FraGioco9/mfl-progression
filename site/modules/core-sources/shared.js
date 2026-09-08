@@ -20,6 +20,7 @@ const state = {
   watchlistPlayerIdsAdded: new Set(),
   watchlistPlayerIdsRemoved: new Set(),
   watchlists: [],
+  watchlistViews: /** @type {Record<string, string>} */ ({}),
   currentWatchlistId: "",
   currentAgentWalletAddress: "",
   pendingWatchlistRouteId: "",
@@ -3361,6 +3362,9 @@ async function ensureWatchlistRoute(options = {}) {
 }
 
 function switchWatchlist(watchlistId) {
+  if (state.currentWatchlistId && state.view) {
+    state.watchlistViews[state.currentWatchlistId] = state.view;
+  }
   syncActiveWatchlistFromSet();
   const nextWatchlist = state.watchlists.find((watchlist) => watchlist.id === watchlistId);
   if (!nextWatchlist) {
@@ -3368,6 +3372,11 @@ function switchWatchlist(watchlistId) {
     return;
   }
 
+  const savedView = String(state.watchlistViews[nextWatchlist.id] || "").trim();
+  const viewChanged = pageViewOptions.watchlist.includes(savedView) && savedView !== state.view;
+  if (viewChanged) {
+    state.view = savedView;
+  }
   state.currentWatchlistId = nextWatchlist.id;
   state.watchlistPlayerIdsAdded.clear();
   state.watchlistPlayerIdsRemoved.clear();
@@ -3376,6 +3385,10 @@ function switchWatchlist(watchlistId) {
   setActiveWatchlistIds(nextWatchlist.playerIds);
   state.page = 1;
   renderWatchlistSwitcher();
+  if (viewChanged) {
+    updateViewButtons();
+    buildHeader();
+  }
   updateWatchlistUrl();
   saveTableState();
   applyFilters();
@@ -4184,8 +4197,13 @@ function currentTableState() {
     state.tablePageStates[pageKey] = currentTablePageState();
   }
 
+  if (state.currentPage === "watchlist" && state.currentWatchlistId && state.view) {
+    state.watchlistViews[state.currentWatchlistId] = state.view;
+  }
+
   return {
     pages: state.tablePageStates,
+    watchlistViews: { ...state.watchlistViews },
     menuOpen: state.menuOpen,
     recentSearchItems: state.recentSearchItems,
     recentSearchPlayerIds: state.recentSearchPlayerIds,
@@ -4268,8 +4286,18 @@ function applyWalletTableState(savedState) {
   }
 
   const mergedState = mergeCloudTableStateWithLocalPages(savedState);
+const incomingWatchlistViews = mergedState.watchlistViews;
+if (incomingWatchlistViews && typeof incomingWatchlistViews === "object" && !Array.isArray(incomingWatchlistViews)) {
+  Object.entries(incomingWatchlistViews).forEach(([watchlistId, view]) => {
+    const normalizedWatchlistId = String(watchlistId || "").trim();
+    const normalizedView = String(view || "").trim();
+    if (normalizedWatchlistId && pageViewOptions.watchlist.includes(normalizedView)) {
+      state.watchlistViews[normalizedWatchlistId] = normalizedView;
+    }
+  });
+}
 
-  restoreTablePageStates(mergedState);
+restoreTablePageStates(mergedState);
   restoreMenuState(mergedState);
   restoreRecentSearchState(mergedState);
   restoreRecentEvaluationState(mergedState);
@@ -7329,75 +7357,7 @@ async function startApp() {
   });
 }
 
-(() => {
-  const watchlistViewsKey = "watchlistViews";
-  const watchlistViews = {};
 
-  function rememberCurrentWatchlistView() {
-    if (state.currentPage === "watchlist" && state.currentWatchlistId && state.view) {
-      watchlistViews[state.currentWatchlistId] = state.view;
-    }
-  }
-
-  if (typeof currentTableState === "function") {
-    const originalCurrentTableState = currentTableState;
-    currentTableState = function currentTableStateWithWatchlistViews(...args) {
-      rememberCurrentWatchlistView();
-      return { ...originalCurrentTableState.apply(this, args), [watchlistViewsKey]: { ...watchlistViews } };
-    };
-  }
-
-  if (typeof stripPersistentSortState === "function") {
-    const originalStripPersistentSortState = stripPersistentSortState;
-    stripPersistentSortState = function stripPersistentSortStateWithWatchlistViews(tableState) {
-      return {
-        ...originalStripPersistentSortState.call(this, tableState),
-        [watchlistViewsKey]: { ...(tableState?.[watchlistViewsKey] || watchlistViews) },
-      };
-    };
-  }
-
-  if (typeof applyWalletTableState === "function") {
-    const originalApplyWalletTableState = applyWalletTableState;
-    applyWalletTableState = function applyWalletTableStateWithWatchlistViews(tableState) {
-      const incoming = tableState?.[watchlistViewsKey];
-      if (incoming && typeof incoming === "object" && !Array.isArray(incoming)) {
-        Object.entries(incoming).forEach(([watchlistId, view]) => {
-          if (watchlistId && typeof view === "string") watchlistViews[watchlistId] = view;
-        });
-      }
-      return originalApplyWalletTableState.call(this, tableState);
-    };
-  }
-
-  if (typeof setView === "function") {
-    const originalSetView = setView;
-    setView = function setViewWithWatchlistSync(viewName) {
-      const result = originalSetView.apply(this, arguments);
-      rememberCurrentWatchlistView();
-      if (state.currentPage === "watchlist" && typeof saveTableState === "function") saveTableState();
-      return result;
-    };
-  }
-
-  if (typeof switchWatchlist === "function") {
-    const originalSwitchWatchlist = switchWatchlist;
-    switchWatchlist = function switchWatchlistWithSavedView(watchlistId) {
-      rememberCurrentWatchlistView();
-      const result = originalSwitchWatchlist.apply(this, arguments);
-      const savedView = watchlistViews[String(watchlistId || "")];
-      if (savedView && typeof normalizeViewForPage === "function") {
-        state.view = normalizeViewForPage(savedView, "watchlist");
-        state.page = 1;
-        if (typeof updateViewButtons === "function") updateViewButtons();
-        if (typeof buildHeader === "function") buildHeader();
-        if (typeof applyFilters === "function") applyFilters();
-        if (typeof saveTableState === "function") saveTableState();
-      }
-      return result;
-    };
-  }
-})();
 
 
 
