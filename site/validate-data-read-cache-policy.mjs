@@ -67,5 +67,17 @@ invariant(
     && dataAuth.includes('response.setHeader("Server-Timing", serverTimingHeader(startedAt, timings));'),
   "Backend phase timings must continue flowing through the canonical Server-Timing response owner.",
 );
+invariant(
+  dataAuth.includes("function serializeJson(data, timings = {}) {")
+    && dataAuth.includes("timings.serialization = Math.max(0, performance.now() - serializationStartedAt);")
+    && dataAuth.includes("const body = serializeJson(data, timings);")
+    && dataAuth.indexOf("const body = serializeJson(data, timings);") < dataAuth.indexOf("applyJsonHeaders(response, startedAt, timings, options);")
+    && dataAuth.includes("response.status(status).end(body);"),
+  "JSON serialization must be measured once before Server-Timing headers are finalized, then the pre-serialized body must be written directly.",
+);
+invariant(
+  !dataAuth.includes("response.status(status).json(data);"),
+  "Measured JSON responses must not serialize the same payload a second time through response.json().",
+);
 
 console.log("Public data read cache, wallet-proof fast path, and backend phase timing validation passed.");
