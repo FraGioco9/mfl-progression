@@ -73,6 +73,37 @@ for (const [handler, ownerSlot, chunkOwner, binding] of lazyTableHandlers) {
   includes(tableCore, binding, `Canonical Table source must install the ${handler} DOM binding when its lazy runtime loads.`);
 }
 
+const tableControlBindings = [
+  'pageSizeSelect.addEventListener("change", () => {',
+  'hideRetiredInput.addEventListener("change", () => {',
+  'hideRetiringInput.addEventListener("change", () => {',
+  'hideMflPlayersInput?.addEventListener("change", () => {',
+  'packablePlayersInput?.addEventListener("change", () => {',
+  'newMintsInput.addEventListener("change", () => {',
+  'showAddFilterButton.addEventListener("click", () => {',
+  'addFilterSelect.addEventListener("change", () => {',
+  'setupBackdropClickClose(filtersModal, () => closeFilters());',
+  'clearFiltersButton.addEventListener("click", () => {',
+  'prevButton.addEventListener("click", () => {',
+  'nextButton.addEventListener("click", () => {',
+];
+for (const binding of tableControlBindings) {
+  excludes(sharedCore, binding, `Table page/filter/pager binding must not remain in universal Shared ownership: ${binding}`);
+  includes(tableCore, binding, `Canonical Table source must own page/filter/pager binding: ${binding}`);
+}
+
+for (const typedControl of [
+  'const addFilterSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#addFilterSelect"));',
+  'const hideRetiredInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiredInput"));',
+  'const hideRetiringInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiringInput"));',
+  'const hideMflPlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideMflPlayersInput"));',
+  'const packablePlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#packablePlayersInput"));',
+  'const newMintsInput = /** @type {HTMLInputElement} */ (document.querySelector("#newMintsInput"));',
+  'const pageSizeSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#pageSizeSelect"));',
+]) {
+  includes(sharedCore, typedControl, `Shared DOM registry must preserve concrete Table control typing: ${typedControl}`);
+}
+
 excludes(sharedCore, "function tableNextOverallPreciseValue(row) {", "Table sorting calculations must stay lazy in Table source.");
 excludes(sharedCore, "function activeFilterCount() {", "Table filter UI must stay lazy in Table source.");
 excludes(sharedCore, "function currentPageRows() {", "Table paging and selection must stay lazy in Table source.");
@@ -122,4 +153,4 @@ invariant(
   "Generated Table runtime must exactly match canonical table.js.",
 );
 
-console.log("Source-owned Table facades, lazy Table-only DOM bindings, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");
+console.log("Source-owned Table facades, lazy Table-only handlers and page/filter/pager bindings, typed control references, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");

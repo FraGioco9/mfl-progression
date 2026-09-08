@@ -2804,3 +2804,88 @@ clearSelectionButton.addEventListener("click", clearSelection);
 addToWatchlistButton.addEventListener("click", addSelectedToWatchlist);
 moveToWatchlistButton?.addEventListener("click", moveSelectedToWatchlist);
 openSelectedLinksButton.addEventListener("click", openSelectedPlayerLinks);
+
+pageSizeSelect.addEventListener("change", () => {
+  state.pageSize = Number(pageSizeSelect.value);
+  state.page = 1;
+  if (state.incrementalMode) {
+    void reloadIncrementalPage(1);
+    return;
+  }
+  renderTable();
+});
+
+hideRetiredInput.addEventListener("change", () => {
+  state.page = 1;
+  applyFilters();
+});
+
+hideRetiringInput.addEventListener("change", () => {
+  state.page = 1;
+  applyFilters();
+});
+
+
+hideMflPlayersInput?.addEventListener("change", () => {
+  state.page = 1;
+  applyFilters();
+});
+packablePlayersInput?.addEventListener("change", () => {
+  if (state.currentPage === "mfl" && packablePlayersInput.checked) {
+    newMintsInput.checked = false;
+  }
+  state.page = 1;
+  applyFilters();
+});
+
+newMintsInput.addEventListener("change", () => {
+  if (state.currentPage === "mfl" && newMintsInput.checked && packablePlayersInput) {
+    packablePlayersInput.checked = false;
+  }
+  state.page = 1;
+  applyFilters();
+});
+
+
+showAddFilterButton.addEventListener("click", () => {
+  addFilterSelect.hidden = !addFilterSelect.hidden;
+
+  if (!addFilterSelect.hidden) {
+    addFilterSelect.focus();
+  }
+});
+
+addFilterSelect.addEventListener("change", () => {
+  if (!addFilterSelect.value) {
+    return;
+  }
+
+  addFilterRule(addFilterSelect.value);
+  addFilterSelect.value = "";
+  addFilterSelect.hidden = true;
+});
+
+setupBackdropClickClose(filtersModal, () => closeFilters());
+
+clearFiltersButton.addEventListener("click", () => {
+  clearAdvancedFilters(false);
+  applyAdvancedFilters();
+});
+
+prevButton.addEventListener("click", () => {
+  if (state.incrementalMode) {
+    void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });
+    return;
+  }
+  state.page -= 1;
+  renderTable();
+});
+
+nextButton.addEventListener("click", () => {
+  if (state.incrementalMode) {
+    void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });
+    return;
+  }
+  state.page += 1;
+  renderTable();
+});

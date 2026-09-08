@@ -374,17 +374,17 @@ const closeFiltersButton = document.querySelector("#closeFiltersButton");
 const applyFiltersButton = document.querySelector("#applyFiltersButton");
 const clearFiltersButton = document.querySelector("#clearFiltersButton");
 const showAddFilterButton = document.querySelector("#showAddFilterButton");
-const addFilterSelect = document.querySelector("#addFilterSelect");
+const addFilterSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#addFilterSelect"));
 const filterRules = document.querySelector("#filterRules");
-const hideRetiredInput = document.querySelector("#hideRetiredInput");
-const hideRetiringInput = document.querySelector("#hideRetiringInput");
+const hideRetiredInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiredInput"));
+const hideRetiringInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiringInput"));
 const hideMflPlayersFilter = document.querySelector("#hideMflPlayersFilter");
 const packablePlayersFilter = document.querySelector("#packablePlayersFilter");
-const hideMflPlayersInput = document.querySelector("#hideMflPlayersInput");
-const packablePlayersInput = document.querySelector("#packablePlayersInput");
-const newMintsInput = document.querySelector("#newMintsInput");
+const hideMflPlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideMflPlayersInput"));
+const packablePlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#packablePlayersInput"));
+const newMintsInput = /** @type {HTMLInputElement} */ (document.querySelector("#newMintsInput"));
 const newMintsLabel = document.querySelector("#newMintsLabel");
-const pageSizeSelect = document.querySelector("#pageSizeSelect");
+const pageSizeSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#pageSizeSelect"));
 const tableColGroup = document.querySelector("#tableColGroup");
 const tableHead = document.querySelector("#tableHead");
 const tableBody = document.querySelector("#tableBody");
@@ -7026,68 +7026,6 @@ watchlistButton?.addEventListener("click", (event) => {
   toggleWatchlistDropdown();
 });
 
-pageSizeSelect.addEventListener("change", () => {
-  state.pageSize = Number(pageSizeSelect.value);
-  state.page = 1;
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(1);
-    return;
-  }
-  renderTable();
-});
-
-hideRetiredInput.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-
-hideRetiringInput.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-
-
-hideMflPlayersInput?.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-packablePlayersInput?.addEventListener("change", () => {
-  if (state.currentPage === "mfl" && packablePlayersInput.checked) {
-    newMintsInput.checked = false;
-  }
-  state.page = 1;
-  applyFilters();
-});
-
-newMintsInput.addEventListener("change", () => {
-  if (state.currentPage === "mfl" && newMintsInput.checked && packablePlayersInput) {
-    packablePlayersInput.checked = false;
-  }
-  state.page = 1;
-  applyFilters();
-});
-
-
-showAddFilterButton.addEventListener("click", () => {
-  addFilterSelect.hidden = !addFilterSelect.hidden;
-
-  if (!addFilterSelect.hidden) {
-    addFilterSelect.focus();
-  }
-});
-
-addFilterSelect.addEventListener("change", () => {
-  if (!addFilterSelect.value) {
-    return;
-  }
-
-  addFilterRule(addFilterSelect.value);
-  addFilterSelect.value = "";
-  addFilterSelect.hidden = true;
-});
-
-setupBackdropClickClose(filtersModal, () => closeFilters());
-
 document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
@@ -7161,11 +7099,6 @@ setupBackdropClickClose(addWatchlistModal, closeAddWatchlistModal);
 setupBackdropClickClose(deleteWatchlistModal, closeDeleteWatchlistModal);
 
 
-clearFiltersButton.addEventListener("click", () => {
-  clearAdvancedFilters(false);
-  applyAdvancedFilters();
-});
-
 discardAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 closeAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 confirmAddWatchlistButton?.addEventListener("click", confirmAddWatchlist);
@@ -7185,24 +7118,6 @@ addWatchlistNameInput?.addEventListener("input", () => {
   }
 });
 
-
-prevButton.addEventListener("click", () => {
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });
-    return;
-  }
-  state.page -= 1;
-  renderTable();
-});
-
-nextButton.addEventListener("click", () => {
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });
-    return;
-  }
-  state.page += 1;
-  renderTable();
-});
 
 themeButton.addEventListener("click", () => {
   const currentTheme = document.documentElement.dataset.theme || "light";
