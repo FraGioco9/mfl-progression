@@ -989,7 +989,7 @@ function updateAccountState() {
 function optOutWallet() {
   const previousWalletAddress = state.linkedWalletAddress;
   const routeAtOptOut = pageTargetFromPath(`${window.location.pathname}${window.location.search}`);
-  const protectedRouteAtOptOut = ["myplayers", "watchlist", "settings"].includes(routeAtOptOut.pageName)
+  const protectedRouteAtOptOut = ["myplayers", "my-clubs", "watchlist", "settings"].includes(routeAtOptOut.pageName)
     ? routeAtOptOut
     : null;
   clearWalletNotesState();
@@ -1035,7 +1035,7 @@ function optOutWallet() {
     renderEvaluationPage();
   }
 
-  if (state.currentPage === "myplayers" || state.currentPage === "watchlist" || state.currentPage === "settings") {
+  if (["myplayers", "my-clubs", "watchlist", "settings"].includes(state.currentPage)) {
     setPage(state.currentPage, false, { preserveScroll: true });
     return;
   }
@@ -1258,7 +1258,9 @@ async function openSavedEvaluationsModal() {
 }
 
 function normalizedPageName(pageName) {
-  return pageName === "my-players" ? "myplayers" : pageName;
+  if (pageName === "my-players") return "myplayers";
+  if (pageName === "myclubs") return "my-clubs";
+  return pageName;
 }
 
 function pageFromUrl() {
@@ -1360,6 +1362,13 @@ function pageTargetFromPath(path) {
         ...(savedId ? { savedId } : {}),
         ...(shareId ? { shareId } : {}),
       },
+    };
+  }
+
+  if (cleanPath === "/my-clubs" || cleanPath === "/myclubs") {
+    return {
+      pageName: "my-clubs",
+      options: cleanPath === "/myclubs" ? { replaceUrl: "/my-clubs" } : {},
     };
   }
 
@@ -2047,7 +2056,7 @@ function setView() {
 }
 
 async function setPage(pageName, updateHash = true, options = {}) {
-  const lockedOptOutRoute = (pageName === "myplayers" || pageName === "watchlist" || pageName === "settings") && !hasWalletOptIn();
+  const lockedOptOutRoute = ["myplayers", "my-clubs", "watchlist", "settings"].includes(pageName) && !hasWalletOptIn();
   resetTableSortSession(pageName, options);
   if (!pageNavigationIsCurrent(options)) return null;
   const plainEvaluationEntry = pageName === "evaluation" && (options.plain || isPlainEvaluationUrl());

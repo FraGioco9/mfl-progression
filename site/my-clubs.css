@@ -1,0 +1,140 @@
+/* My Clubs owns only club-card geometry and route-specific states.
+ * Shared page frame, title, panel, metadata, focus, and motion semantics come from canonical foundations. */
+
+.myClubsPage {
+  width: 100%;
+  min-width: 0;
+}
+
+.myClubsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.myClubCard {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr);
+  align-items: stretch;
+  min-width: 0;
+  min-height: 144px;
+  overflow: hidden;
+  border: var(--mfl-panel-border-strong);
+  border-radius: var(--mfl-radius-panel);
+  background: var(--mfl-panel-background);
+  color: var(--text);
+  text-decoration: none;
+  transition: border-color var(--mfl-motion-fast) ease, background-color var(--mfl-motion-fast) ease;
+}
+
+.myClubCard:hover {
+  border-color: var(--primary-hover);
+  background: var(--row-hover);
+}
+
+.myClubCard.myClubCardNoLogo {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.myClubCard:focus-visible {
+  outline: var(--mfl-focus-ring-width) solid var(--mfl-focus-ring-color);
+  outline-offset: var(--mfl-focus-ring-offset);
+}
+
+.myClubLogoFrame {
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  padding: 16px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-muted);
+}
+
+.myClubLogo {
+  display: block;
+  width: 100%;
+  max-width: 80px;
+  max-height: 88px;
+  object-fit: contain;
+}
+
+.myClubCardBody {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  padding: 16px 18px;
+}
+
+.myClubTitleRow {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+
+.myClubName {
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--mfl-section-title-font-size);
+  font-weight: var(--mfl-section-title-font-weight);
+  line-height: var(--mfl-section-title-line-height);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.myClubId {
+  flex: 0 0 auto;
+  color: var(--text-soft);
+  font-size: var(--mfl-metadata-compact-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
+  line-height: var(--mfl-metadata-line-height);
+}
+
+.myClubMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  min-height: 14px;
+  margin-top: 6px;
+  color: var(--text-soft);
+  font-size: var(--mfl-metadata-font-size);
+  font-weight: var(--mfl-metadata-font-weight);
+  line-height: var(--mfl-metadata-line-height);
+}
+
+.myClubsStatusWrap {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.myClubsStatus {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 13px;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.myClubsStatus.error {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.myClubsRetryButton {
+  min-width: 84px;
+}
+
+html[data-stored-wallet-opt-in="true"]:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-page="my-clubs"] #myClubsPage {
+  display: block;
+}
+
+html[data-stored-wallet-opt-in="false"]:not(.mflInitialRouteResolved):not(.mflInitialRouteSuperseded)[data-initial-page="my-clubs"] #myPlayersLockedPage {
+  display: grid;
+  place-items: center;
+}

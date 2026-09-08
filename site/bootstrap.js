@@ -254,13 +254,17 @@
     const tableView = String(root.dataset.initialTableView || "").toLowerCase();
     const storedOptIn = root.dataset.storedWalletOptIn === "true";
 
-    if (!storedOptIn && (["watchlist", "myplayers"].includes(tablePage) || initialPage === "settings")) {
+    if (!storedOptIn && (
+      ["watchlist", "myplayers"].includes(tablePage)
+      || ["my-clubs", "myclubs", "settings"].includes(initialPage)
+    )) {
       return document.getElementById("myPlayersLockedPage");
     }
     if (tablePage === "database" && tableView === "stats") return document.getElementById("databaseStatsPage");
     if (tablePage === "mfl" && tableView === "stats") return document.getElementById("mflStatsPage");
     if (tablePage) return document.getElementById("progressionPage");
     if (initialPage === "evaluation") return document.getElementById("evaluationPage");
+    if (initialPage === "my-clubs" || initialPage === "myclubs") return document.getElementById("myClubsPage");
     if (initialPage.startsWith("players/")) return document.getElementById("playerPage");
     if (initialPage === "settings") return document.getElementById("settingsPage");
     if (initialPage === "changelog") return document.getElementById("changelogPage");
