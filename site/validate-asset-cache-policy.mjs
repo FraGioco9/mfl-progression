@@ -83,15 +83,15 @@ invariant(
   "Non-versioned production JavaScript must remain uncached.",
 );
 
-const versionedCoreRule = headerRule(
+const versionedJsRule = headerRule(
   productionConfig,
-  "/modules/app-core-runtime.js",
+  "/(.*\\.js)",
   (rule) => hasQuery(rule, "has", "mfl_core"),
 );
-invariant(versionedCoreRule, "Production must retain the versioned application-core cache rule.");
+invariant(versionedJsRule, "Production must retain the versioned JavaScript cache rule.");
 invariant(
-  cacheControl(versionedCoreRule) === "public, max-age=31536000, immutable",
-  "Versioned application core must remain immutable for one year.",
+  cacheControl(versionedJsRule) === "public, max-age=31536000, immutable",
+  "Every build-identified JavaScript runtime must remain immutable for one year.",
 );
 
 console.log("Asset cache policy validation passed.");

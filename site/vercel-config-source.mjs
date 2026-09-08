@@ -37,7 +37,7 @@ const productionJsHeaders = Object.freeze([
     headers: [Object.freeze({ key: "Cache-Control", value: "no-store, max-age=0" })],
   }),
   Object.freeze({
-    source: "/modules/app-core-runtime.js",
+    source: "/(.*\\.js)",
     has: [Object.freeze({ type: "query", key: "mfl_core" })],
     headers: [Object.freeze({ key: "Cache-Control", value: "public, max-age=31536000, immutable" })],
   }),
