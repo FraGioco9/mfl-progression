@@ -49,6 +49,14 @@
     return typeof fn === "function" ? fn : null;
   }
 
+  function dataClientFetch(input, init = {}, options = {}) {
+    const dataClient = window.__mflDataClient;
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      return Promise.reject(new Error("Canonical data client is unavailable."));
+    }
+    return dataClient.fetch(input, init, options);
+  }
+
   function coreContracts() {
     const contracts = Reflect.get(window, "__mflCoreContracts");
     return contracts && typeof contracts === "object" ? contracts : null;
@@ -342,7 +350,7 @@
     if (identifiers.walletAddresses.length) parameters.set("walletAddresses", identifiers.walletAddresses.join(","));
     if (identifiers.clubIds.length) parameters.set("clubIds", identifiers.clubIds.join(","));
 
-    const response = await fetch(`/api/data?${parameters}`, {
+    const response = await dataClientFetch(`/api/data?${parameters}`, {
       cache: "no-store",
       headers: { Accept: "application/json", "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
       signal,
@@ -500,7 +508,7 @@
 
     const loadPromise = (async () => {
       try {
-        const response = await fetch("/api/wallet-preferences", {
+        const response = await dataClientFetch("/api/wallet-preferences", {
           cache: "no-store",
           headers: walletProofHeaders(true),
           signal: activeController.signal,
@@ -599,7 +607,7 @@
 
     markSearching(normalizedQuery);
     try {
-      const response = await fetch(`/api/data?${parameters}`, {
+      const response = await dataClientFetch(`/api/data?${parameters}`, {
         cache: "no-store",
         headers: { Accept: "application/json", "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
         signal: activeController.signal,
@@ -638,7 +646,7 @@
 
     markEvaluationSearching(normalizedQuery);
     try {
-      const response = await fetch(`/api/data?${parameters}`, {
+      const response = await dataClientFetch(`/api/data?${parameters}`, {
         cache: "no-store",
         headers: { Accept: "application/json", "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },
         signal: activeController.signal,
