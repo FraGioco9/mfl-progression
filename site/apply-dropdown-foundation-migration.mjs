@@ -88,6 +88,18 @@ replaceOnce(
 );
 
 replaceOnce(
+  "site/validate-player-table-actions.mjs",
+  `    && dropdowns.includes('#pageSizeSelect option:hover,\\n  #pageSizeSelect option:focus-visible {\\n    outline: 0;\\n    border-color: var(--border);\\n    background: var(--row-hover);')\n    && dropdowns.includes('padding: 0 8px;\\n  border: 1px solid transparent;\\n  font-size: 12px;')\n    && dropdowns.includes('.playerTableActionItem:hover:not(:disabled),\\n.playerTableActionItem:focus-visible:not(:disabled) {\\n  outline: 0;\\n  border-color: var(--border);\\n  background: var(--row-hover);'),`,
+  `    && dropdowns.includes('#pageSizeSelect option:hover,\\n  #pageSizeSelect option:focus-visible {\\n    outline: 0;\\n    border-color: var(--mfl-dropdown-option-hover-border-color);\\n    background: var(--mfl-dropdown-option-hover-background);')\n    && dropdowns.includes('padding: 0 8px;\\n  border: 1px solid transparent;\\n  font-size: 12px;')\n    && dropdowns.includes('.playerTableActionItem:hover:not(:disabled),\\n.playerTableActionItem:focus-visible:not(:disabled) {\\n  outline: 0;\\n  border-color: var(--mfl-dropdown-option-hover-border-color);\\n  background: var(--mfl-dropdown-option-hover-background);'),`,
+);
+
+replaceOnce(
+  "site/validate-player-table-actions.mjs",
+  `    && dropdowns.includes('.accountDropdown button.accountDropdownItem:hover:not(:disabled),\\n.accountDropdown button.accountDropdownItem:focus-visible:not(:disabled) {\\n  border-color: var(--border);\\n  outline: 0;\\n  background: var(--row-hover);')`,
+  `    && dropdowns.includes('.accountDropdown button.accountDropdownItem:hover:not(:disabled),\\n.accountDropdown button.accountDropdownItem:focus-visible:not(:disabled) {\\n  border-color: var(--mfl-dropdown-option-hover-border-color);\\n  outline: 0;\\n  background: var(--mfl-dropdown-option-hover-background);')`,
+);
+
+replaceOnce(
   "docs/ui-foundations.md",
   `## Dialogs and overlays`,
   `## Dropdowns and menus\n\n- Ordinary dropdown/menu surface: \`var(--surface)\` (\`--mfl-dropdown-background\`)\n- Ordinary dropdown/menu border: \`1px solid var(--border-strong)\` (\`--mfl-dropdown-border\`)\n- Ordinary dropdown/menu radius: \`8px\` (\`--mfl-radius-dropdown\`)\n- Ordinary dropdown/menu shadow: \`0 12px 36px rgba(0, 0, 0, 0.16)\` (\`--mfl-shadow-dropdown\`)\n- Ordinary option radius: \`6px\` (\`--mfl-radius-dropdown-option\`)\n- Ordinary option rest/hover/selected colors are semantic foundation tokens; enhanced native pickers and generic custom menus consume them where their visual role matches.\n- \`dropdowns.css\` remains the sole owner of dropdown mechanics: positioning, gaps, max-height, z-index, chevrons, transitions, native picker enhancement, and responsive/menu-specific geometry.\n- Watchlist active rows/actions, Account wallet semantic colors, destructive items, Player action geometry/icons, and Database Stats Custom layout remain specialist-owned.\n\n## Dialogs and overlays`,
