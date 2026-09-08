@@ -72,24 +72,25 @@ if (outsideStandardsFallback.includes("scrollbar-width:") || outsideStandardsFal
 if (!scrollbarSource.includes("--mfl-scrollbar-track-end-inset: 4px;")) {
   throw new Error("Scrollbar tracks must keep the canonical 4px top/bottom thumb inset.");
 }
-if (!scrollbarSource.includes(`html body > #appShell > main {
+const canonicalMainScrollbarGutter = `html body > #appShell > main {
   overflow-y: scroll;
   scrollbar-gutter: stable;
-}`)) {
-  throw new Error("The main scroller must always reserve stable scrollbar space.");
+}`;
+if (!scrollbarSource.includes(canonicalMainScrollbarGutter)) {
+  throw new Error("The main scroller must reserve only its canonical inline-end scrollbar gutter.");
 }
-const mobileSymmetricScrollbarGutter = `@media (max-width: 900px) {
-  html body > #appShell > main {
-    scrollbar-gutter: stable both-edges;
-  }`;
-if (!scrollbarSource.includes(mobileSymmetricScrollbarGutter)) {
-  throw new Error("Mobile must reserve the main scrollbar gutter on both edges so page content stays visually symmetric.");
+if (scrollbarSource.includes("scrollbar-gutter: stable both-edges;")) {
+  throw new Error("Page content padding must ignore scrollbar width; never mirror the main scrollbar gutter onto the opposite edge.");
+}
+const stableMainGutterDeclarations = scrollbarSource.match(/scrollbar-gutter:\s*stable\s*;/g) || [];
+if (stableMainGutterDeclarations.length !== 1) {
+  throw new Error("The main scrollbar gutter must have one canonical non-responsive owner across desktop and mobile.");
 }
 const modalScrollLock = `:root:has(body > .modalBackdrop:not([hidden])) body > #appShell > main {
   overflow-y: hidden;
 }`;
 if (!scrollbarSource.includes(modalScrollLock)) {
-  throw new Error("Visible modal backdrops must lock main scrolling without releasing its stable scrollbar gutter.");
+  throw new Error("Visible modal backdrops must lock main scrolling without changing the canonical scrollport geometry.");
 }
 if (!scrollbarSource.includes("*::-webkit-scrollbar-track,")
   || !scrollbarSource.includes("*::-webkit-scrollbar-track-piece,")
@@ -161,4 +162,4 @@ if (scrollbarSource.includes("--mfl-scrollbar-arrow") || scrollbarSource.include
   throw new Error("Scrollbar arrow styling must not be reintroduced; only the thumb should be visible.");
 }
 
-console.log("Canonical CSS priority, symmetric mobile page gutter, thumb-only scrollbar, hidden table/histogram horizontal scrollbars, and hidden mobile control scrollbars validation passed.");
+console.log("Canonical CSS priority, scrollbar-independent page padding, thumb-only scrollbar, hidden table/histogram horizontal scrollbars, and hidden mobile control scrollbars validation passed.");

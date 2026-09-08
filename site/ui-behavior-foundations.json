@@ -1,0 +1,27 @@
+{
+  "breakpoints": {
+    "mobileMaxPx": 900,
+    "phoneMaxPx": 520,
+    "compactPhoneMaxPx": 380
+  },
+  "interactionStates": {
+    "disabledOpacity": 0.45,
+    "disabledCursor": "not-allowed"
+  },
+  "touch": {
+    "minimumTargetPx": 44,
+    "formFieldFontSizePx": 16
+  },
+  "overflow": {
+    "measurementTolerancePx": 2
+  },
+  "validationMatrix": [
+    { "name": "desktop-scrollbar", "width": 1280, "height": 900, "scrollbar": "present" },
+    { "name": "desktop-no-scrollbar", "width": 1280, "height": 900, "scrollbar": "absent" },
+    { "name": "desktop-boundary", "width": 901, "height": 900, "scrollbar": "present" },
+    { "name": "mobile-boundary", "width": 900, "height": 900, "scrollbar": "present" },
+    { "name": "phone-boundary", "width": 520, "height": 844, "scrollbar": "present" },
+    { "name": "compact-phone-boundary", "width": 380, "height": 800, "scrollbar": "present" },
+    { "name": "compact-phone-small", "width": 360, "height": 780, "scrollbar": "present" }
+  ]
+}
