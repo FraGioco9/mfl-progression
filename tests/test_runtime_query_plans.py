@@ -40,20 +40,26 @@ def create_query_plan_database(path: Path, player_count: int = 6000) -> None:
             )
             """
         )
-        wallets = (
-            ("0xagent-a", "Agent A"),
-            ("0xagent-b", "Agent B"),
-            (runtime_db.MFL_WALLET_ADDRESS, "MFL"),
-        )
+        wallets = {
+            "agent-a": ("0xagent-a", "Agent A"),
+            "agent-b": ("0xagent-b", "Agent B"),
+            "mfl": (runtime_db.MFL_WALLET_ADDRESS, "MFL"),
+        }
         connection.executemany(
             "INSERT INTO wallets(wallet_address, name) VALUES (?, ?)",
-            wallets,
+            wallets.values(),
         )
         positions = runtime_query_plans.POSITION_ORDER
         rows = []
         for player_id in range(1, player_count + 1):
-            wallet_address, wallet_name = wallets[player_id % len(wallets)]
-            club_suffix = "a" if player_id % 2 else "b"
+            if player_id % 10 == 0:
+                wallet_address, wallet_name = wallets["agent-a"]
+            elif player_id % 10 == 1:
+                wallet_address, wallet_name = wallets["mfl"]
+            else:
+                wallet_address, wallet_name = wallets["agent-b"]
+            club_index = player_id % 10
+            club_suffix = chr(ord("a") + club_index)
             position = positions[player_id % len(positions)]
             rows.append(
                 (
@@ -67,7 +73,7 @@ def create_query_plan_database(path: Path, player_count: int = 6000) -> None:
                     1_760_000_000 + player_id,
                     f"club-{club_suffix}",
                     f"Club {club_suffix.upper()}",
-                    "1" if club_suffix == "a" else "2",
+                    str(1 + (club_index % 5)),
                     50 + (player_id % 50),
                     45 + (player_id % 50),
                     1 + (player_id % 5),
