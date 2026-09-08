@@ -1,0 +1,40 @@
+name: Temporary 754 Evaluation data-client migration
+
+on:
+  push:
+    branches:
+      - perf/754-evaluation-data-client
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: perf/754-evaluation-data-client
+      - name: Route Evaluation API calls through canonical data client
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          target = Path("site/modules/core-sources/evaluation.js")
+          source = target.read_text(encoding="utf-8")
+          old = "await fetch("
+          expected = 6
+          actual = source.count(old)
+          if actual != expected:
+              raise SystemExit(f"Expected {expected} Evaluation fetch calls, found {actual}")
+          source = source.replace(old, "await window.__mflDataClient.fetch(")
+          target.write_text(source, encoding="utf-8")
+
+          Path(".github/workflows/temporary-754-evaluation-data-client.yml").unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- site/modules/core-sources/evaluation.js .github/workflows/temporary-754-evaluation-data-client.yml
+          git commit -m "Route Evaluation API calls through data client"
+          git push origin HEAD:perf/754-evaluation-data-client
