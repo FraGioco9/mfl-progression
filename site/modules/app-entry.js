@@ -14,39 +14,128 @@ function isSameOriginApiRequest(input) {
   }
 }
 
-/**
- * Install one request policy for same-origin API calls made by the application core and modular runtimes.
- * Existing caller signals are preserved; calls without a signal receive a bounded timeout.
- * @param {{timeoutMs?: number}} [options]
- */
-function installApiFetchPolicy({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
-  if (window.__mflApiFetchPolicyInstalled) return;
-  window.__mflApiFetchPolicyInstalled = true;
+/** @param {RequestInfo | URL} input @param {RequestInit} init */
+function requestHeaders(input, init) {
+  const headers = new Headers(input instanceof Request ? input.headers : undefined);
+  new Headers(init.headers || undefined).forEach((value, key) => headers.set(key, value));
+  if (!headers.has("Accept")) headers.set("Accept", "application/json");
+  return headers;
+}
 
-  window.fetch = async (input, init = {}) => {
+/** @param {RequestInfo | URL} input @param {RequestInit} init @param {Headers} headers */
+function canonicalRequestKey(input, init, headers) {
+  const url = new URL(input instanceof Request ? input.url : String(input), window.location.href);
+  const method = String(init.method || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
+  const headerKey = Array.from(headers.entries())
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, value]) => `${key}:${value}`)
+    .join("\n");
+  return `${method} ${url.href}\n${headerKey}`;
+}
+
+/** @param {AbortSignal | null} callerSignal @param {number} timeoutMs */
+function composeRequestSignal(callerSignal, timeoutMs) {
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort(callerSignal?.reason);
+  if (callerSignal?.aborted) abortFromCaller();
+  else callerSignal?.addEventListener("abort", abortFromCaller, { once: true });
+  const timer = window.setTimeout(() => controller.abort(new DOMException("Request timed out.", "TimeoutError")), timeoutMs);
+  return Object.freeze({
+    signal: controller.signal,
+    release() {
+      window.clearTimeout(timer);
+      callerSignal?.removeEventListener("abort", abortFromCaller);
+    },
+  });
+}
+
+/** @param {{timeoutMs?: number}} [configuration] */
+function createDataClient({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+  const inFlight = new Map();
+  const responseCache = new Map();
+
+  /**
+   * @param {RequestInfo | URL} input
+   * @param {RequestInit} [init]
+   * @param {{dedupe?: boolean, cacheTtlMs?: number, key?: string}} [options]
+   */
+  async function request(input, init = {}, options = {}) {
     if (!isSameOriginApiRequest(input)) return nativeFetch(input, init);
 
     const requestInit = { ...init };
-    const headers = new Headers(input instanceof Request ? input.headers : undefined);
-    new Headers(init.headers || undefined).forEach((value, key) => headers.set(key, value));
-    if (!headers.has("Accept")) headers.set("Accept", "application/json");
+    const headers = requestHeaders(input, requestInit);
     requestInit.headers = headers;
+    const method = String(requestInit.method || (input instanceof Request ? input.method : "GET") || "GET").toUpperCase();
+    const callerSignal = requestInit.signal || (input instanceof Request ? input.signal : null);
+    const timeout = composeRequestSignal(callerSignal, Math.max(1, Number(timeoutMs) || DEFAULT_TIMEOUT_MS));
+    requestInit.signal = timeout.signal;
 
-    const callerSignal = init.signal || (input instanceof Request ? input.signal : null);
-    if (callerSignal) {
-      requestInit.signal = callerSignal;
-      return nativeFetch(input, requestInit);
+    const requestKey = String(options.key || canonicalRequestKey(input, requestInit, headers));
+    const dedupe = method === "GET" && options.dedupe === true;
+    const cacheTtlMs = method === "GET" ? Math.max(0, Number(options.cacheTtlMs) || 0) : 0;
+    const cached = cacheTtlMs > 0 ? responseCache.get(requestKey) : null;
+    if (cached?.expiresAt > Date.now()) {
+      timeout.release();
+      return cached.response.clone();
+    }
+    if (cached) responseCache.delete(requestKey);
+
+    if (dedupe && inFlight.has(requestKey)) {
+      timeout.release();
+      return inFlight.get(requestKey).then((response) => response.clone());
     }
 
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => controller.abort(), timeoutMs);
-    requestInit.signal = controller.signal;
+    const startedAt = performance.now();
+    const pending = (async () => {
+      try {
+        const response = await nativeFetch(input, requestInit);
+        if (cacheTtlMs > 0 && response.ok) {
+          responseCache.set(requestKey, {
+            expiresAt: Date.now() + cacheTtlMs,
+            response: response.clone(),
+          });
+        }
+        window.dispatchEvent(new CustomEvent("mfl:data-client-timing", {
+          detail: Object.freeze({
+            key: requestKey,
+            url: input instanceof Request ? input.url : String(input),
+            duration: Math.max(0, performance.now() - startedAt),
+            status: response.status,
+          }),
+        }));
+        return response;
+      } finally {
+        timeout.release();
+      }
+    })();
+
+    if (!dedupe) return pending;
+    inFlight.set(requestKey, pending);
     try {
-      return await nativeFetch(input, requestInit);
+      return (await pending).clone();
     } finally {
-      window.clearTimeout(timer);
+      if (inFlight.get(requestKey) === pending) inFlight.delete(requestKey);
     }
-  };
+  }
+
+  return Object.freeze({
+    fetch: request,
+    clearCache() {
+      responseCache.clear();
+    },
+    snapshot() {
+      return Object.freeze({ inFlight: inFlight.size, cached: responseCache.size });
+    },
+  });
+}
+
+/** @param {ReturnType<typeof createDataClient>} dataClient */
+function installDataClientCompatibilityBridge(dataClient) {
+  if (window.__mflApiFetchPolicyInstalled) return;
+  window.__mflApiFetchPolicyInstalled = true;
+  window.fetch = (input, init = {}) => isSameOriginApiRequest(input)
+    ? dataClient.fetch(input, init)
+    : nativeFetch(input, init);
 }
 
 function runtimeResources() {
@@ -128,6 +217,7 @@ const initialPreCoreRuntimeScripts = Object.freeze(uniqueScripts([
 /** @type {Window & {
  * __mflReleaseVersion?: string,
  * __mflCoreBuildId?: string,
+ * __mflDataClient?: ReturnType<typeof createDataClient>,
  * __mflInteractionBusy?: { reason?: string, begin?: (reason?: string) => string, end?: (token?: string) => void, waitForRoutePaint?: () => Promise<void>, installCoreBridge?: () => void },
  * __mflTableLoadingRuntime?: { installCoreBridge?: () => void, sync?: () => void },
  * __mflFilterControlsRuntime?: { sync?: () => void },
@@ -150,6 +240,8 @@ const initialPreCoreRuntimeScripts = Object.freeze(uniqueScripts([
  * mflOpenClubPage?: ((clubId: string, view?: string) => unknown) & { __mflRouteRuntimeGate?: boolean },
  * }} */
 const runtimeWindow = window;
+const dataClient = createDataClient();
+runtimeWindow.__mflDataClient = dataClient;
 
 function releaseFromBootstrap() {
   const version = String(runtimeWindow.__mflReleaseVersion || "").trim();
@@ -382,7 +474,7 @@ async function start() {
   window.__mflRelease = release;
   window.__mflAssetUrl = (path) => new URL(String(path || "").replace(/^\/+/, ""), `${window.location.origin}/`).href;
 
-  installApiFetchPolicy();
+  installDataClientCompatibilityBridge(dataClient);
   await loadScriptGroup(initialPreCoreRuntimeScripts);
 
   await loadApplicationCore();
