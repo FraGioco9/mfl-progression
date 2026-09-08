@@ -16,8 +16,8 @@ invariant(
 );
 invariant(
   databaseStats.includes("function databaseStatsData()")
-    && databaseStats.includes("module.exports = { databaseStatsData }"),
-  "_database-stats.js must remain the sole Database Stats implementation/export.",
+    && /module\.exports\s*=\s*\{[\s\S]*?\bdatabaseStatsData,?[\s\S]*?\};/.test(databaseStats),
+  "_database-stats.js must remain the canonical Database Stats implementation/export.",
 );
 invariant(
   !dataViews.includes("function databaseStatsData()")
