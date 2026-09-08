@@ -23,6 +23,7 @@ const appCore = await Promise.all([
   ]).then((parts) => parts.join("\n"));
 const schema = await read(resolve(repoRoot, "supabase-schema.sql"));
 const migration = await read(resolve(repoRoot, "supabase/migrations/20260823140000_minimize_wallet_preferences_table_state.sql"));
+const atomicMigration = await read(resolve(repoRoot, "supabase/migrations/20260908131924_atomic_wallet_preferences.sql"));
 const documentation = await read(resolve(repoRoot, "SUPABASE_PERSISTENCE.md"));
 
 function includes(source, expected, message) {
@@ -69,18 +70,28 @@ includes(
 );
 includes(
   preferences,
-  'if (hasDomain("tableState")) {',
-  "Supabase table-state writes must be explicitly scoped to the tableState preference domain.",
+  'if (hasDomain("tableState")) patch.table_state = normalizeCloudTableState(incoming.tableState);',
+  "Supabase table-state writes must store only the canonical tableState shape in their atomic patch.",
 );
 includes(
   preferences,
-  "patch.table_state = mergeTableState(incoming.tableState, currentTableState) || {};",
-  "Supabase table-state PATCHes must merge and store the canonical tableState rather than the compatibility response shape.",
+  'supabaseRequest("rpc/patch_wallet_preferences_atomic"',
+  "Wallet preference writes must use the database-owned atomic RPC.",
 );
 includes(
+  preferences,
+  "p_wallet_address: wallet,\n      p_patch: patch,",
+  "The atomic preference RPC must receive the verified wallet and only the normalized supplied-domain patch.",
+);
+excludes(
+  preferences,
+  "select=table_state&wallet_address",
+  "Production table-state writes must not read a stale table_state snapshot before writing.",
+);
+excludes(
   preferences,
   'method: "PATCH",',
-  "Existing wallet preference rows must use partial PATCH updates so unrelated domains cannot be overwritten.",
+  "Production wallet preference writes must not fall back to a separate REST PATCH after the atomic RPC is available.",
 );
 excludes(
   preferences,
@@ -92,6 +103,16 @@ excludes(
   "recentSearchAgentWallets: mergeRecentIds(incoming.recentSearchAgentWallets, current.recentSearchAgentWallets)",
   "Legacy agent recent-search arrays must not regain independent cloud merge/storage ownership.",
 );
+
+for (const source of [schema, atomicMigration]) {
+  includes(source, "create or replace function public.patch_wallet_preferences_atomic(", "Atomic wallet preference RPC must be present in canonical schema and migration.");
+  includes(source, "security invoker", "Atomic wallet preference RPC must preserve caller privileges rather than bypass RLS implicitly.");
+  includes(source, "set search_path = ''", "Atomic wallet preference RPC must pin an empty search_path.");
+  includes(source, "for update;", "Atomic wallet preference RPC must lock the wallet row before merging state.");
+  includes(source, "limit 5", "Atomic recent-history merging must retain the five-item cap.");
+  includes(source, "revoke all on function public.patch_wallet_preferences_atomic(text, jsonb) from public, anon, authenticated;", "Atomic wallet preference RPC must not be executable by public browser roles.");
+  includes(source, "grant execute on function public.patch_wallet_preferences_atomic(text, jsonb) to service_role;", "Atomic wallet preference RPC must be service-role-only.");
+}
 
 includes(
   walletPresence,
@@ -149,7 +170,7 @@ includes(
 includes(
   preferences,
   "const currentPreferences = await readPreferences(wallet);",
-  "Preference PUT merging must use the non-visit read path and avoid redundant last-seen writes.",
+  "The no-Supabase fallback must keep using the non-visit read path and avoid redundant last-seen writes.",
 );
 includes(
   appCore,
@@ -198,6 +219,16 @@ includes(
   "Application startup already requests wallet preferences for a restored valid wallet proof",
   "Supabase documentation must explain how returning opted-in visits refresh wallet presence data.",
 );
+includes(
+  documentation,
+  "atomic database RPC",
+  "Supabase documentation must explain atomic wallet-preference domain updates.",
+);
+includes(
+  documentation,
+  "service-role-only",
+  "Supabase documentation must record the RPC execution boundary.",
+);
 
 const apiFiles = await fs.readdir(apiRoot);
 for (const filename of apiFiles.filter((name) => name.endsWith(".js") && name !== "_supabase.js")) {
@@ -223,4 +254,4 @@ includes(
   "The workflow that supplies Supabase credentials to progression email delivery must be documented.",
 );
 
-console.log("Supabase persistence ownership is documented, authenticated visits refresh wallet presence data, and wallet table_state stores only canonical cloud-owned data.");
+console.log("Supabase persistence ownership is documented, authenticated visits refresh wallet presence data, and wallet preference writes are atomic and domain-scoped.");

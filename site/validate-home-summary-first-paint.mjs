@@ -107,7 +107,7 @@ for (const required of [
 ]) {
   includes(eagerCore, required, `Canonical shared Home summary owner is missing ${required}`);
 }
-invariant(occurrences(eagerCore, 'fetch("/api/data?mode=bootstrap"') === 1, "The canonical shared core must keep exactly one database-summary fetch owner.");
+invariant(occurrences(eagerCore, 'window.__mflDataClient.fetch("/api/data?mode=bootstrap"') === 1, "The canonical shared core must keep exactly one database-summary data-client owner.");
 
 const loaderStart = eagerCore.indexOf("let summaryLoadPromise = null;");
 const loaderEnd = eagerCore.indexOf("\nfunction tablePageKey", loaderStart);
@@ -116,19 +116,23 @@ const loaderSource = eagerCore.slice(loaderStart, loaderEnd);
 let fetchCount = 0;
 const updates = [];
 const context = {
-  fetch: async () => {
-    fetchCount += 1;
-    return {
-      ok: true,
-      json: async () => ({
-        manifest: { version: "test" },
-        summary: {
-          playerCount: 321,
-          walletCount: 87,
-          generatedAt: "2026-08-21T12:00:00.000Z",
-        },
-      }),
-    };
+  window: {
+    __mflDataClient: {
+      fetch: async () => {
+        fetchCount += 1;
+        return {
+          ok: true,
+          json: async () => ({
+            manifest: { version: "test" },
+            summary: {
+              playerCount: 321,
+              walletCount: 87,
+              generatedAt: "2026-08-21T12:00:00.000Z",
+            },
+          }),
+        };
+      },
+    },
   },
   state: {},
   updateSummaryCounts: (players, wallets) => updates.push([players, wallets]),
@@ -147,4 +151,4 @@ await context.__loadSummary();
 invariant(fetchCount === 1, "Returning Home after a successful summary load must not fetch again.");
 invariant(updates.length === 1 && updates[0][0] === 321 && updates[0][1] === 87, "Returning Home must repaint cached Players/Wallets counts after route priming reset them to '-'.");
 
-console.log("Source-owned Home and deep-link first-paint validation passed: non-Home routes never expose Home boxes, Club waits for verification, Player paints its structural shell immediately, and cached Home counts repaint without refetching.");
+console.log("Source-owned Home and deep-link first-paint validation passed: non-Home routes never expose Home boxes, Club waits for verification, Player paints its structural shell immediately, and cached Home counts repaint without refetching through the canonical data client.");

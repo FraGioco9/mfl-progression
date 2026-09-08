@@ -45,6 +45,33 @@ includes(sharedCore, "function renderWatchlistSwitcher() {", "Shared core must r
 includes(sharedCore, "function closeWatchlistDropdown() {", "Shared core must retain a safe dropdown-close facade for global Escape/pointer handling.");
 includes(sharedCore, "async function ensureWatchlistRoute(", "Watchlist route selection must remain shared for setPage orchestration.");
 includes(sharedCore, "function switchWatchlist(", "Watchlist switching must retain its shared API.");
+includes(sharedCore, "const watchlistMatch = cleanPath.match(/^\\/watchlist(?:\\/[^/]+)?(?:\\/[^/]+)?$/);", "Canonical route parsing must recognize Watchlist id/view URLs directly.");
+includes(sharedCore, "const target = watchlistTargetFromUrl(cleanPath);", "Canonical route parsing must resolve Watchlist URL identity once.");
+includes(sharedCore, "const normalizedView = normalizeViewForPage(target.view, \"watchlist\");", "Canonical route parsing must normalize the Watchlist view before setPage receives it.");
+includes(sharedCore, "watchlistId: target.watchlistId,", "Canonical Watchlist route options must carry the selected Watchlist id.");
+includes(sharedCore, "view: normalizedView,", "Canonical Watchlist route options must carry the selected view.");
+for (const retired of [
+  "routeViewFromPath",
+  "enforceWatchlistRouteView",
+  "restoreSavedTableStateWithRoute",
+  "setPageWithWatchlistRoute",
+]) excludes(sharedCore, retired, `Legacy Watchlist route-view reparser must stay removed: ${retired}`);
+includes(sharedCore, "watchlistViews: /** @type {Record<string, string>} */ ({}),", "Watchlist view memory must live in canonical shared state.");
+includes(sharedCore, "state.watchlistViews[state.currentWatchlistId] = state.view;", "Canonical table-state serialization must capture the active Watchlist view.");
+includes(sharedCore, "watchlistViews: { ...state.watchlistViews },", "Canonical table-state serialization must persist per-Watchlist views.");
+includes(sharedCore, "const incomingWatchlistViews = mergedState.watchlistViews;", "Wallet table-state hydration must restore per-Watchlist views without a wrapper.");
+includes(sharedCore, "Object.entries(incomingWatchlistViews).forEach(([watchlistId, view]) => {", "Wallet table-state hydration must merge validated per-Watchlist views into canonical state.");
+excludes(sharedCore, "state.watchlistViews = {};", "Partial wallet table-state hydration must not clear newer in-session per-Watchlist view choices.");
+includes(sharedCore, 'const savedView = String(state.watchlistViews[nextWatchlist.id] || "").trim();', "Watchlist switching must resolve its saved view before rendering the destination list.");
+includes(tableCore, "state.watchlistViews[state.currentWatchlistId] = viewName;", "Canonical Table view switching must update Watchlist view memory directly.");
+for (const retired of [
+  "watchlistViewsKey",
+  "currentTableStateWithWatchlistViews",
+  "stripPersistentSortStateWithWatchlistViews",
+  "applyWalletTableStateWithWatchlistViews",
+  "setViewWithWatchlistSync",
+  "switchWatchlistWithSavedView",
+]) excludes(sharedCore, retired, `Legacy Watchlist view persistence wrapper must stay removed: ${retired}`);
 includes(sharedCore, "function normalizeWatchlists(watchlists, legacyIds = []) {", "Watchlist persistence normalization must remain shared.");
 excludes(sharedCore, "watchlistDropdown.replaceChildren();", "Watchlist dropdown DOM construction must not remain universal.");
 

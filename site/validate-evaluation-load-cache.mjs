@@ -48,16 +48,18 @@ invariant(
 );
 
 invariant(
-  sharedCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
+  evaluationCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
+    && !sharedCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
     && sharedCore.includes('async function openSavedEvaluationsModal() {\n  evaluationSearchInput.blur();\n  if (document.activeElement === evaluationLoadButton) evaluationLoadButton.blur();')
     && !sharedCore.includes('async function openSavedEvaluationsModal() {\n  clearEvaluationSearchFocus();'),
-  "Clicking Load must preserve the direct universal binding while clearing both Evaluation-search focus and stale trigger focus before opening the modal.",
+  "Clicking Load must use the lazy Evaluation binding while the stable shared facade clears both Evaluation-search focus and stale trigger focus before opening the modal.",
 );
 
 invariant(
-  sharedCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;')
-    && sharedCore.includes('event.preventDefault();\n  hideEvaluationLoadActionTooltip();\n  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {\n    document.activeElement.blur();'),
-  "Saved Evaluations must stay open on Escape while the active control is deselected.",
+  evaluationCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;')
+    && evaluationCore.includes('event.preventDefault();\n  hideEvaluationLoadActionTooltip();\n  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {\n    document.activeElement.blur();')
+    && !sharedCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;'),
+  "Saved Evaluations must keep Escape focus-release behavior in the lazy Evaluation owner without a duplicate Shared listener.",
 );
 
 for (const required of [
@@ -86,14 +88,14 @@ invariant(
   evaluationCore.includes("let savedEvaluationListPreloadPromise = null;")
     && evaluationCore.includes("async function loadSavedEvaluationListData()")
     && evaluationCore.includes("if (savedEvaluationListPreloadPromise) return savedEvaluationListPreloadPromise;")
-    && evaluationCore.includes('fetch("/api/evaluation-save", {')
+    && evaluationCore.includes('window.__mflDataClient.fetch("/api/evaluation-save", {')
     && evaluationCore.includes("return rememberSavedEvaluationList(evaluations);")
     && evaluationCore.includes("function preloadSavedEvaluationList()")
     && evaluationCore.includes("queueMicrotask(() => {")
     && evaluationCore.includes('window.addEventListener("mfl:evaluation-ready", () => {')
     && evaluationCore.includes("const evaluations = await loadSavedEvaluationListData();")
     && evaluationCore.includes("renderSavedEvaluationList(Array.isArray(evaluations) ? evaluations : []);"),
-  "Saved Evaluation list/player data must preload in the background on Evaluation entry and the Load modal must reuse the same cache/in-flight request.",
+  "Saved Evaluation list/player data must preload in the background through the canonical data client and the Load modal must reuse the same cache/in-flight request.",
 );
 
 const listRenderStart = evaluationCore.indexOf("function renderSavedEvaluationList(rows)");
@@ -120,12 +122,13 @@ invariant(
   savedLoad.includes("let data = cachedSavedEvaluationEntry(id);")
     && savedLoad.includes("if (!data) {")
     && savedLoad.includes('const requestUrl = new URL("/api/evaluation-save", window.location.origin);')
+    && savedLoad.includes("window.__mflDataClient.fetch(requestUrl.toString(), {")
     && savedLoad.includes("data = await response.json();")
     && savedLoad.includes("rememberSavedEvaluationCacheEntry(data);")
     && savedLoad.includes("data = rememberSavedEvaluationCacheEntry(data) || data;")
     && savedLoad.includes("await applySharedEvaluationPayload(data.payload, {")
     && savedLoad.includes("mflPerUsdRevisionAtLoadStart: evaluationMflPerUsdRevisionAtLoadStart,"),
-  "Opening a Saved Evaluation must reuse its cached full payload, refresh its cached valuation after row hydration, preserve newer MFL/USD commits during hydration, and fetch only when that saved ID is not cached.",
+  "Opening a Saved Evaluation must reuse its cached full payload, refresh its cached valuation after row hydration, preserve newer MFL/USD commits during hydration, and use the canonical data client only when that saved ID is not cached.",
 );
 
 const saveStart = evaluationCore.indexOf("async function createSavedEvaluation()");
@@ -153,11 +156,11 @@ invariant(
 );
 
 invariant(
-  evaluationCore.includes('fetch("/api/evaluation-save", {\n      cache: "no-store",')
-    || evaluationCore.includes('fetch("/api/evaluation-save", {\n    cache: "no-store",'),
-  "The first Saved Evaluation list request must remain server-fresh before it is cached for the session.",
+  evaluationCore.includes('window.__mflDataClient.fetch("/api/evaluation-save", {\n      cache: "no-store",')
+    || evaluationCore.includes('window.__mflDataClient.fetch("/api/evaluation-save", {\n    cache: "no-store",'),
+  "The first Saved Evaluation list request must remain server-fresh through the canonical data client before it is cached for the session.",
 );
 
 new Function(sharedCore);
 new Function(evaluationCore);
-console.log("Source-owned Evaluation Saved cache validation passed: Saved lists/player rows preload in the background, Load reuses cache/in-flight work, cached rows retain names and valuations, and saved hydration remains source-owned.");
+console.log("Source-owned Evaluation Saved cache validation passed: Saved lists/player rows preload in the background, lazy Load interactions reuse cache/in-flight work, cached rows retain names and valuations, canonical transport is enforced, and saved hydration remains source-owned.");

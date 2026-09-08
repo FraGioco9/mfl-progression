@@ -3,7 +3,10 @@ import { readFile } from "node:fs/promises";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
-const runtime = await read("./global-search-runtime.js");
+const [runtime, shared] = await Promise.all([
+  read("./global-search-runtime.js"),
+  read("./modules/core-sources/shared.js"),
+]);
 const start = runtime.indexOf("function onAgentSearchResultClickCapture(event)");
 const end = runtime.indexOf("function onSearchResultClickCapture(event)", start);
 const agentActivation = start >= 0 && end > start ? runtime.slice(start, end) : "";
@@ -39,4 +42,16 @@ invariant(
   "Agent Global Search activation must be installed after recent-result promotion and removed with the Global Search runtime.",
 );
 
-console.log("Global Search Agent activation is DOM-keyed, hydration-independent, direct-routed, and isolated from Player/Club result navigation.");
+invariant(
+  !shared.includes("function clickedMflWallet(event)")
+    && !shared.includes('window.location.assign("/mfl/attributes");')
+    && !shared.includes("event.stopImmediatePropagation();\n\n    if (typeof closeSearch === \"function\") closeSearch();"),
+  "Shared core must not restore the retired document-wide MFL Wallet click interceptor.",
+);
+invariant(
+  shared.includes('if (normalizedWalletAddress === mflWalletAddress) {\n    return pagePath("mfl", { view: preferredViewForPage("mfl") });')
+    && shared.includes('if (normalizedWalletAddress === mflWalletAddress) {\n    setPage("mfl", true);'),
+  "Canonical shared Agent routing must retain explicit MFL Wallet route ownership without text-sniffing click interception.",
+);
+
+console.log("Global Search Agent activation is DOM-keyed, hydration-independent, direct-routed, and isolated from Player/Club result navigation without the retired document-wide MFL Wallet interceptor.");

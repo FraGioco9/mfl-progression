@@ -217,7 +217,7 @@ assert.ok(
   cueReady.includes('button.classList.contains("mflViewsScrollButtonVisible")')
     && cueReady.includes('button.getAttribute("aria-hidden") === "false"')
     && cueReady.includes('Boolean(String(views.style.boxShadow || "").trim())'),
-  "The current real Player strip is not first-paint-ready until its right arrow has the final visible class/ARIA state and its right fade exists.",
+  "The presentation runtime must still be able to verify the real Player strip's right arrow and fade after render.",
 );
 
 const cueSyncStart = interactions.indexOf("function syncInitialPlayerViewCue() {");
@@ -231,7 +231,7 @@ assert.ok(
     && cueSyncIndex > readinessFalseIndex
     && cueVerifyIndex > cueSyncIndex
     && !cueSync.includes('playerFirstPaintCuesReady = ready ? "true" : "false"'),
-  "The real Player strip may invalidate and prepare the cue synchronously, but it must not release canonical initial-route cue readiness itself.",
+  "The real Player strip may invalidate, prepare, and verify presentation cues without owning canonical route completion.",
 );
 
 const bootstrapFinishStart = bootstrapCore.indexOf("function scheduleInitialRouteFinishFrame() {");
@@ -239,23 +239,32 @@ const bootstrapFinishEnd = bootstrapCore.indexOf("\n  const recoverCompletedAppl
 const bootstrapFinish = bootstrapCore.slice(bootstrapFinishStart, bootstrapFinishEnd);
 const bootstrapGateFalseIndex = bootstrapFinish.indexOf('root.dataset.playerFirstPaintCuesReady = "false";');
 const bootstrapCueSyncIndex = bootstrapFinish.indexOf("window.__mflSharedTableUiRuntime?.syncRouteHorizontalCuesNow?.();");
-const bootstrapFrameGateIndex = bootstrapFinish.indexOf("if (initialPlayerViewCueReadyFrames < 1) {");
 const bootstrapGateTrueIndex = bootstrapFinish.indexOf('root.dataset.playerFirstPaintCuesReady = "true";');
 const bootstrapResolvedIndex = bootstrapFinish.indexOf('document.documentElement.classList.add("mflInitialRouteResolved");');
 assert.ok(
   bootstrapFinishStart >= 0
     && bootstrapGateFalseIndex >= 0
     && bootstrapCueSyncIndex > bootstrapGateFalseIndex
-    && bootstrapFrameGateIndex > bootstrapCueSyncIndex
-    && bootstrapGateTrueIndex > bootstrapFrameGateIndex
+    && bootstrapGateTrueIndex > bootstrapCueSyncIndex
     && bootstrapResolvedIndex > bootstrapGateTrueIndex,
-  "The canonical initial-route owner must keep the visible Player shell unresolved, synchronize the current cue, cross a real animation-frame boundary, reverify it, and only then release cue readiness and route completion.",
+  "The canonical initial-route owner must prime Player presentation cues before reveal, then release route completion without waiting on measured geometry.",
 );
+for (const geometryToken of [
+  "initialPlayerViewCueReadyFrames",
+  "function initialPlayerViewCueReady()",
+  "scrollWidth",
+  "clientWidth",
+  "mflViewsScrollButtonVisible",
+  'getAttribute("aria-hidden")',
+  "boxShadow",
+]) {
+  assert.ok(!bootstrapFinish.includes(geometryToken), `Player route readiness must not depend on presentation geometry: ${geometryToken}`);
+}
 assert.ok(
-  bootstrapCore.includes("let initialPlayerViewCueReadyFrames = 0;")
+  bootstrapFinish.includes("if (!initialPlayerFirstPaintContentReady()) {")
     && bootstrapFinish.includes("scheduleInitialRouteFinishFrame();")
-    && (bootstrapFinish.match(/syncRouteHorizontalCuesNow/g) || []).length >= 2,
-  "Player refresh release must be tied to a browser render boundary and a second shared-cue synchronization, not a static readiness flag or timeout.",
+    && (bootstrapFinish.match(/syncRouteHorizontalCuesNow/g) || []).length === 1,
+  "Player route completion may wait for authoritative content commit, but cue geometry is primed once and left to the presentation runtime.",
 );
 
 const observerStart = interactions.indexOf("function playerAttributeViewControlsChanged(record) {");
@@ -273,7 +282,7 @@ const observerCueSyncIndex = observer.indexOf("syncInitialPlayerViewCue()");
 const observerRestoreIndex = observer.lastIndexOf("schedulePlayerAttributeViewScrollRestore();");
 assert.ok(
   observerCueSyncIndex >= 0 && observerRestoreIndex > observerCueSyncIndex,
-  "The real Player grid must complete first-paint cue readiness in the MutationObserver checkpoint before any frame-bound scroll restoration.",
+  "The real Player grid must synchronize presentation cues in the MutationObserver checkpoint before frame-bound scroll restoration.",
 );
 
 const ensureViewScrollersStart = shared.indexOf("function ensureViewScrollers() {");
@@ -321,4 +330,4 @@ assert.ok(
   "Player first-paint horizontal cues must be measured after the visible Player content row is in its initial shell and before hydration begins.",
 );
 
-console.log("Player refresh shows the complete static shell with the real right cue before first paint, native scrolling stops with All Time flush to the panel edge, and same-player rerenders preserve position.");
+console.log("Player refresh keeps first-paint cues correct while route readiness depends on content commit rather than layout geometry; native scrolling still stops with All Time flush to the panel edge and same-player rerenders preserve position.");

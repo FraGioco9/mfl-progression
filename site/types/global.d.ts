@@ -1,5 +1,14 @@
+interface MflDataClient {
+  fetch(
+    input: RequestInfo | URL,
+    init?: RequestInit,
+    options?: { dedupe?: boolean; cacheTtlMs?: number; key?: string },
+  ): Promise<Response>;
+  clearCache(): void;
+  snapshot(): Readonly<{ inFlight: number; cached: number }>;
+}
+
 interface Window {
-  __mflApiFetchPolicyInstalled?: boolean;
   __mflReleaseVersion?: string;
   __mflRelease?: Readonly<{ version: string; description: string }>;
   __mflAssetUrl?: (path: string) => string;
@@ -8,6 +17,7 @@ interface Window {
   __mflFilterControlsRuntime?: { sync?: () => void };
   __mflSelectionStartupResetRuntime?: { rebind?: () => void; destroy?: () => void };
   __mflDatabaseStatsRuntime?: { sync?: () => void };
+  __mflDataClient?: MflDataClient;
 }
 
 interface ParentNode {

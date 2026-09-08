@@ -6,6 +6,39 @@ const recommendedRules = {
   "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 };
 
+const canonicalCoreRules = {
+  ...recommendedRules,
+  "no-empty": ["error", { allowEmptyCatch: true }],
+  // Canonical core files are build-time script fragments that share declarations
+  // and intentionally rebind stable facades after lazy domain cores load.
+  "no-undef": "off",
+  "no-unused-vars": "off",
+  "no-func-assign": "off",
+  "no-useless-assignment": "off",
+  "preserve-caught-error": "off",
+};
+
+const nodeWebGlobals = {
+  ...globals.node,
+  fetch: "readonly",
+  AbortController: "readonly",
+  AbortSignal: "readonly",
+  Blob: "readonly",
+  File: "readonly",
+  FormData: "readonly",
+  Headers: "readonly",
+  Request: "readonly",
+  Response: "readonly",
+  TextDecoder: "readonly",
+  TextEncoder: "readonly",
+  URL: "readonly",
+  URLSearchParams: "readonly",
+  atob: "readonly",
+  btoa: "readonly",
+  crypto: "readonly",
+  structuredClone: "readonly",
+};
+
 export default [
   {
     ignores: [
@@ -24,6 +57,15 @@ export default [
       globals: globals.browser,
     },
     rules: recommendedRules,
+  },
+  {
+    files: ["modules/core-sources/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "script",
+      globals: globals.browser,
+    },
+    rules: canonicalCoreRules,
   },
   {
     files: ["bootstrap-core.js", "*-runtime.js"],
@@ -48,13 +90,16 @@ export default [
     rules: {},
   },
   {
-    files: ["api/releases.js", "api/mfl-season-ratios-v2.js"],
+    files: ["api/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "commonjs",
-      globals: { ...globals.node, fetch: "readonly", AbortController: "readonly" },
+      globals: nodeWebGlobals,
     },
-    rules: js.configs.recommended.rules,
+    rules: {
+      ...recommendedRules,
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
   },
   {
     files: [

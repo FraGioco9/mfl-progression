@@ -110,7 +110,7 @@
           type: "recent",
           clubIds: normalizedClubId,
         });
-        const response = await fetch("/api/data?" + parameters.toString(), {
+        const response = await window.__mflDataClient.fetch("/api/data?" + parameters.toString(), {
           cache: "no-store",
           headers: { Accept: "application/json" },
         });

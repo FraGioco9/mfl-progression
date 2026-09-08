@@ -13,6 +13,14 @@
   let nextRequestToken = 0;
   let activeRequestToken = 0;
 
+  function loadMarketplaceOverlayRuntime() {
+    const resources = Reflect.get(window, "__mflRuntimeResources");
+    if (!resources || typeof resources.load !== "function") return Promise.resolve(false);
+    return Promise.resolve(resources.load("/marketplace-overlay-runtime.js")).then(() => true);
+  }
+
+  void loadMarketplaceOverlayRuntime();
+
   function coreContracts() {
     const contracts = Reflect.get(window, "__mflCoreContracts");
     return contracts && typeof contracts === "object" ? contracts : null;
