@@ -7067,9 +7067,6 @@ newMintsInput.addEventListener("change", () => {
   applyFilters();
 });
 
-openFiltersButton.addEventListener("click", openFilters);
-quickClearFiltersButton.addEventListener("click", clearAdvancedFilters);
-closeFiltersButton.addEventListener("click", closeFilters);
 
 showAddFilterButton.addEventListener("click", () => {
   addFilterSelect.hidden = !addFilterSelect.hidden;
@@ -7163,17 +7160,12 @@ setupBackdropClickClose(watchlistChoiceModal, closeWatchlistChoiceModal);
 setupBackdropClickClose(addWatchlistModal, closeAddWatchlistModal);
 setupBackdropClickClose(deleteWatchlistModal, closeDeleteWatchlistModal);
 
-applyFiltersButton.addEventListener("click", applyAdvancedFilters);
 
 clearFiltersButton.addEventListener("click", () => {
   clearAdvancedFilters(false);
   applyAdvancedFilters();
 });
 
-clearSelectionButton.addEventListener("click", clearSelection);
-addToWatchlistButton.addEventListener("click", addSelectedToWatchlist);
-moveToWatchlistButton?.addEventListener("click", moveSelectedToWatchlist);
-openSelectedLinksButton.addEventListener("click", openSelectedPlayerLinks);
 discardAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 closeAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 confirmAddWatchlistButton?.addEventListener("click", confirmAddWatchlist);

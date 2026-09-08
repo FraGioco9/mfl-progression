@@ -2795,3 +2795,12 @@ __mflTableAddSelectedToWatchlistOwner = tableAddSelectedToWatchlistOwner;
 __mflTableMoveSelectedToWatchlistOwner = tableMoveSelectedToWatchlistOwner;
 __mflTableOpenSelectedPlayerLinksOwner = tableOpenSelectedPlayerLinksOwner;
 __mflTableSetViewOwner = tableSetViewOwner;
+
+openFiltersButton.addEventListener("click", openFilters);
+quickClearFiltersButton.addEventListener("click", clearAdvancedFilters);
+closeFiltersButton.addEventListener("click", closeFilters);
+applyFiltersButton.addEventListener("click", applyAdvancedFilters);
+clearSelectionButton.addEventListener("click", clearSelection);
+addToWatchlistButton.addEventListener("click", addSelectedToWatchlist);
+moveToWatchlistButton?.addEventListener("click", moveSelectedToWatchlist);
+openSelectedLinksButton.addEventListener("click", openSelectedPlayerLinks);
