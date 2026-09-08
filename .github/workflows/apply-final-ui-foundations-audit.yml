@@ -1,0 +1,55 @@
+name: Apply final UI foundations audit
+
+on:
+  push:
+    branches: [refactor/747-final-ui-foundations-audit]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: refactor/747-final-ui-foundations-audit
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Apply canonical migration
+        run: node site/apply-final-ui-foundations-audit.mjs
+
+      - name: Install site dependencies
+        working-directory: site
+        run: npm install --no-audit --no-fund
+
+      - name: Lint
+        working-directory: site
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: site
+        run: npm run typecheck
+
+      - name: Build generated projections
+        working-directory: site
+        run: npm run build
+
+      - name: Repository validation
+        working-directory: site
+        run: npm run validate
+
+      - name: Commit canonical migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -- site/apply-final-ui-foundations-audit.mjs .github/workflows/apply-final-ui-foundations-audit.yml
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Complete final UI foundations ownership audit"
+          git push origin HEAD:refactor/747-final-ui-foundations-audit
