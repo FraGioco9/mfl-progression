@@ -65,9 +65,17 @@ function applyJsonHeaders(response, startedAt, timings = {}, options = {}) {
   response.setHeader("Server-Timing", serverTimingHeader(startedAt, timings));
 }
 
+function serializeJson(data, timings = {}) {
+  const serializationStartedAt = performance.now();
+  const body = JSON.stringify(data);
+  timings.serialization = Math.max(0, performance.now() - serializationStartedAt);
+  return body === undefined ? "null" : body;
+}
+
 function sendJson(response, status, data, startedAt, timings = {}, options = {}) {
+  const body = serializeJson(data, timings);
   applyJsonHeaders(response, startedAt, timings, options);
-  response.status(status).json(data);
+  response.status(status).end(body);
 }
 
 function sendNotModified(response, startedAt, timings = {}, options = {}) {
