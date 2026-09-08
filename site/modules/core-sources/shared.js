@@ -130,11 +130,12 @@ const joinedAgencyColumn = "owned_since";
 const linkColumn = "player_link";
 const mflWalletAddress = "0xff8d2bbed8164db0";
 
-const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers"]);
+const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers", "club"]);
 const pageViewOptions = {
   database: ["attributes", "contracts", "stats"],
   mfl: ["attributes", "stats"],
   agents: ["attributes", "contracts", "next", "current", "all"],
+  club: ["attributes", "contracts", "current", "all"],
   progression: ["current", "all"],
   watchlist: ["attributes", "next", "contracts", "current", "all"],
   myplayers: ["attributes", "next", "contracts", "current", "all"],
@@ -143,6 +144,7 @@ const defaultPageViews = {
   database: "attributes",
   mfl: "attributes",
   agents: "attributes",
+  club: "attributes",
   progression: "current",
   watchlist: "current",
   myplayers: "attributes",
@@ -7363,48 +7365,7 @@ async function startApp() {
 
 
 
-/* Public progression table views */
-(() => {
-  const PUBLIC_PROGRESSION_VIEWS = ["current", "all"];
-  const PUBLIC_TABLE_PAGES = new Set(["watchlist", "club"]);
 
-  tablePages.add("club");
-  pageViewOptions.watchlist = Array.from(new Set([
-    ...(pageViewOptions.watchlist || []),
-    ...PUBLIC_PROGRESSION_VIEWS,
-  ]));
-  pageViewOptions.club = ["attributes", "contracts", ...PUBLIC_PROGRESSION_VIEWS];
-  defaultPageViews.club = "attributes";
-
-  if (typeof allowedViewsForPage === "function") {
-    const originalAllowedViewsForPage = allowedViewsForPage;
-    allowedViewsForPage = function allowedViewsForPublicTables(pageName = state.currentPage) {
-      const allowed = originalAllowedViewsForPage.apply(this, arguments) || [];
-      if (!PUBLIC_TABLE_PAGES.has(pageName)) return allowed;
-      return Array.from(new Set([...allowed, ...PUBLIC_PROGRESSION_VIEWS]));
-    };
-  }
-
-  if (typeof normalizeViewForPage === "function") {
-    const originalNormalizeViewForPage = normalizeViewForPage;
-    normalizeViewForPage = function normalizePublicProgressionView(viewName, pageName = state.currentPage) {
-      if (PUBLIC_TABLE_PAGES.has(pageName) && PUBLIC_PROGRESSION_VIEWS.includes(String(viewName || ""))) {
-        return String(viewName);
-      }
-      return originalNormalizeViewForPage.apply(this, arguments);
-    };
-  }
-
-  if (typeof currentDataAccess === "function") {
-    const originalCurrentDataAccess = currentDataAccess;
-    currentDataAccess = function currentPublicProgressionDataAccess(pageName = state.currentPage) {
-      if (PUBLIC_TABLE_PAGES.has(pageName) && PUBLIC_PROGRESSION_VIEWS.includes(state.view)) {
-        return "public";
-      }
-      return originalCurrentDataAccess.apply(this, arguments);
-    };
-  }
-})();
 
 ;(() => {
   // Compatibility marker for legacy validation; route ownership lives in the Club chunk:
