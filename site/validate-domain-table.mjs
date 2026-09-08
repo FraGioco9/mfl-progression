@@ -3,6 +3,7 @@ const validators = [
   "validate-pager-current-page.mjs",
   "validate-pager-cached-route-restore.mjs",
   "validate-table-column-layout.mjs",
+  "validate-table-foundations.mjs",
   "validate-table-progression-spacing.mjs",
   "validate-table-row-vertical-centering.mjs",
   "validate-table-header-typography.mjs",

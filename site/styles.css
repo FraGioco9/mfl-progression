@@ -8,6 +8,17 @@
 :root {
   --mfl-pager-block-padding: 12px;
 
+  /* Shared Table-domain visual language. Responsive geometry remains specialist-owned. */
+  --mfl-table-surface: var(--surface);
+  --mfl-table-border-color: var(--border);
+  --mfl-table-radius: 8px;
+  --mfl-table-header-background: var(--header-bg);
+  --mfl-table-header-text-color: var(--text);
+  --mfl-table-sort-hover-background: var(--surface-muted);
+  --mfl-table-row-hover-background: var(--row-hover);
+  --mfl-table-header-font-size: 12px;
+  --mfl-table-row-font-size: 14px;
+
   /* Uniform Width. This is the only numeric column-width contract. */
   --mfl-table-header-height: 38px;
   --mfl-table-row-height: 34px;
@@ -126,7 +137,7 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 
   #progressionPage .playerTableScroller th.col-name {
     z-index: 6;
-    background: var(--header-bg);
+    background: var(--mfl-table-header-background);
   }
 
   #progressionPage .playerTableScroller :is(
@@ -137,8 +148,8 @@ table :is(th, td) > :is(button, img, input, select, svg) {
     isolation: isolate;
     container-type: scroll-state;
     container-name: mfl-sticky-name;
-    background: var(--surface);
-    background-image: linear-gradient(var(--surface), var(--surface));
+    background: var(--mfl-table-surface);
+    background-image: linear-gradient(var(--mfl-table-surface), var(--mfl-table-surface));
     background-clip: border-box;
   }
 
@@ -146,8 +157,8 @@ table :is(th, td) > :is(button, img, input, select, svg) {
     td.col-name,
     td:has(> .playerNameCell)
   ) {
-    background: var(--row-hover);
-    background-image: linear-gradient(var(--row-hover), var(--row-hover));
+    background: var(--mfl-table-row-hover-background);
+    background-image: linear-gradient(var(--mfl-table-row-hover-background), var(--mfl-table-row-hover-background));
   }
 
   #progressionPage #tableBody > .mflTableLoadingRow > td:has(> .playerNameCell) {
