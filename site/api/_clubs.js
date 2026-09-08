@@ -33,7 +33,7 @@ function myClubsData(signedWallet) {
      FROM runtime_clubs
      WHERE lower(owner_wallet_address) = ?
      ORDER BY
-       CASE WHEN division BETWEEN 1 AND 5 THEN division ELSE 999 END,
+       CASE WHEN division BETWEEN 1 AND 10 THEN division ELSE 999 END,
        name,
        club_id`,
     [walletAddress],
