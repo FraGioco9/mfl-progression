@@ -196,9 +196,11 @@ for (const expectedStyle of [
   "display: grid;",
   "width: 220px;",
   "padding: 5px;",
-  "border: 1px solid var(--border-strong);",
-  "border-radius: var(--mfl-radius-dialog);",
-  "box-shadow: var(--mfl-dropdown-shadow);",
+  "border: var(--mfl-dropdown-border);",
+  "border-radius: var(--mfl-radius-dropdown);",
+  "background: var(--mfl-dropdown-background);",
+  "color: var(--mfl-dropdown-text-color);",
+  "box-shadow: var(--mfl-shadow-dropdown);",
 ]) {
   includes(customMenuStyles, expectedStyle, `Database Stats Custom menu must use the canonical site dropdown style: ${expectedStyle}`);
 }
