@@ -10,7 +10,7 @@
  * - theme/layout palette: styles-base.css
  * - table geometry / Uniform Width: styles.css
  * - motion: motion.css
- * - dropdown mechanics: dropdowns.css
+ * - dropdown mechanics/geometry: dropdowns.css
  * - scrollbars: scrollbars.css
  * - stacking: stacking.css
  *
@@ -80,6 +80,21 @@
   --mfl-panel-border: 1px solid var(--border);
   --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
+
+  /* Shared ordinary dropdown/menu visual language. */
+  --mfl-dropdown-background: var(--surface);
+  --mfl-dropdown-border: 1px solid var(--border-strong);
+  --mfl-dropdown-text-color: var(--text);
+  --mfl-radius-dropdown: 8px;
+  --mfl-shadow-dropdown: 0 12px 36px rgba(0, 0, 0, 0.16);
+  --mfl-dropdown-option-background: transparent;
+  --mfl-dropdown-option-text-color: var(--text);
+  --mfl-radius-dropdown-option: 6px;
+  --mfl-dropdown-option-hover-border-color: var(--border);
+  --mfl-dropdown-option-hover-background: var(--row-hover);
+  --mfl-dropdown-option-hover-text-color: var(--text);
+  --mfl-dropdown-option-selected-background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  --mfl-dropdown-option-selected-text-color: var(--primary);
 
   /* Shared ordinary modal/dialog language. */
   --mfl-modal-backdrop-background: rgba(0, 0, 0, 0.45);
@@ -5529,7 +5544,6 @@ html body > #appShell > main {
 
 :root {
   --mfl-dropdown-gap: 8px;
-  --mfl-dropdown-shadow: 0 12px 36px rgba(0, 0, 0, 0.16);
   --mfl-dropdown-max-height: min(320px, calc(100vh - 16px));
   --mfl-dropdown-chevron-inset: 10px;
   --mfl-dropdown-chevron-gap: auto;
@@ -5616,11 +5630,11 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
     overflow-x: hidden;
     overflow-y: auto;
     overscroll-behavior: contain;
-    border: 1px solid var(--border-strong);
-    border-radius: 8px;
-    background: var(--surface);
-    color: var(--text);
-    box-shadow: var(--mfl-dropdown-shadow);
+    border: var(--mfl-dropdown-border);
+    border-radius: var(--mfl-radius-dropdown);
+    background: var(--mfl-dropdown-background);
+    color: var(--mfl-dropdown-text-color);
+    box-shadow: var(--mfl-shadow-dropdown);
   }
 
   select[data-mfl-dropdown-enhanced="true"]::picker-icon,
@@ -5651,9 +5665,9 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
     margin: 0;
     padding: 7px 9px;
     border: 0;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text);
+    border-radius: var(--mfl-radius-dropdown-option);
+    background: var(--mfl-dropdown-option-background);
+    color: var(--mfl-dropdown-option-text-color);
     font: inherit;
     font-weight: 600;
     line-height: 1.2;
@@ -5675,22 +5689,22 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   .filtersDialog select option:hover,
   .filtersDialog select option:focus-visible {
     outline: 0;
-    background: var(--row-hover);
-    color: var(--text);
+    background: var(--mfl-dropdown-option-hover-background);
+    color: var(--mfl-dropdown-option-hover-text-color);
   }
 
   #pageSizeSelect option:hover,
   #pageSizeSelect option:focus-visible {
     outline: 0;
-    border-color: var(--border);
-    background: var(--row-hover);
-    color: var(--text);
+    border-color: var(--mfl-dropdown-option-hover-border-color);
+    background: var(--mfl-dropdown-option-hover-background);
+    color: var(--mfl-dropdown-option-hover-text-color);
   }
 
   select[data-mfl-dropdown-enhanced="true"] option:checked,
   .filtersDialog select option:checked {
-    background: color-mix(in srgb, var(--primary) 12%, var(--surface));
-    color: var(--primary);
+    background: var(--mfl-dropdown-option-selected-background);
+    color: var(--mfl-dropdown-option-selected-text-color);
   }
 
   select[data-mfl-dropdown-enhanced="true"] option::checkmark,
@@ -5706,11 +5720,11 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  border: 1px solid var(--border-strong);
-  border-radius: 8px;
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--mfl-dropdown-shadow);
+  border: var(--mfl-dropdown-border);
+  border-radius: var(--mfl-radius-dropdown);
+  background: var(--mfl-dropdown-background);
+  color: var(--mfl-dropdown-text-color);
+  box-shadow: var(--mfl-shadow-dropdown);
 }
 
 [data-mfl-dropdown-menu="true"][hidden] {
@@ -5817,9 +5831,9 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
   padding: 0 9px;
   overflow: hidden;
   border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--text);
+  border-radius: var(--mfl-radius-dropdown-option);
+  background: var(--mfl-dropdown-option-background);
+  color: var(--mfl-dropdown-option-text-color);
   font: inherit;
   font-weight: 700;
   text-align: left;
@@ -5850,10 +5864,10 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 
 .accountDropdown button.accountDropdownItem:hover:not(:disabled),
 .accountDropdown button.accountDropdownItem:focus-visible:not(:disabled) {
-  border-color: var(--border);
+  border-color: var(--mfl-dropdown-option-hover-border-color);
   outline: 0;
-  background: var(--row-hover);
-  color: var(--text);
+  background: var(--mfl-dropdown-option-hover-background);
+  color: var(--mfl-dropdown-option-hover-text-color);
   box-shadow: none;
 }
 
@@ -6244,9 +6258,9 @@ select[data-mfl-dropdown-enhanced="true"]:disabled {
 .playerTableActionItem:hover:not(:disabled),
 .playerTableActionItem:focus-visible:not(:disabled) {
   outline: 0;
-  border-color: var(--border);
-  background: var(--row-hover);
-  color: var(--text);
+  border-color: var(--mfl-dropdown-option-hover-border-color);
+  background: var(--mfl-dropdown-option-hover-background);
+  color: var(--mfl-dropdown-option-hover-text-color);
   box-shadow: none;
 }
 

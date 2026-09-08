@@ -5,7 +5,7 @@
  * - theme/layout palette: styles-base.css
  * - table geometry / Uniform Width: styles.css
  * - motion: motion.css
- * - dropdown mechanics: dropdowns.css
+ * - dropdown mechanics/geometry: dropdowns.css
  * - scrollbars: scrollbars.css
  * - stacking: stacking.css
  *
@@ -75,6 +75,21 @@
   --mfl-panel-border: 1px solid var(--border);
   --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
+
+  /* Shared ordinary dropdown/menu visual language. */
+  --mfl-dropdown-background: var(--surface);
+  --mfl-dropdown-border: 1px solid var(--border-strong);
+  --mfl-dropdown-text-color: var(--text);
+  --mfl-radius-dropdown: 8px;
+  --mfl-shadow-dropdown: 0 12px 36px rgba(0, 0, 0, 0.16);
+  --mfl-dropdown-option-background: transparent;
+  --mfl-dropdown-option-text-color: var(--text);
+  --mfl-radius-dropdown-option: 6px;
+  --mfl-dropdown-option-hover-border-color: var(--border);
+  --mfl-dropdown-option-hover-background: var(--row-hover);
+  --mfl-dropdown-option-hover-text-color: var(--text);
+  --mfl-dropdown-option-selected-background: color-mix(in srgb, var(--primary) 12%, var(--surface));
+  --mfl-dropdown-option-selected-text-color: var(--primary);
 
   /* Shared ordinary modal/dialog language. */
   --mfl-modal-backdrop-background: rgba(0, 0, 0, 0.45);

@@ -135,15 +135,15 @@ invariant(
   playerRuntime.includes('item.style.background = "var(--row-hover)";')
     && playerRuntime.includes('item.style.borderColor = "var(--border)";')
     && dropdowns.includes('#pageSizeSelect option {\n    box-sizing: border-box;\n    border: 1px solid transparent;')
-    && dropdowns.includes('#pageSizeSelect option:hover,\n  #pageSizeSelect option:focus-visible {\n    outline: 0;\n    border-color: var(--border);\n    background: var(--row-hover);')
+    && dropdowns.includes('#pageSizeSelect option:hover,\n  #pageSizeSelect option:focus-visible {\n    outline: 0;\n    border-color: var(--mfl-dropdown-option-hover-border-color);\n    background: var(--mfl-dropdown-option-hover-background);')
     && dropdowns.includes('padding: 0 8px;\n  border: 1px solid transparent;\n  font-size: 12px;')
-    && dropdowns.includes('.playerTableActionItem:hover:not(:disabled),\n.playerTableActionItem:focus-visible:not(:disabled) {\n  outline: 0;\n  border-color: var(--border);\n  background: var(--row-hover);'),
+    && dropdowns.includes('.playerTableActionItem:hover:not(:disabled),\n.playerTableActionItem:focus-visible:not(:disabled) {\n  outline: 0;\n  border-color: var(--mfl-dropdown-option-hover-border-color);\n  background: var(--mfl-dropdown-option-hover-background);'),
   "Player table action items and row selector options must match the Player hero action menu hover border/background contract.",
 );
 
 invariant(
   dropdowns.includes('.accountDropdownItem {\n  box-sizing: border-box;\n  border: 1px solid transparent;')
-    && dropdowns.includes('.accountDropdown button.accountDropdownItem:hover:not(:disabled),\n.accountDropdown button.accountDropdownItem:focus-visible:not(:disabled) {\n  border-color: var(--border);\n  outline: 0;\n  background: var(--row-hover);')
+    && dropdowns.includes('.accountDropdown button.accountDropdownItem:hover:not(:disabled),\n.accountDropdown button.accountDropdownItem:focus-visible:not(:disabled) {\n  border-color: var(--mfl-dropdown-option-hover-border-color);\n  outline: 0;\n  background: var(--mfl-dropdown-option-hover-background);')
     && dropdowns.includes('.accountDropdown .accountSettingsButton,\n.accountDropdown .accountSettingsButton:not(:disabled) {\n  border-color: transparent;')
     && !dropdowns.includes('.accountDropdown .accountSettingsButton:hover:not(:disabled)')
     && source.includes('linkWalletButton.removeAttribute("title");')
