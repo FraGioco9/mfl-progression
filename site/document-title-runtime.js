@@ -4,6 +4,7 @@
   window.__mflDocumentTitleRuntime?.destroy?.();
 
   const APP_NAME = "MFL Front Office";
+  const CLUB_DISPLAY_DATA_STORAGE_KEY = "mfl-club-display-data-v1";
   const GENERIC_PAGE_LABELS = Object.freeze({
     database: "Database",
     mfl: "MFL",
@@ -98,7 +99,24 @@
     return withAppName("Agent");
   }
 
-  function resolvedClubTitle() {
+  function cachedClubTitleLabel(clubId) {
+    const normalizedClubId = cleanText(clubId);
+    if (!normalizedClubId) return "";
+    try {
+      const stored = JSON.parse(localStorage.getItem(CLUB_DISPLAY_DATA_STORAGE_KEY) || "{}");
+      const identity = stored?.[normalizedClubId];
+      const name = cleanText(identity?.name);
+      const divisionName = cleanText(identity?.divisionName);
+      if (!name) return "";
+      return divisionName ? `${name} - ${divisionName}` : name;
+    } catch {
+      return "";
+    }
+  }
+
+  function resolvedClubTitle(request = currentRouteRequest()) {
+    const cachedLabel = cachedClubTitleLabel(request?.options?.clubId);
+    if (cachedLabel) return withAppName(cachedLabel);
     if (routeBusy()) return withAppName("Club");
     const tableTitle = textFrom("#tablePageTitle");
     if (!tableTitle || GENERIC_TABLE_TITLES.has(tableTitle)) return withAppName("Club");
@@ -160,7 +178,7 @@
     const pageName = normalizedPageName(request?.pageName);
     if (pageName === "home") return APP_NAME;
     if (pageName === "player") return resolvedPlayerTitle();
-    if (pageName === "club") return resolvedClubTitle();
+    if (pageName === "club") return resolvedClubTitle(request);
     if (pageName === "agents") return resolvedAgentTitle();
     if (pageName === "watchlist") return resolvedWatchlistTitle();
     if (pageName === "evaluation") return resolvedEvaluationTitle();

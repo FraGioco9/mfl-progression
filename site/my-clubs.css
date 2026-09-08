@@ -16,10 +16,10 @@
 
 .myClubCard {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 128px minmax(0, 1fr);
   align-items: stretch;
   min-width: 0;
-  min-height: 144px;
+  min-height: 156px;
   overflow: hidden;
   border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
@@ -47,7 +47,7 @@
   display: grid;
   place-items: center;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
   border-right: 1px solid var(--border);
   background: var(--surface-muted);
 }
@@ -55,8 +55,8 @@
 .myClubLogo {
   display: block;
   width: 100%;
-  max-width: 80px;
-  max-height: 88px;
+  max-width: 100px;
+  max-height: 108px;
   object-fit: contain;
 }
 

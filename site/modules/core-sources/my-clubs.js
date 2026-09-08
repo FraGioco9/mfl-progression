@@ -5,6 +5,7 @@
 
   const PAGE = "my-clubs";
   const PATH = "/my-clubs";
+  const CLUB_DISPLAY_DATA_STORAGE_KEY = "mfl-club-display-data-v1";
   const originalSetPage = setPage;
   const originalOptOutWallet = typeof optOutWallet === "function" ? optOutWallet : null;
   const page = document.getElementById("myClubsPage");
@@ -24,6 +25,46 @@
 
   function routeIsCurrent(options = {}) {
     return typeof pageNavigationIsCurrent !== "function" || pageNavigationIsCurrent(options);
+  }
+
+  function firstLetterCaps(value) {
+    const text = String(value || "").trim().toLocaleLowerCase();
+    return text ? `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}` : "";
+  }
+
+  function primeClubDestinationTitle(clubId, name, divisionInfo) {
+    const normalizedClubId = String(clubId || "").trim();
+    const normalizedName = String(name || "").trim();
+    if (!normalizedClubId || !normalizedName) return;
+
+    try {
+      const stored = JSON.parse(localStorage.getItem(CLUB_DISPLAY_DATA_STORAGE_KEY) || "{}");
+      const next = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+      next[normalizedClubId] = {
+        clubId: normalizedClubId,
+        name: normalizedName,
+        divisionName: String(divisionInfo?.name || "").trim(),
+        divisionColor: String(divisionInfo?.color || "").trim(),
+      };
+      localStorage.setItem(CLUB_DISPLAY_DATA_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // The destination can still resolve the title from its own data if storage is unavailable.
+    }
+
+    const destinationTitle = document.getElementById("tablePageTitle");
+    if (!(destinationTitle instanceof HTMLElement)) return;
+    if (!divisionInfo?.name) {
+      destinationTitle.textContent = normalizedName;
+      return;
+    }
+    const divisionLabel = document.createElement("span");
+    divisionLabel.className = "clubPageTitleDivision";
+    divisionLabel.style.color = String(divisionInfo.color || "");
+    divisionLabel.textContent = String(divisionInfo.name);
+    destinationTitle.replaceChildren(
+      document.createTextNode(`${normalizedName} - `),
+      divisionLabel,
+    );
   }
 
   function clearCache() {
@@ -47,7 +88,7 @@
     const division = Number(club?.division);
     const divisionInfo = typeof contractDivisionInfo === "function" ? contractDivisionInfo(division) : null;
     const city = String(club?.city || "").trim();
-    const nation = String(club?.nation || "").trim();
+    const nation = firstLetterCaps(club?.nation);
     const location = [city, nation].filter(Boolean).join(", ");
 
     const link = document.createElement("a");
@@ -114,6 +155,7 @@
     link.addEventListener("click", (event) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       if (!clubId || typeof window.mflOpenClubPage !== "function") return;
+      primeClubDestinationTitle(clubId, name, divisionInfo);
       event.preventDefault();
       void window.mflOpenClubPage(clubId, "attributes");
     });

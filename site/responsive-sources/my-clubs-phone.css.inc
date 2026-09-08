@@ -5,17 +5,17 @@
   }
 
   .myClubCard {
-    grid-template-columns: 88px minmax(0, 1fr);
-    min-height: 120px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    min-height: 128px;
   }
 
   .myClubLogoFrame {
-    padding: 11px;
+    padding: 10px;
   }
 
   .myClubLogo {
-    max-width: 64px;
-    max-height: 70px;
+    max-width: 82px;
+    max-height: 90px;
   }
 
   .myClubCardBody {

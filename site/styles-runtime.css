@@ -10574,22 +10574,17 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .myClubCard {
-    grid-template-columns: 82px minmax(0, 1fr);
-    min-height: 108px;
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: 120px;
   }
 
   .myClubLogoFrame {
-    padding: 10px;
+    padding: 9px;
   }
 
   .myClubLogo {
-    max-width: 58px;
-    max-height: 66px;
-  }
-
-  .myClubLogoPlaceholder {
-    width: 52px;
-    height: 52px;
+    max-width: 76px;
+    max-height: 84px;
   }
 
   .myClubCardBody {
@@ -12071,17 +12066,17 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .myClubCard {
-    grid-template-columns: 88px minmax(0, 1fr);
-    min-height: 120px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    min-height: 128px;
   }
 
   .myClubLogoFrame {
-    padding: 11px;
+    padding: 10px;
   }
 
   .myClubLogo {
-    max-width: 64px;
-    max-height: 70px;
+    max-width: 82px;
+    max-height: 90px;
   }
 
   .myClubCardBody {
@@ -12791,10 +12786,10 @@ html:not(.mflInitialRouteResolved):is(
 
 .myClubCard {
   display: grid;
-  grid-template-columns: 112px minmax(0, 1fr);
+  grid-template-columns: 128px minmax(0, 1fr);
   align-items: stretch;
   min-width: 0;
-  min-height: 144px;
+  min-height: 156px;
   overflow: hidden;
   border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
@@ -12822,7 +12817,7 @@ html:not(.mflInitialRouteResolved):is(
   display: grid;
   place-items: center;
   min-width: 0;
-  padding: 16px;
+  padding: 12px;
   border-right: 1px solid var(--border);
   background: var(--surface-muted);
 }
@@ -12830,8 +12825,8 @@ html:not(.mflInitialRouteResolved):is(
 .myClubLogo {
   display: block;
   width: 100%;
-  max-width: 80px;
-  max-height: 88px;
+  max-width: 100px;
+  max-height: 108px;
   object-fit: contain;
 }
 

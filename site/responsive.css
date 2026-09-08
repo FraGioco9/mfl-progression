@@ -2090,22 +2090,17 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .myClubCard {
-    grid-template-columns: 82px minmax(0, 1fr);
-    min-height: 108px;
+    grid-template-columns: 96px minmax(0, 1fr);
+    min-height: 120px;
   }
 
   .myClubLogoFrame {
-    padding: 10px;
+    padding: 9px;
   }
 
   .myClubLogo {
-    max-width: 58px;
-    max-height: 66px;
-  }
-
-  .myClubLogoPlaceholder {
-    width: 52px;
-    height: 52px;
+    max-width: 76px;
+    max-height: 84px;
   }
 
   .myClubCardBody {
@@ -3587,17 +3582,17 @@ html:not(.mflInitialRouteResolved):is(
   }
 
   .myClubCard {
-    grid-template-columns: 88px minmax(0, 1fr);
-    min-height: 120px;
+    grid-template-columns: 104px minmax(0, 1fr);
+    min-height: 128px;
   }
 
   .myClubLogoFrame {
-    padding: 11px;
+    padding: 10px;
   }
 
   .myClubLogo {
-    max-width: 64px;
-    max-height: 70px;
+    max-width: 82px;
+    max-height: 90px;
   }
 
   .myClubCardBody {

@@ -72,3 +72,8 @@ assert.match(coreSource, /validClubs\.sort/u, "My Clubs must sort cards by divis
 assert.match(coreSource, /myClubId/u, "My Clubs must place the club ID beside the club name.");
 assert.doesNotMatch(clubsApi, /mfl_points|nbMflPoints/u, "My Clubs API must not fetch or expose MFL points.");
 assert.match(clubsApi, /country AS nation/u, "My Clubs API must expose country using the Nation terminology.");
+assert.match(coreSource, /function firstLetterCaps\(value\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");
+assert.match(coreSource, /primeClubDestinationTitle\(clubId, name, divisionInfo\)/u, "My Clubs must prime the known club identity before route navigation.");
+assert.match(coreSource, /localStorage\.setItem\(CLUB_DISPLAY_DATA_STORAGE_KEY/u, "My Clubs must share its known club identity with the Club route title cache.");
+assert.match(titleRuntime, /cachedClubTitleLabel\(request\?\.options\?\.clubId\)/u, "Document titles must consume the primed Club identity even while the destination route is busy.");
+assert.match(pageStyles, /\.myClubLogo \{[\s\S]*?max-width: 100px;[\s\S]*?max-height: 108px;/u, "Desktop My Clubs logos must use the enlarged canonical geometry.");
