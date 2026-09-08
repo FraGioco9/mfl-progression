@@ -10,6 +10,7 @@ const validators = [
   "validate-table-hover-scroll.mjs",
   "validate-control-style-ownership.mjs",
   "validate-ui-foundations.mjs",
+  "validate-behavior-foundations.mjs",
   "validate-shadow-foundations.mjs",
   "validate-ui-foundations-final-audit.mjs",
   "validate-evaluation-mfl-usd-focus.mjs",

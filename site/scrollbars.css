@@ -22,15 +22,20 @@ html:root {
   scrollbar-gutter: auto;
 }
 
-/* The main content is the canonical vertical page-scrolling surface. */
+/*
+ * The main content is the canonical vertical page-scrolling surface. Reserve
+ * only the scrollbar's own inline-end gutter: page padding is measured inside
+ * the usable scrollport and must never mirror scrollbar width onto the left.
+ */
 html body > #appShell > main {
   overflow-y: scroll;
   scrollbar-gutter: stable;
 }
 
 /*
- * Keep the page fixed while any modal backdrop is present. The stable gutter
- * remains allocated, so hiding the scrollbar never moves the page underneath.
+ * Keep the page fixed while any modal backdrop is present. The canonical main
+ * scrollport geometry remains allocated, so hiding the thumb never moves page
+ * content underneath the modal.
  */
 :root:has(body > .modalBackdrop:not([hidden])) body > #appShell > main {
   overflow-y: hidden;
@@ -99,7 +104,7 @@ html body > #appShell > main {
 
 /*
  * If a WebKit engine still paints the main scrollbar during modal scroll lock,
- * keep its thumb transparent while preserving the already-reserved gutter.
+ * keep its thumb transparent while preserving the canonical main scrollport.
  */
 :root:has(body > .modalBackdrop:not([hidden])) body > #appShell > main::-webkit-scrollbar-thumb,
 :root:has(body > .modalBackdrop:not([hidden])) body > #appShell > main::-webkit-scrollbar-thumb:hover,
@@ -199,10 +204,6 @@ html body > #appShell > main {
 
 /* Mobile control strips and the compact Filters body keep native scrolling without visible scrollbar chrome. */
 @media (max-width: 900px) {
-  html body > #appShell > main {
-    scrollbar-gutter: stable both-edges;
-  }
-
   @supports not selector(::-webkit-scrollbar) {
     .views,
     .quickFilters,

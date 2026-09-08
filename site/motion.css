@@ -10,6 +10,21 @@
   --mfl-motion-slow: 220ms;
 }
 
+/*
+ * Respect the user's reduced-motion preference at the semantic timing layer.
+ * Specialist animations that do not consume these tokens remain responsible for
+ * their own reduced-motion branch, but shared controls/runtimes become immediate.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --mfl-motion-fast: 0ms;
+    --mfl-motion-tooltip: 0ms;
+    --mfl-motion-standard: 0ms;
+    --mfl-motion-expand: 0ms;
+    --mfl-motion-slow: 0ms;
+  }
+}
+
 /* Non-button touch boxes extend the mobile button press contract without affecting text links. */
 @media (hover: none) and (pointer: coarse) {
   :is(
