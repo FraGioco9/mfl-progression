@@ -38,7 +38,6 @@
     width: min(100%, 420px);
     max-width: 420px;
     max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-    border-radius: 8px;
   }
 
   #evaluationLoadModal .evaluationLoadDialog {

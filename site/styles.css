@@ -696,11 +696,11 @@ html:has(body > .modalBackdrop:not([hidden])) body > #appShell > main {
   max-width: calc(100vw - 24px);
   margin: 0;
   padding: 5px;
-  border: 1px solid var(--border-strong);
-  border-radius: var(--mfl-radius-dialog);
-  background: var(--surface);
-  color: var(--text);
-  box-shadow: var(--mfl-dropdown-shadow);
+  border: var(--mfl-dropdown-border);
+  border-radius: var(--mfl-radius-dropdown);
+  background: var(--mfl-dropdown-background);
+  color: var(--mfl-dropdown-text-color);
+  box-shadow: var(--mfl-shadow-dropdown);
 }
 
 #databaseStatsPage #databaseStatsCustomFilter[hidden] {

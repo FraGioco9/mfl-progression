@@ -177,6 +177,7 @@ Specialized tiny steppers, table action buttons, mobile-only touch geometry, and
 - Ordinary option rest/hover/selected colors are semantic foundation tokens; enhanced native pickers and generic custom menus consume them where their visual role matches.
 - `dropdowns.css` remains the sole owner of dropdown mechanics: positioning, gaps, max-height, z-index, chevrons, transitions, native picker enhancement, and responsive/menu-specific geometry.
 - Watchlist active rows/actions, Account wallet semantic colors, destructive items, Player action geometry/icons, and Database Stats Custom layout remain specialist-owned.
+- Database Stats Custom keeps specialist layout/positioning while its ordinary menu shell consumes the shared dropdown visual foundations.
 
 ## Dialogs and overlays
 
@@ -188,6 +189,7 @@ Specialized tiny steppers, table action buttons, mobile-only touch geometry, and
 - Canonical modal/dialog shadow: `0 20px 80px rgba(0, 0, 0, 0.28)` (`--mfl-shadow-modal`)
 - `.mflDialog` owns the shared ordinary shell; `.mflDialogHeader` and `.mflDialogFooter` own shared dialog chrome.
 - Search, Filters, saved Evaluation, Watchlist chooser/add/delete, Advanced Settings, and Bug Report consume those generic structural classes while retaining their domain-specific widths, bodies, controls, and responsive geometry.
+- Responsive dialog owners may change dimensions but must not re-declare the shared dialog shell radius/surface/border/shadow.
 - The shared backdrop uses `--mfl-motion-standard` for its existing 180ms opacity/transform timing.
 - Tooltip shadow: `0 10px 26px rgba(0, 0, 0, 0.28)` (`--mfl-shadow-tooltip`)
 - Mobile navigation surface shadow: `0 10px 28px rgba(0, 0, 0, 0.18)` (`--mfl-shadow-mobile-navigation`), consumed by the canonical responsive mobile navigation rail
@@ -288,6 +290,10 @@ Component-local z-index values stay below the global application layers.
 13. Equivalent ordinary Home, Stats, Settings, and Privacy panels consume shared surface background and normal/strong border contracts alongside the shared panel radius; specialist surfaces keep local ownership.
 14. View, Filters, Search, and refresh-first-paint View controls consume shared ordinary resting/hover surface-state contracts, while navigation, Stats, Player, dropdown, destructive, opt-in, and other specialist states remain locally owned.
 15. Equivalent table surfaces, headers, dividers, sortable-header hover, row hover, and standard desktop table typography consume Table-domain semantic foundations from `styles.css`; Uniform Width, responsive geometry, Advanced Settings specialist interactions, Evaluation geometry, loading surfaces, and table action controls keep their existing owners.
+16. Ordinary modal/dialog shells consume shared backdrop, surface, border/divider, radius, and shadow foundations; responsive owners keep dimensions and layout only.
+17. Ordinary dropdown/menu shells and option states consume shared dropdown visual foundations while `dropdowns.css` keeps mechanics and specialist menu geometry.
+18. Tooltip, dropdown, modal, and mobile-navigation shadows each have one semantic source and canonical consumer.
+19. The final ownership audit removes retired semantic-token references and rejects responsive re-ownership of shared dialog visuals.
 
 ## What must remain intentionally separate
 
