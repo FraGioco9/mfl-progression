@@ -6,6 +6,13 @@ const recommendedRules = {
   "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 };
 
+const canonicalCoreRules = {
+  ...recommendedRules,
+  "no-empty": ["error", { allowEmptyCatch: true }],
+  "no-undef": "off",
+  "no-unused-vars": ["error", { vars: "local", argsIgnorePattern: "^_" }],
+};
+
 const nodeWebGlobals = {
   ...globals.node,
   fetch: "readonly",
@@ -45,6 +52,15 @@ export default [
       globals: globals.browser,
     },
     rules: recommendedRules,
+  },
+  {
+    files: ["modules/core-sources/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "script",
+      globals: globals.browser,
+    },
+    rules: canonicalCoreRules,
   },
   {
     files: ["bootstrap-core.js", "*-runtime.js"],
