@@ -116,6 +116,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
           normalized_name TEXT NOT NULL,
           city TEXT NOT NULL DEFAULT '',
           country TEXT NOT NULL DEFAULT '',
+          primary_color TEXT,
+          secondary_color TEXT,
           status TEXT NOT NULL DEFAULT '',
           division INTEGER,
           owner_wallet_address TEXT NOT NULL DEFAULT '',
@@ -134,6 +136,12 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
         city_expression = "coalesce(city, '')" if "city" in club_columns else "''"
         country_expression = "coalesce(country, '')" if "country" in club_columns else "''"
         status_expression = "coalesce(status, '')" if "status" in club_columns else "''"
+        primary_color_expression = (
+            "primary_color" if "primary_color" in club_columns else "NULL"
+        )
+        secondary_color_expression = (
+            "secondary_color" if "secondary_color" in club_columns else "NULL"
+        )
         signed_players_expression = (
             "coalesce(signed_player_ids, '[]')"
             if "signed_player_ids" in club_columns
@@ -161,6 +169,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               normalized_name,
               city,
               country,
+              primary_color,
+              secondary_color,
               status,
               division,
               owner_wallet_address,
@@ -177,6 +187,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               normalize_search(name),
               {city_expression},
               {country_expression},
+              {primary_color_expression},
+              {secondary_color_expression},
               {status_expression},
               CAST(NULLIF(division, '') AS INTEGER),
               lower(coalesce(owner_wallet_address, '')),

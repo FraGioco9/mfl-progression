@@ -9,8 +9,9 @@ reading Flow state and are never persisted.
 
 import json
 import sqlite3
-from collections import defaultdict
+from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Any
 
 from scripts.database import flow_season_population_core as flow_core
@@ -466,6 +467,105 @@ def owner_names(connection: sqlite3.Connection) -> dict[str, str]:
     return names
 
 
+def _clean_colour(value: Any) -> str | None:
+    colour = str(value or "").strip()
+    if not colour:
+        return None
+    return colour.lower() if colour.startswith("#") else colour
+
+
+def contract_club_colours(
+    players: Iterable[dict[str, Any]],
+) -> dict[str, tuple[str | None, str | None]]:
+    """Extract one deterministic colour pair per club from already-fetched player contracts."""
+    primary_counts: defaultdict[str, Counter[str]] = defaultdict(Counter)
+    secondary_counts: defaultdict[str, Counter[str]] = defaultdict(Counter)
+
+    for player in players:
+        if not isinstance(player, dict):
+            continue
+        contract = player.get("activeContract")
+        if not isinstance(contract, dict):
+            continue
+        club = contract.get("club")
+        if not isinstance(club, dict):
+            continue
+        club_id = _normalized_club_id(club.get("id"))
+        if not club_id:
+            continue
+
+        primary = _clean_colour(club.get("mainColor"))
+        secondary = _clean_colour(club.get("secondaryColor"))
+        if primary:
+            primary_counts[club_id][primary] += 1
+        if secondary:
+            secondary_counts[club_id][secondary] += 1
+
+    def preferred(counter: Counter[str]) -> str | None:
+        if not counter:
+            return None
+        return min(counter, key=lambda value: (-counter[value], value.lower(), value))
+
+    club_ids = set(primary_counts) | set(secondary_counts)
+    return {
+        club_id: (
+            preferred(primary_counts[club_id]),
+            preferred(secondary_counts[club_id]),
+        )
+        for club_id in club_ids
+    }
+
+
+def load_previous_club_colours(
+    database_path: Path | None,
+) -> dict[str, tuple[str | None, str | None]]:
+    """Load cached colours from the previously published database when its schema supports them."""
+    if database_path is None or not database_path.is_file():
+        return {}
+
+    database_uri = f"{database_path.resolve().as_uri()}?mode=ro"
+    connection = sqlite3.connect(database_uri, uri=True)
+    try:
+        tables = {
+            str(row[0])
+            for row in connection.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "clubs" not in tables:
+            return {}
+        columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(clubs)")}
+        if "primary_color" not in columns and "secondary_color" not in columns:
+            return {}
+        primary_expression = "primary_color" if "primary_color" in columns else "NULL"
+        secondary_expression = "secondary_color" if "secondary_color" in columns else "NULL"
+        rows = connection.execute(
+            f"SELECT club_id, {primary_expression}, {secondary_expression} FROM clubs"
+        ).fetchall()
+        return {
+            str(club_id): (_clean_colour(primary), _clean_colour(secondary))
+            for club_id, primary, secondary in rows
+            if _normalized_club_id(club_id)
+            and (_clean_colour(primary) or _clean_colour(secondary))
+        }
+    finally:
+        connection.close()
+
+
+def resolved_club_colours(
+    club_id: str,
+    current: dict[str, tuple[str | None, str | None]],
+    previous: dict[str, tuple[str | None, str | None]],
+) -> tuple[str | None, str | None]:
+    """Prefer current scouting colours field-by-field, then preserve previous known values."""
+    current_primary, current_secondary = current.get(club_id, (None, None))
+    previous_primary, previous_secondary = previous.get(club_id, (None, None))
+    return (
+        current_primary or previous_primary,
+        current_secondary or previous_secondary,
+    )
+
+
 def signed_players_by_club(connection: sqlite3.Connection) -> dict[str, list[int]]:
     grouped: defaultdict[str, list[int]] = defaultdict(list)
     rows = connection.execute(
@@ -486,6 +586,8 @@ def build_club_record(
     owner_wallet_address: str,
     owner_name: str,
     signed_player_ids: Iterable[int],
+    primary_color: str | None = None,
+    secondary_color: str | None = None,
 ) -> dict[str, Any]:
     metadata = _metadata(snapshot)
     competition_ids, division = competition_ids_and_division(snapshot)
@@ -495,6 +597,8 @@ def build_club_record(
         "name": str(metadata.get("name") or "").strip(),
         "city": str(metadata.get("foundationLicenseCity") or "").strip(),
         "country": str(metadata.get("foundationLicenseCountry") or "").strip(),
+        "primary_color": _clean_colour(primary_color),
+        "secondary_color": _clean_colour(secondary_color),
         "status": club_status_name(snapshot),
         "division": division,
         "owner_wallet_address": owner_wallet_address.strip().lower(),
@@ -513,6 +617,8 @@ def ensure_club_schema(connection: sqlite3.Connection) -> None:
             name TEXT NOT NULL DEFAULT '',
             city TEXT NOT NULL DEFAULT '',
             country TEXT NOT NULL DEFAULT '',
+            primary_color TEXT,
+            secondary_color TEXT,
             status TEXT NOT NULL DEFAULT '',
             division INTEGER,
             owner_wallet_address TEXT NOT NULL DEFAULT '',
@@ -533,6 +639,8 @@ def refresh_clubs(
     execute_script: FlowExecute | None = None,
     request_json: JsonRequest | None = None,
     limiter: Any = None,
+    contract_players: Iterable[dict[str, Any]] = (),
+    previous_database_path: Path | None = None,
 ) -> int:
     """Build every canonical ClubData record, with Flow-verified ownership when it exists."""
     total_supply = fetch_total_supply(execute_script)
@@ -547,6 +655,8 @@ def refresh_clubs(
     wallets.update(owner_hints.values())
     owners = fetch_club_owners(wallets, execute_script) if wallets else {}
     signed_players = signed_players_by_club(connection)
+    current_colours = contract_club_colours(contract_players)
+    previous_colours = load_previous_club_colours(previous_database_path)
 
     candidate_ids = set(index_ids) | set(owners)
     candidate_ids.update(
@@ -582,15 +692,23 @@ def refresh_clubs(
             wallets.update(new_wallets)
 
     names = owner_names(connection)
-    records = [
-        build_club_record(
-            snapshots[club_id],
-            owners.get(club_id, ""),
-            names.get(owners.get(club_id, ""), ""),
-            signed_players.get(club_id, []),
+    records: list[dict[str, Any]] = []
+    for club_id in snapshots:
+        primary_color, secondary_color = resolved_club_colours(
+            club_id,
+            current_colours,
+            previous_colours,
         )
-        for club_id in snapshots
-    ]
+        records.append(
+            build_club_record(
+                snapshots[club_id],
+                owners.get(club_id, ""),
+                names.get(owners.get(club_id, ""), ""),
+                signed_players.get(club_id, []),
+                primary_color,
+                secondary_color,
+            )
+        )
 
     ensure_club_schema(connection)
     connection.executemany(
@@ -600,13 +718,15 @@ def refresh_clubs(
             name,
             city,
             country,
+            primary_color,
+            secondary_color,
             status,
             division,
             owner_wallet_address,
             owner_name,
             signed_player_ids,
             competition_ids
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             (
@@ -614,6 +734,8 @@ def refresh_clubs(
                 record["name"],
                 record["city"],
                 record["country"],
+                record["primary_color"],
+                record["secondary_color"],
                 record["status"],
                 record["division"],
                 record["owner_wallet_address"],
@@ -630,11 +752,26 @@ def refresh_clubs(
     for record in records:
         status_counts[record["status"]] += 1
     verified_owners = sum(1 for record in records if record["owner_wallet_address"])
+    colour_records = sum(
+        1 for record in records
+        if record["primary_color"] or record["secondary_color"]
+    )
+    current_colour_records = sum(
+        1 for club_id in snapshots
+        if any(current_colours.get(club_id, (None, None)))
+    )
+    preserved_colour_records = sum(
+        1 for club_id in snapshots
+        if not any(current_colours.get(club_id, (None, None)))
+        and any(previous_colours.get(club_id, (None, None)))
+    )
     print(
         f"Canonical Flow clubs saved: {len(records)} "
         f"({sum(len(record['signed_player_ids']) for record in records)} signed-player links; "
         f"{verified_owners} Flow-verified owners; "
         f"{len(records) - verified_owners} without a current verified owner; "
+        f"{colour_records} with known colours "
+        f"({current_colour_records} current, {preserved_colour_records} preserved); "
         f"statuses={status_counts})",
         flush=True,
     )
