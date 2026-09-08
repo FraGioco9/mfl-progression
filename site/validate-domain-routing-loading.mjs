@@ -16,6 +16,7 @@ const validators = [
   "validate-table-background-loading-stability.mjs",
   "validate-app-core-startup-handshake.mjs",
   "validate-data-client-foundation.mjs",
+  "validate-client-performance-timing.mjs",
 ];
 
 for (const validator of validators) {

@@ -3,6 +3,13 @@
 const nativeFetch = window.fetch.bind(window);
 const DEFAULT_TIMEOUT_MS = 60_000;
 
+/** @param {string} phase @param {Record<string, unknown>} [detail] */
+function recordClientTiming(phase, detail = {}) {
+  const owner = Reflect.get(window, "__mflClientPerformance");
+  if (!owner || typeof owner.record !== "function") return null;
+  return owner.record(phase, detail);
+}
+
 /** @param {RequestInfo | URL} input */
 function isSameOriginApiRequest(input) {
   try {
@@ -71,21 +78,47 @@ function createDataClient({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
     requestInit.signal = timeout.signal;
 
     const requestKey = String(options.key || canonicalRequestKey(input, requestInit, headers));
+    const requestUrl = input instanceof Request ? input.url : String(input);
+    const startedAt = performance.now();
+    recordClientTiming("data-request", {
+      key: requestKey,
+      url: requestUrl,
+      method,
+    });
     const dedupe = method === "GET" && options.dedupe === true;
     const cacheTtlMs = method === "GET" ? Math.max(0, Number(options.cacheTtlMs) || 0) : 0;
     const cached = cacheTtlMs > 0 ? responseCache.get(requestKey) : null;
     if (cached?.expiresAt > Date.now()) {
+      const response = cached.response.clone();
+      recordClientTiming("data-response", {
+        key: requestKey,
+        url: requestUrl,
+        method,
+        duration: Math.max(0, performance.now() - startedAt),
+        status: response.status,
+        source: "memory-cache",
+      });
       timeout.release();
-      return cached.response.clone();
+      return response;
     }
     if (cached) responseCache.delete(requestKey);
 
     if (dedupe && inFlight.has(requestKey)) {
+      const sharedRequest = inFlight.get(requestKey);
       timeout.release();
-      return inFlight.get(requestKey).then((response) => response.clone());
+      return sharedRequest.then((response) => {
+        recordClientTiming("data-response", {
+          key: requestKey,
+          url: requestUrl,
+          method,
+          duration: Math.max(0, performance.now() - startedAt),
+          status: response.status,
+          source: "in-flight",
+        });
+        return response.clone();
+      });
     }
 
-    const startedAt = performance.now();
     const pending = (async () => {
       try {
         const response = await nativeFetch(input, requestInit);
@@ -95,11 +128,20 @@ function createDataClient({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
             response: response.clone(),
           });
         }
+        const duration = Math.max(0, performance.now() - startedAt);
+        recordClientTiming("data-response", {
+          key: requestKey,
+          url: requestUrl,
+          method,
+          duration,
+          status: response.status,
+          source: "network",
+        });
         window.dispatchEvent(new CustomEvent("mfl:data-client-timing", {
           detail: Object.freeze({
             key: requestKey,
-            url: input instanceof Request ? input.url : String(input),
-            duration: Math.max(0, performance.now() - startedAt),
+            url: requestUrl,
+            duration,
             status: response.status,
           }),
         }));
@@ -288,6 +330,9 @@ function markApplicationCoreLoaded() {
   detachInitialGlobalSearchWarmupFromRoute();
   applicationCoreLoaded = true;
   applicationCoreLoadedResolve();
+  recordClientTiming("core-ready", {
+    route: initialRouteRuntime.pageName,
+  });
 }
 
 runtimeWindow.__mflMarkApplicationCoreLoaded = markApplicationCoreLoaded;
@@ -433,6 +478,7 @@ function routeRuntimeKey(page, options = {}) {
 function trackRouteRuntimePromise(key, promise) {
   const pending = promise.then(() => {
     routeRuntimeReadyKeys.add(key);
+    recordClientTiming("route-runtime-ready", { key });
   }).catch((error) => {
     routeRuntimeEnsurePromises.delete(key);
     routeRuntimeReadyKeys.delete(key);
@@ -488,7 +534,17 @@ async function start() {
     await runtimeWindow.__mflEvaluationSearchStateRuntime?.restoreEmptyRecentResults?.(false);
   }
 
+  recordClientTiming("content-commit", {
+    kind: "initial",
+    route: initialRouteRuntime.pageName,
+    key: initialRouteKey,
+  });
   await runtimeWindow.__mflInteractionBusy?.waitForRoutePaint?.();
+  recordClientTiming("route-visually-settled", {
+    kind: "initial",
+    route: initialRouteRuntime.pageName,
+    key: initialRouteKey,
+  });
   document.documentElement.dataset.mflRouteReady = "true";
   window.dispatchEvent(new CustomEvent("mfl:route-ready", { detail: release }));
 
