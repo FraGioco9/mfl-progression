@@ -7,6 +7,8 @@ const { supabaseConfig, supabaseRequest } = require("./_supabase");
 
 const WALLET_PERMISSION_CACHE = new Map();
 const WALLET_PERMISSION_CACHE_TTL_MS = 60_000;
+const PRIVATE_CACHE_CONTROL = "private, no-store, no-cache, must-revalidate, max-age=0";
+const PUBLIC_REVALIDATE_CACHE_CONTROL = "public, max-age=0, must-revalidate";
 
 async function walletAllowed(wallet) {
   const normalizedWallet = normalizeWalletAddress(wallet);
@@ -54,19 +56,32 @@ function serverTimingHeader(startedAt, timings = {}) {
   return metrics.join(", ");
 }
 
-function sendJson(response, status, data, startedAt, timings = {}) {
+function applyJsonHeaders(response, startedAt, timings = {}, options = {}) {
   response.setHeader("Content-Type", "application/json; charset=utf-8");
-  response.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate, max-age=0");
+  response.setHeader("Cache-Control", String(options.cacheControl || PRIVATE_CACHE_CONTROL));
   response.setHeader("CDN-Cache-Control", "no-store, max-age=0");
   response.setHeader("Vercel-CDN-Cache-Control", "no-store, max-age=0");
+  if (options.etag) response.setHeader("ETag", String(options.etag));
   response.setHeader("Server-Timing", serverTimingHeader(startedAt, timings));
+}
+
+function sendJson(response, status, data, startedAt, timings = {}, options = {}) {
+  applyJsonHeaders(response, startedAt, timings, options);
   response.status(status).json(data);
 }
 
+function sendNotModified(response, startedAt, timings = {}, options = {}) {
+  applyJsonHeaders(response, startedAt, timings, options);
+  response.status(304).end();
+}
+
 module.exports = {
+  PRIVATE_CACHE_CONTROL,
+  PUBLIC_REVALIDATE_CACHE_CONTROL,
   normalizeWalletAddress,
   walletAllowed,
   signedWalletFromRequest,
   serverTimingHeader,
   sendJson,
+  sendNotModified,
 };

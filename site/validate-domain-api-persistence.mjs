@@ -1,5 +1,6 @@
 const validators = [
   "validate-shared-api-logic.mjs",
+  "validate-data-read-cache-policy.mjs",
   "validate-supabase-persistence.mjs",
   "validate-wallet-core.mjs",
   "validate-wallet-preferences-lifecycle.mjs",

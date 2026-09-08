@@ -1,9 +1,13 @@
+const { createHash } = require("node:crypto");
 const { performance } = require("node:perf_hooks");
 const {
+  PUBLIC_REVALIDATE_CACHE_CONTROL,
   signedWalletFromRequest,
   walletAllowed,
   sendJson,
+  sendNotModified,
 } = require("./_data-auth");
+const { getGeneratedAt } = require("./_database");
 const { pagedData } = require("./_data-page");
 const {
   bootstrapData,
@@ -14,6 +18,39 @@ const {
 const { filterOptionsData } = require("./_filter-options");
 const { databaseStatsData } = require("./_database-stats");
 const { mflStatsSummaryData } = require("./_mfl-stats-summary");
+
+const PUBLIC_SNAPSHOT_MODES = new Set([
+  "bootstrap",
+  "search",
+  "summary",
+  "filter-options",
+  "database-stats",
+  "mfl-stats-summary",
+  "mfl-stats",
+  "mfl-stats-all",
+]);
+
+function publicSnapshotEtag(request) {
+  const identity = `${getGeneratedAt()}\n${String(request.url || "")}`;
+  const digest = createHash("sha256").update(identity).digest("hex").slice(0, 24);
+  return `"mfl-${digest}"`;
+}
+
+function requestMatchesEtag(request, etag) {
+  const value = String(request.headers?.["if-none-match"] || "");
+  return value.split(",").some((candidate) => {
+    const normalized = candidate.trim();
+    return normalized === etag || normalized === `W/${etag}`;
+  });
+}
+
+function requiresSignedWallet(mode, scope, accessMode, publicEntityProgression, publicWatchlistProgression) {
+  if (mode !== "page") return false;
+  if (scope === "myplayers" || accessMode === "owned-progression") return true;
+  return accessMode === "full-progression"
+    && !publicEntityProgression
+    && !publicWatchlistProgression;
+}
 
 module.exports = async function handler(request, response) {
   const startedAt = performance.now();
@@ -35,10 +72,23 @@ module.exports = async function handler(request, response) {
       || (["agent", "club"].includes(scope) && ["current", "all"].includes(view));
     const publicWatchlistProgression = scope === "watchlist"
       && ["current", "all"].includes(view);
+    const publicSnapshot = PUBLIC_SNAPSHOT_MODES.has(mode);
+    const etag = publicSnapshot ? publicSnapshotEtag(request) : "";
+    const publicCacheOptions = publicSnapshot
+      ? { cacheControl: PUBLIC_REVALIDATE_CACHE_CONTROL, etag }
+      : {};
 
-    const authStartedAt = performance.now();
-    const signedWallet = await signedWalletFromRequest(request);
-    timings.auth = performance.now() - authStartedAt;
+    if (etag && requestMatchesEtag(request, etag)) {
+      sendNotModified(response, startedAt, timings, publicCacheOptions);
+      return;
+    }
+
+    let signedWallet = "";
+    if (requiresSignedWallet(mode, scope, accessMode, publicEntityProgression, publicWatchlistProgression)) {
+      const authStartedAt = performance.now();
+      signedWallet = await signedWalletFromRequest(request);
+      timings.auth = performance.now() - authStartedAt;
+    }
 
     async function measuredWalletAllowed(wallet) {
       const permissionStartedAt = performance.now();
@@ -77,7 +127,7 @@ module.exports = async function handler(request, response) {
     }
     timings.query = performance.now() - queryStartedAt;
 
-    sendJson(response, 200, data, startedAt, timings);
+    sendJson(response, 200, data, startedAt, timings, publicCacheOptions);
   } catch (error) {
     console.error("Could not query MFL database.", error);
     sendJson(
