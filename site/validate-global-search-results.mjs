@@ -36,13 +36,21 @@ for (const required of [
   "function normalizedSupabaseRecentItems(tableState) {",
   'windowFunction("hasWalletProof")',
   'windowFunction("walletProofHeaders")',
-  'fetch("/api/wallet-preferences", {',
+  "function dataClientFetch(input, init = {}, options = {})",
+  'dataClientFetch("/api/wallet-preferences", {',
   "applySupabaseRecentState(data?.tableState);",
   "preload: preloadRecentResults,",
   "recent: restoreSupabaseRecentResults,",
 ]) {
   invariant(runtime.includes(required), `Global Search result ownership is missing ${required}`);
 }
+
+invariant(
+  runtime.includes("window.__mflDataClient")
+    && runtime.includes("return dataClient.fetch(input, init, options);")
+    && !/(^|[^.\w$])fetch\s*\(\s*["'`]\/api\//m.test(runtime),
+  "Global Search must use the canonical data client for all API reads rather than the temporary global fetch compatibility bridge.",
+);
 
 invariant(
   runtime.includes('const TABLE_STATE_STORAGE_KEY = "mfl-table-filters-v1";')
