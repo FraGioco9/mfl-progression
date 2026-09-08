@@ -7,8 +7,8 @@ for (const token of [
   "function countRows(where, parameters) {",
   "function parametersEqual(left, right) {",
   "const sameResultSet = where === sourceWhere && parametersEqual(parameters, baseParameters);",
-  "const totalRows = countRows(where, parameters);",
-  "const sourceRows = sameResultSet ? totalRows : countRows(sourceWhere, baseParameters);",
+  'const totalRows = measureSync(timings, "sqlite", () => countRows(where, parameters));',
+  'const sourceRows = sameResultSet\n    ? totalRows\n    : measureSync(timings, "sqlite", () => countRows(sourceWhere, baseParameters));',
   "totalRows,\n    sourceRows,",
 ]) {
   includes(dataPage, token, `Paged table count fast path is missing: ${token}`);
@@ -20,4 +20,4 @@ excludes(
   "Paged reads must not unconditionally execute the source count before result filters are known.",
 );
 
-console.log("Paged table reads reuse the filtered count as sourceRows whenever the final predicate is unchanged, while filtered requests preserve separate source and result totals.");
+console.log("Paged table reads reuse the filtered count as sourceRows whenever the final predicate is unchanged, while filtered requests preserve separately timed source and result totals.");

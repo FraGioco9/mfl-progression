@@ -30,8 +30,8 @@ invariant(
 );
 
 invariant(
-  apiSource.includes('else if (mode === "page") data = await pagedData(pageRequest, signedWallet, fullAccess, ownedProgression);'),
-  "Paged player data must use the progression-capable player request.",
+  apiSource.includes('else if (mode === "page") data = await pagedData(pageRequest, signedWallet, fullAccess, ownedProgression, timings);'),
+  "Paged player data must use the progression-capable player request while sharing the canonical timing collector.",
 );
 
 invariant(
@@ -63,7 +63,6 @@ invariant(
   coreSource.includes('if (pageName === "progression") {\n    return hasProgressionAccess() ? "full" : "public";\n  }'),
   "The main Progression page must retain its full-access permission gate.",
 );
-
 
 invariant(
   coreSource.includes('const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers", "club"]);'),

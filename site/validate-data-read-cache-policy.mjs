@@ -2,9 +2,10 @@ import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
-const [dataApi, dataAuth] = await Promise.all([
+const [dataApi, dataAuth, dataPage] = await Promise.all([
   read("./api/data.js"),
   read("./api/_data-auth.js"),
+  read("./api/_data-page.js"),
 ]);
 
 for (const mode of [
@@ -52,5 +53,19 @@ invariant(
     && dataApi.includes("sendJson(response, 200, data, startedAt, timings, publicCacheOptions);"),
   "Public snapshot reads must share one ETag/cache policy for 304 and 200 responses.",
 );
+invariant(
+  dataApi.includes("pagedData(pageRequest, signedWallet, fullAccess, ownedProgression, timings)"),
+  "Paged reads must pass the request timing collector into the canonical page query owner.",
+);
+invariant(
+  dataPage.includes('measureAsync(timings, "marketplace", marketplaceState)')
+    && (dataPage.match(/measureSync\(timings, "sqlite"/g) || []).length >= 2,
+  "Paged reads must expose marketplace and accumulated SQLite phases through the shared Server-Timing collector.",
+);
+invariant(
+  dataAuth.includes("Object.entries(timings || {}).forEach")
+    && dataAuth.includes('response.setHeader("Server-Timing", serverTimingHeader(startedAt, timings));'),
+  "Backend phase timings must continue flowing through the canonical Server-Timing response owner.",
+);
 
-console.log("Public data read cache and wallet-proof fast-path validation passed.");
+console.log("Public data read cache, wallet-proof fast path, and backend phase timing validation passed.");
