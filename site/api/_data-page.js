@@ -95,47 +95,46 @@ function ruleSql(rule, parameters) {
     return `${quotedColumn} = ?`;
   }
 
+  if (column === "owned_since") {
+    const fallbackStart = Date.parse(`${String(value || "")}T00:00:00Z`) / 1000;
+    if (!Number.isFinite(fallbackStart)) return "0";
 
-if (column === "owned_since") {
-  const fallbackStart = Date.parse(`${String(value || "")}T00:00:00Z`) / 1000;
-  if (!Number.isFinite(fallbackStart)) return "0";
+    const suppliedStart = rule?.valueDayStartEpochSeconds;
+    const suppliedNext = rule?.valueNextDayStartEpochSeconds;
+    const fromStart = suppliedStart !== null
+      && suppliedStart !== undefined
+      && Number.isFinite(Number(suppliedStart))
+      ? Number(suppliedStart)
+      : fallbackStart;
+    const fromNext = suppliedNext !== null
+      && suppliedNext !== undefined
+      && Number.isFinite(Number(suppliedNext))
+      ? Number(suppliedNext)
+      : fallbackStart + 86400;
 
-  const suppliedStart = rule?.valueDayStartEpochSeconds;
-  const suppliedNext = rule?.valueNextDayStartEpochSeconds;
-  const fromStart = suppliedStart !== null
-    && suppliedStart !== undefined
-    && Number.isFinite(Number(suppliedStart))
-    ? Number(suppliedStart)
-    : fallbackStart;
-  const fromNext = suppliedNext !== null
-    && suppliedNext !== undefined
-    && Number.isFinite(Number(suppliedNext))
-    ? Number(suppliedNext)
-    : fallbackStart + 86400;
+    if (operator === "during") {
+      const fallbackToStart = Date.parse(`${String(rule?.valueTo || "")}T00:00:00Z`) / 1000;
+      if (!Number.isFinite(fallbackToStart)) return "0";
+      const suppliedToStart = rule?.valueToDayStartEpochSeconds;
+      const suppliedToNext = rule?.valueToNextDayStartEpochSeconds;
+      const toStart = suppliedToStart !== null
+        && suppliedToStart !== undefined
+        && Number.isFinite(Number(suppliedToStart))
+        ? Number(suppliedToStart)
+        : fallbackToStart;
+      const toNext = suppliedToNext !== null
+        && suppliedToNext !== undefined
+        && Number.isFinite(Number(suppliedToNext))
+        ? Number(suppliedToNext)
+        : fallbackToStart + 86400;
+      parameters.push(Math.min(fromStart, toStart), Math.max(fromNext, toNext));
+      return `${normalizedEpochSeconds(quotedColumn)} >= ? AND ${normalizedEpochSeconds(quotedColumn)} < ?`;
+    }
 
-  if (operator === "during") {
-    const fallbackToStart = Date.parse(`${String(rule?.valueTo || "")}T00:00:00Z`) / 1000;
-    if (!Number.isFinite(fallbackToStart)) return "0";
-    const suppliedToStart = rule?.valueToDayStartEpochSeconds;
-    const suppliedToNext = rule?.valueToNextDayStartEpochSeconds;
-    const toStart = suppliedToStart !== null
-      && suppliedToStart !== undefined
-      && Number.isFinite(Number(suppliedToStart))
-      ? Number(suppliedToStart)
-      : fallbackToStart;
-    const toNext = suppliedToNext !== null
-      && suppliedToNext !== undefined
-      && Number.isFinite(Number(suppliedToNext))
-      ? Number(suppliedToNext)
-      : fallbackToStart + 86400;
-    parameters.push(Math.min(fromStart, toStart), Math.max(fromNext, toNext));
-    return `${normalizedEpochSeconds(quotedColumn)} >= ? AND ${normalizedEpochSeconds(quotedColumn)} < ?`;
+    if (!["before", "after"].includes(operator)) return "0";
+    parameters.push(fromStart);
+    return `${normalizedEpochSeconds(quotedColumn)} ${operator === "before" ? "<" : ">="} ?`;
   }
-
-  if (!["before", "after"].includes(operator)) return "0";
-  parameters.push(fromStart);
-  return `${normalizedEpochSeconds(quotedColumn)} ${operator === "before" ? "<" : ">="} ?`;
-}
 
   const numeric = NUMBER_COLUMNS.has(column)
     || column.includes("_prog_")
@@ -250,6 +249,18 @@ function progressionActivityCondition(view) {
     .join(" OR ")})`;
 }
 
+function countRows(where, parameters) {
+  return Number(queryOne(
+    `SELECT count(*) AS count FROM players${where}`,
+    parameters,
+  )?.count || 0);
+}
+
+function parametersEqual(left, right) {
+  return left.length === right.length
+    && left.every((value, index) => Object.is(value, right[index]));
+}
+
 async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const query = request.query || {};
   const scope = String(query.scope || "database").toLowerCase();
@@ -337,11 +348,6 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const sourceWhere = baseConditions.length
     ? ` WHERE ${baseConditions.join(" AND ")}`
     : "";
-  const sourceRows = Number(queryOne(
-    `SELECT count(*) AS count FROM players${sourceWhere}`,
-    baseParameters,
-  )?.count || 0);
-
   const conditions = [...baseConditions];
   const parameters = [...baseParameters];
 
@@ -363,10 +369,9 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   appendAdvancedRules(conditions, parameters, safeRules(query.filters));
 
   const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
-  const totalRows = Number(queryOne(
-    `SELECT count(*) AS count FROM players${where}`,
-    parameters,
-  )?.count || 0);
+  const sameResultSet = where === sourceWhere && parametersEqual(parameters, baseParameters);
+  const totalRows = countRows(where, parameters);
+  const sourceRows = sameResultSet ? totalRows : countRows(sourceWhere, baseParameters);
 
   const allRows = ["player", "players", "evaluation", "club", "mflstats"].includes(scope);
   const maximumPageSize = allRows ? 5000 : 250;
