@@ -44,7 +44,7 @@ includes(sharedCore, "function updateSettingsTimeFormat(format)", "Shared time-f
 includes(sharedCore, "settingsDraftBaseline: null", "Shared Settings state must retain the last committed Settings snapshot.");
 includes(sharedCore, "settingsDraftDirty: false", "Shared Settings state must track one page-wide dirty flag.");
 includes(sharedCore, "async function settingsRefreshCommittedFromSupabase(options = {})", "Settings must own one fresh committed Supabase read path for SPA entries.");
-includes(sharedCore, 'const response = await fetch("/api/wallet-preferences", {', "Settings committed-state hydration must read wallet Settings from Supabase.");
+includes(sharedCore, 'const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {', "Settings committed-state hydration must read wallet Settings from Supabase through the canonical data client.");
 includes(sharedCore, 'cache: "no-store"', "Settings and startup wallet-preference hydration must bypass browser response caching.");
 includes(sharedCore, "function settingsConfirmNavigation(pageName, updateHash = true)", "Settings must own one canonical synchronous SPA leave-confirmation gate.");
 includes(sharedCore, 'window.confirm("You have unsaved settings changes. Leave without saving?")', "Leaving Settings with unsaved changes must require explicit confirmation.");
@@ -79,4 +79,4 @@ invariant(
   "The generated Settings runtime must exactly match its canonical source.",
 );
 
-console.log("Settings route core validation passed: source-owned first paint, fresh Supabase hydration, explicit Save/Discard, unsaved-navigation protection, and deterministic generated ownership.");
+console.log("Settings route core validation passed: source-owned first paint, fresh Supabase hydration through canonical transport, explicit Save/Discard, unsaved-navigation protection, and deterministic generated ownership.");
