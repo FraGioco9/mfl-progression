@@ -1,0 +1,43 @@
+name: Apply dialog foundation migration
+
+on:
+  push:
+    branches: [refactor/741-shared-dialog-foundations]
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: refactor/741-shared-dialog-foundations
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - name: Apply canonical migration
+        run: node site/apply-dialog-foundation-migration.mjs
+
+      - name: Install site dependencies
+        working-directory: site
+        run: npm install --no-audit --no-fund
+
+      - name: Verify migrated tree
+        working-directory: site
+        run: npm run check
+
+      - name: Commit canonical migration
+        shell: bash
+        run: |
+          set -euo pipefail
+          git rm -- site/apply-dialog-foundation-migration.mjs .github/workflows/apply-dialog-foundation-migration.yml
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Introduce shared modal and dialog foundations"
+          git push origin HEAD:refactor/741-shared-dialog-foundations
