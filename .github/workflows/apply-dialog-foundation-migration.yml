@@ -21,7 +21,9 @@ jobs:
           node-version: 22
 
       - name: Apply canonical migration
-        run: node site/apply-dialog-foundation-migration.mjs
+        run: |
+          node site/apply-dialog-foundation-migration.mjs
+          node site/patch-dialog-foundation-validators.mjs
 
       - name: Install site dependencies
         working-directory: site
@@ -47,7 +49,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          git rm -- site/apply-dialog-foundation-migration.mjs .github/workflows/apply-dialog-foundation-migration.yml
+          git rm -- site/apply-dialog-foundation-migration.mjs site/patch-dialog-foundation-validators.mjs .github/workflows/apply-dialog-foundation-migration.yml
           git add -A
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
