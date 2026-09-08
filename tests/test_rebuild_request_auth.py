@@ -4,7 +4,6 @@ import os
 import unittest
 from unittest.mock import patch
 
-from scripts.database import clubs
 from scripts.database import rebuild_database_runner as runner
 from scripts.database import run_flow_rebuild as pipeline
 
@@ -24,7 +23,6 @@ class RebuildRequestAuthenticationTests(unittest.TestCase):
 
         for url in (
             "https://api.playmfl.com/prod/players?limit=1",
-            clubs.CLUBS_LEADERBOARD_URL,
             "https://z519wdyajg.execute-api.us-east-1.amazonaws.com/prod/players",
         ):
             with self.subTest(url=url):

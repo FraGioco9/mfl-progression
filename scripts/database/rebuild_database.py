@@ -191,13 +191,6 @@ def rebuild_directly() -> int:
             connection,
             limiter,
         )
-        run_flow_rebuild.timed(
-            "Club leaderboard",
-            clubs.refresh_clubs,
-            connection,
-            run_flow_rebuild.request_json,
-            limiter,
-        )
         source_results, _ = run_flow_rebuild.timed(
             "All players",
             run_flow_rebuild.fetch_all_player_sources,
@@ -214,6 +207,14 @@ def rebuild_directly() -> int:
             run_flow_rebuild.insert_players,
             connection,
             players,
+        )
+        run_flow_rebuild.timed(
+            "Flow clubs and rosters",
+            clubs.refresh_clubs,
+            connection,
+            None,
+            run_flow_rebuild.request_json,
+            limiter,
         )
 
         flow_started = time.perf_counter()

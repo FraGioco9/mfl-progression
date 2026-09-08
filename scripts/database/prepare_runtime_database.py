@@ -106,7 +106,7 @@ def validate_runtime_database(database_path: Path) -> str:
 
 
 def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
-    """Build the search lookup from canonical leaderboard clubs when available."""
+    """Build the club read model from canonical club records when available."""
     connection.executescript(
         """
         DROP TABLE IF EXISTS runtime_clubs;
@@ -116,9 +116,12 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
           normalized_name TEXT NOT NULL,
           city TEXT NOT NULL DEFAULT '',
           country TEXT NOT NULL DEFAULT '',
+          status TEXT NOT NULL DEFAULT '',
           division INTEGER,
           owner_wallet_address TEXT NOT NULL DEFAULT '',
           owner_name TEXT NOT NULL DEFAULT '',
+          signed_player_ids TEXT NOT NULL DEFAULT '[]',
+          competition_ids TEXT NOT NULL DEFAULT '[]',
           logo_version TEXT NOT NULL DEFAULT '',
           leaderboard_rank INTEGER,
           mfl_points REAL
@@ -130,6 +133,26 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
         club_columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(clubs)")}
         city_expression = "coalesce(city, '')" if "city" in club_columns else "''"
         country_expression = "coalesce(country, '')" if "country" in club_columns else "''"
+        status_expression = "coalesce(status, '')" if "status" in club_columns else "''"
+        signed_players_expression = (
+            "coalesce(signed_player_ids, '[]')"
+            if "signed_player_ids" in club_columns
+            else "'[]'"
+        )
+        competition_ids_expression = (
+            "coalesce(competition_ids, '[]')"
+            if "competition_ids" in club_columns
+            else "'[]'"
+        )
+        logo_version_expression = (
+            "coalesce(logo_version, '')"
+            if "logo_version" in club_columns
+            else "coalesce(CAST(division AS TEXT), '')"
+        )
+        leaderboard_rank_expression = (
+            "leaderboard_rank" if "leaderboard_rank" in club_columns else "NULL"
+        )
+        mfl_points_expression = "mfl_points" if "mfl_points" in club_columns else "NULL"
         connection.execute(
             f"""
             INSERT INTO runtime_clubs (
@@ -138,9 +161,12 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               normalized_name,
               city,
               country,
+              status,
               division,
               owner_wallet_address,
               owner_name,
+              signed_player_ids,
+              competition_ids,
               logo_version,
               leaderboard_rank,
               mfl_points
@@ -151,27 +177,37 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               normalize_search(name),
               {city_expression},
               {country_expression},
+              {status_expression},
               CAST(NULLIF(division, '') AS INTEGER),
               lower(coalesce(owner_wallet_address, '')),
               coalesce(owner_name, ''),
-              coalesce(logo_version, ''),
-              leaderboard_rank,
-              mfl_points
+              {signed_players_expression},
+              {competition_ids_expression},
+              {logo_version_expression},
+              {leaderboard_rank_expression},
+              {mfl_points_expression}
             FROM clubs
             WHERE coalesce(club_id, '') <> ''
               AND normalize_search(name) <> 'development center'
-            ORDER BY leaderboard_rank, club_id
+            ORDER BY
+              CASE WHEN CAST(NULLIF(division, '') AS INTEGER) BETWEEN 1 AND 5
+                THEN CAST(NULLIF(division, '') AS INTEGER) ELSE 999 END,
+              name,
+              club_id
             """
         )
     else:
         connection.execute(
             """
-            INSERT INTO runtime_clubs (club_id, name, normalized_name, division)
+            INSERT INTO runtime_clubs (
+              club_id, name, normalized_name, division, signed_player_ids
+            )
             SELECT
               active_contract_club_id,
               max(active_contract_club_name),
               normalize_search(max(active_contract_club_name)),
-              min(CAST(active_contract_club_division AS INTEGER))
+              min(CAST(active_contract_club_division AS INTEGER)),
+              '[]'
             FROM players
             WHERE coalesce(active_contract_club_id, '') <> ''
               AND coalesce(active_contract_club_name, '') <> ''
@@ -185,9 +221,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
     )
     connection.execute(
         "CREATE INDEX runtime_clubs_owner_index "
-        "ON runtime_clubs(owner_wallet_address, leaderboard_rank, club_id)"
+        "ON runtime_clubs(owner_wallet_address, division, club_id)"
     )
-
 
 def prepare_runtime_database(database_path: Path) -> None:
     if not database_path.is_file():
