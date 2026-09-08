@@ -33,6 +33,11 @@
     return text ? `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}` : "";
   }
 
+  function clubColor(value) {
+    const color = String(value || "").trim();
+    return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : "";
+  }
+
   function primeClubDestinationTitle(clubId, name, divisionInfo) {
     const normalizedClubId = String(clubId || "").trim();
     const normalizedName = String(name || "").trim();
@@ -91,12 +96,20 @@
     const city = String(club?.city || "").trim();
     const nation = firstLetterCaps(club?.nation);
     const location = [city, nation].filter(Boolean).join(", ");
+    const primaryColor = clubColor(club?.primaryColor);
+    const secondaryColor = clubColor(club?.secondaryColor);
 
     const link = document.createElement("a");
     link.className = "myClubCard";
     link.href = `/clubs/${encodeURIComponent(clubId)}/squad`;
     link.dataset.clubId = clubId;
     link.setAttribute("aria-label", `Open ${name}`);
+    const gradientPrimary = primaryColor || secondaryColor;
+    const gradientSecondary = secondaryColor || primaryColor;
+    if (gradientPrimary) {
+      link.style.setProperty("--my-club-primary", gradientPrimary);
+      link.style.setProperty("--my-club-secondary", gradientSecondary);
+    }
 
     const logoFrame = document.createElement("div");
     logoFrame.className = "myClubLogoFrame";
