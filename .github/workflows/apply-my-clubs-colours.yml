@@ -1,0 +1,96 @@
+name: Apply My Clubs colour treatment
+
+on:
+  push:
+    branches:
+      - feat/205-my-clubs-data
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Rebase onto current main
+        run: |
+          git fetch origin main
+          git rebase origin/main
+      - name: Apply club colours
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace(path, old, new, count=1):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(old) < count:
+                  raise SystemExit(f"Expected pattern not found in {path}: {old[:100]!r}")
+              file.write_text(text.replace(old, new, count))
+
+          path = "site/api/_clubs.js"
+          replace(path,
+          '''  const citySelect = runtimeClubColumns.has("city") ? "city" : "'' AS city";\n  const nationSelect = runtimeClubColumns.has("country") ? "country AS nation" : "'' AS nation";\n''',
+          '''  const citySelect = runtimeClubColumns.has("city") ? "city" : "'' AS city";\n  const nationSelect = runtimeClubColumns.has("country") ? "country AS nation" : "'' AS nation";\n  const primaryColorSelect = runtimeClubColumns.has("primary_color")\n    ? "primary_color AS primaryColor"\n    : "NULL AS primaryColor";\n  const secondaryColorSelect = runtimeClubColumns.has("secondary_color")\n    ? "secondary_color AS secondaryColor"\n    : "NULL AS secondaryColor";\n''')
+          replace(path,
+          '''       ${citySelect},\n       ${nationSelect},\n       division,\n''',
+          '''       ${citySelect},\n       ${nationSelect},\n       ${primaryColorSelect},\n       ${secondaryColorSelect},\n       division,\n''')
+
+          path = "site/modules/core-sources/my-clubs.js"
+          replace(path,
+          '''  function firstLetterCaps(value) {\n    const text = String(value || "").trim().toLocaleLowerCase();\n    return text ? `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}` : "";\n  }\n\n''',
+          '''  function firstLetterCaps(value) {\n    const text = String(value || "").trim().toLocaleLowerCase();\n    return text ? `${text.charAt(0).toLocaleUpperCase()}${text.slice(1)}` : "";\n  }\n\n  function clubColor(value) {\n    const color = String(value || "").trim();\n    return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : "";\n  }\n\n''')
+          replace(path,
+          '''    const nation = firstLetterCaps(club?.nation);\n    const location = [city, nation].filter(Boolean).join(", ");\n\n    const link = document.createElement("a");\n''',
+          '''    const nation = firstLetterCaps(club?.nation);\n    const location = [city, nation].filter(Boolean).join(", ");\n    const primaryColor = clubColor(club?.primaryColor);\n    const secondaryColor = clubColor(club?.secondaryColor);\n\n    const link = document.createElement("a");\n''')
+          replace(path,
+          '''    link.dataset.clubId = clubId;\n    link.setAttribute("aria-label", `Open ${name}`);\n\n    const logoFrame = document.createElement("div");\n''',
+          '''    link.dataset.clubId = clubId;\n    link.setAttribute("aria-label", `Open ${name}`);\n    const gradientPrimary = primaryColor || secondaryColor;\n    const gradientSecondary = secondaryColor || primaryColor;\n    if (gradientPrimary) {\n      link.style.setProperty("--my-club-primary", gradientPrimary);\n      link.style.setProperty("--my-club-secondary", gradientSecondary);\n    }\n\n    const logoFrame = document.createElement("div");\n''')
+
+          path = "site/my-clubs.css"
+          replace(path,
+          '''  background: var(--mfl-panel-background);\n  color: var(--text);\n  text-decoration: none;\n  transition: border-color var(--mfl-motion-fast) ease, background-color var(--mfl-motion-fast) ease;\n}\n\n.myClubCard:hover {\n  border-color: var(--primary-hover);\n  background: var(--row-hover);\n}\n''',
+          '''  background-color: var(--mfl-panel-background);\n  background-image:\n    linear-gradient(rgba(0, 0, 0, 0.18) 14%, rgba(0, 0, 0, 0) 100%),\n    linear-gradient(\n      var(--my-club-primary, var(--surface-muted)) 0%,\n      var(--my-club-secondary, var(--surface-muted)) 100%\n    );\n  color: var(--text);\n  text-decoration: none;\n  transition: border-color var(--mfl-motion-fast) ease;\n}\n\n.myClubCard:hover {\n  border-color: var(--primary-hover);\n}\n\n.myClubCard:hover .myClubCardBody {\n  background-color: var(--row-hover);\n}\n''')
+          replace(path,
+          '''  padding: 12px;\n  border-right: 1px solid var(--border);\n  background: var(--surface-muted);\n}\n''',
+          '''  padding: 12px;\n  border-right: 1px solid var(--border);\n  background: transparent;\n}\n''')
+          replace(path,
+          '''  min-width: 0;\n  padding: 16px 18px;\n}\n''',
+          '''  min-width: 0;\n  padding: 16px 18px;\n  background-color: var(--mfl-panel-background);\n  transition: background-color var(--mfl-motion-fast) ease;\n}\n''')
+
+          path = "site/validate-my-clubs-route.mjs"
+          replace(path,
+          '''assert.match(clubsApi, /runtimeClubColumns[\\s\\S]*?citySelect[\\s\\S]*?nationSelect/u, "My Clubs API must expose City/Nation when available while staying compatible with pre-location runtime databases.");\n''',
+          '''assert.match(clubsApi, /runtimeClubColumns[\\s\\S]*?citySelect[\\s\\S]*?nationSelect/u, "My Clubs API must expose City/Nation when available while staying compatible with pre-location runtime databases.");\nassert.match(clubsApi, /primary_color AS primaryColor[\\s\\S]*?secondary_color AS secondaryColor/u, "My Clubs API must expose persisted club colours from runtime_clubs.");\nassert.match(clubsApi, /NULL AS primaryColor[\\s\\S]*?NULL AS secondaryColor/u, "My Clubs API must stay compatible with runtime databases created before club colours existed.");\n''')
+          replace(path,
+          '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\n''',
+          '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\nassert.match(coreSource, /function clubColor\\(value\\)[\\s\\S]*?\\^#\\[0-9a-f\\]\\{6\\}\\$/u, "My Clubs must accept only canonical six-digit hex club colours.");\nassert.match(coreSource, /--my-club-primary[\\s\\S]*?--my-club-secondary/u, "My Clubs cards must pass canonical club colours to route-owned CSS variables.");\nassert.match(pageStyles, /linear-gradient\\(rgba\\(0, 0, 0, 0\\.18\\) 14%, rgba\\(0, 0, 0, 0\\) 100%\\)[\\s\\S]*?var\\(--my-club-primary[\\s\\S]*?var\\(--my-club-secondary/u, "My Clubs cards must use dark top shading over the primary-to-secondary club gradient.");\nassert.match(pageStyles, /\\.myClubLogoFrame \\{[\\s\\S]*?background: transparent;/u, "The logo side must expose the club colour gradient.");\nassert.match(pageStyles, /\\.myClubCardBody \\{[\\s\\S]*?background-color: var\\(--mfl-panel-background\\);/u, "Club information must stay on the shared panel surface for readability.");\nassert.doesNotMatch(pageStyles + coreSource, /clubs-pattern\\.svg/u, "My Clubs must not copy PlayMFL's decorative club pattern asset.");\n''')
+          PY
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build
+      - name: Lint
+        run: npm run lint
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Repository validation
+        run: npm run validate:repo
+      - name: Commit source changes and remove helper workflow
+        shell: bash
+        run: |
+          git rm .github/workflows/apply-my-clubs-colours.yml
+          git config user.name "FraGioco9"
+          git config user.email "giocolifrancesco@gmail.com"
+          git add site/api/_clubs.js site/modules/core-sources/my-clubs.js site/my-clubs.css site/validate-my-clubs-route.mjs
+          git commit -m "Apply club colours to My Clubs cards"
+          git push --force-with-lease origin HEAD:feat/205-my-clubs-data
