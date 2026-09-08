@@ -1,13 +1,11 @@
 import { readdir, readFile } from "node:fs/promises";
 
 const siteRoot = new URL("./", import.meta.url);
-const LEGACY_DIRECT_API_FETCH_RUNTIMES = new Set([
-  "database-stats-runtime.js",
-  "global-search-runtime.js",
-]);
 const MIGRATED_RUNTIMES = Object.freeze([
   "bug-report-runtime.js",
+  "database-stats-runtime.js",
   "evaluation-discount-rate-runtime.js",
+  "global-search-runtime.js",
   "marketplace-overlay-runtime.js",
   "nationality-filter-options-runtime.js",
 ]);
@@ -27,14 +25,8 @@ for (const [name, source] of sources) {
   directApiFetch.lastIndex = 0;
 }
 
-const unexpected = directOwners.filter((name) => !LEGACY_DIRECT_API_FETCH_RUNTIMES.has(name));
-if (unexpected.length) {
-  throw new Error(`Standalone runtimes must not add direct /api fetch owners. Unexpected owners: ${unexpected.join(", ")}`);
-}
-for (const name of LEGACY_DIRECT_API_FETCH_RUNTIMES) {
-  if (!directOwners.includes(name)) {
-    throw new Error(`${name} left the temporary direct-fetch allowlist; remove it from the validator in the same change.`);
-  }
+if (directOwners.length) {
+  throw new Error(`Standalone runtimes must not depend on the global fetch compatibility bridge for /api calls. Remaining owners: ${directOwners.join(", ")}`);
 }
 
 for (const name of MIGRATED_RUNTIMES) {
@@ -52,9 +44,21 @@ if (!nationality.includes("dedupe: true") || !nationality.includes('key: "nation
   throw new Error("Nationality filter options must retain canonical GET deduplication.");
 }
 
+const databaseStats = sources.get("database-stats-runtime.js") || "";
+if (!databaseStats.includes("dedupe: true") || !databaseStats.includes("`database-stats:${VERSION}`")) {
+  throw new Error("Database Stats must retain release-keyed canonical GET deduplication.");
+}
+
+const globalSearch = sources.get("global-search-runtime.js") || "";
+if (!globalSearch.includes("function dataClientFetch(input, init = {}, options = {})")
+    || !globalSearch.includes('dataClientFetch("/api/wallet-preferences"')
+    || !globalSearch.includes("dataClientFetch(`/api/data?${parameters}`")) {
+  throw new Error("Global Search must route wallet and database API reads through the canonical data client while retaining its own abort sequencing.");
+}
+
 const marketplace = sources.get("marketplace-overlay-runtime.js") || "";
 if (!marketplace.includes('dataClient.fetch("/api/marketplace"')) {
   throw new Error("Marketplace overlay must use the canonical client directly.");
 }
 
-console.log(`Standalone data-client migration guard passed; remaining direct runtime owners: ${directOwners.join(", ")}.`);
+console.log("Standalone data-client migration guard passed with zero direct /api fetch owners.");
