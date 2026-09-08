@@ -9,6 +9,7 @@ const styles = read("styles.css");
 const base = read("styles-base.css");
 const docs = read("../docs/ui-foundations.md");
 
+// Table visual semantics stay Table-owned; this gate protects that boundary without taking over geometry.
 for (const token of [
   "--mfl-table-surface: var(--surface);",
   "--mfl-table-border-color: var(--border);",
