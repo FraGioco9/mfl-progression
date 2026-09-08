@@ -9,7 +9,7 @@ async function recordWalletOptIn() {
   }
 
   try {
-    const response = await fetch("/api/wallet-opt-ins", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-opt-ins", {
       method: "POST",
       cache: "no-store",
       headers: walletProofHeaders(true),
@@ -34,7 +34,7 @@ async function loadWalletNames() {
   if (!wallet) { state.walletNamesLoaded = true; return true; }
   state.walletNamesLoadPromise = (async () => {
     const q = new URLSearchParams({ mode: "search", type: "recent", walletAddresses: wallet });
-    const response = await fetch(`/api/data?${q}`, { cache: "no-store", headers: { Accept: "application/json" } });
+    const response = await window.__mflDataClient.fetch(`/api/data?${q}`, { cache: "no-store", headers: { Accept: "application/json" } });
     const payload = await response.json().catch(() => ({}));
     if (!response.ok) return false;
     const agents = payload?.agents || {};
