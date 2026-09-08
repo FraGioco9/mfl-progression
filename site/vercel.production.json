@@ -70,6 +70,21 @@
       ]
     },
     {
+      "source": "/(.*\\.js)",
+      "has": [
+        {
+          "type": "query",
+          "key": "mfl_core"
+        }
+      ],
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
       "source": "/modules/app-core-runtime.js",
       "has": [
         {
