@@ -34,7 +34,8 @@ includes(sharedCore, "function ensureAgentPageTitleName(address) {", "Shared set
 includes(sharedCore, 'function openAgentPage(walletAddress, agentName = "") {', "Agent navigation must accept an already-known name.");
 includes(sharedCore, "agentName: knownName", "Agent navigation must carry the known name into page loading.");
 includes(sharedCore, "navigateFromSearch(() => openAgentPage(result.walletAddress, result.name));", "Global search must reuse the Agent name it already rendered.");
-includes(sharedCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Table navigation must reuse the Agent label already rendered in the row.");
+excludes(sharedCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Delegated Agent-row navigation must not remain in universal Shared ownership.");
+includes(tableCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Table navigation must reuse the Agent label already rendered in the row.");
 includes(sharedCore, "const agentTitleReady = pageName === \"agents\"", "Agent page loading must start title resolution with the route.");
 includes(sharedCore, "await agentTitleReady;", "Agent page loading must not finish before title resolution settles.");
 includes(sharedCore, "renderAgentPageTitle(state.currentAgentWalletAddress || agentWalletAddressFromUrl());", "Agent title must be rendered after its name readiness gate.");
@@ -85,4 +86,4 @@ invariant(
   "Agent name readiness must settle before the page can finish its loading lifecycle.",
 );
 
-console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup, cache, canonical transport, and loading readiness validation passed.");
+console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup and row navigation, cache, canonical transport, and loading readiness validation passed.");

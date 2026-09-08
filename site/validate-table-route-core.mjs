@@ -92,6 +92,21 @@ for (const binding of tableControlBindings) {
   includes(tableCore, binding, `Canonical Table source must own page/filter/pager binding: ${binding}`);
 }
 
+const delegatedTableBodyInteractions = [
+  "function copyDelegatedPlayerId(button, event) {",
+  'tableBody?.addEventListener("pointerdown", (event) => {',
+  'tableBody?.addEventListener("click", (event) => {',
+  'tableBody?.addEventListener("pointermove", (event) => {',
+  'tableBody?.addEventListener("pointerleave", () => {',
+];
+for (const owner of delegatedTableBodyInteractions) {
+  excludes(sharedCore, owner, `Delegated Table-body interaction must not remain in universal Shared ownership: ${owner}`);
+  includes(tableCore, owner, `Canonical Table source must own delegated Table-body interaction: ${owner}`);
+}
+excludes(sharedCore, "Compatibility markers for the legacy table-delegation validator", "Legacy comment-only Table delegation ownership must stay removed from Shared.");
+includes(sharedCore, 'window.addEventListener("scroll", () => hidePlayerNoteTooltip({ immediate: true }), true);', "Cross-route tooltip scroll cleanup must remain shared.");
+includes(sharedCore, 'window.addEventListener("resize", () => hidePlayerNoteTooltip({ immediate: true }));', "Cross-route tooltip resize cleanup must remain shared.");
+
 for (const typedControl of [
   'const addFilterSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#addFilterSelect"));',
   'const hideRetiredInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiredInput"));',
@@ -153,4 +168,4 @@ invariant(
   "Generated Table runtime must exactly match canonical table.js.",
 );
 
-console.log("Source-owned Table facades, lazy Table-only handlers and page/filter/pager bindings, typed control references, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");
+console.log("Source-owned Table facades, lazy Table-only handlers, page/filter/pager controls, delegated Table-body interactions, typed control references, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");

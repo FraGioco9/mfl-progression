@@ -2776,6 +2776,92 @@ state.sortDirection = targetSortState.sortDirection;
   applyFilters();
 }
 
+function copyDelegatedPlayerId(button, event) {
+  const playerId = String(button.dataset.playerId || "").trim();
+  if (!playerId) return;
+  event.preventDefault();
+  event.stopPropagation();
+  state.tooltipSuppressedUntil = Date.now() + 350;
+  button.blur();
+  copyPlayerId(playerId);
+}
+
+tableBody?.addEventListener("pointerdown", (event) => {
+  if (event.isPrimary === false || event.button !== 0 || !(event.target instanceof Element)) return;
+  const button = event.target.closest(".copyPlayerIdButton[data-player-id]");
+  if (!(button instanceof HTMLButtonElement) || !tableBody.contains(button)) return;
+  copyDelegatedPlayerId(button, event);
+});
+
+tableBody?.addEventListener("click", (event) => {
+  if (!(event.target instanceof Element)) return;
+
+  const copyButton = event.target.closest(".copyPlayerIdButton[data-player-id]");
+  if (copyButton instanceof HTMLButtonElement && tableBody.contains(copyButton)) {
+    if (Date.now() < state.tooltipSuppressedUntil) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    copyDelegatedPlayerId(copyButton, event);
+    return;
+  }
+
+  const selectionInput = event.target.closest('.selectionCell input[type="checkbox"][data-player-id]');
+  if (selectionInput instanceof HTMLInputElement && tableBody.contains(selectionInput)) {
+    setPlayerSelected(selectionInput.dataset.playerId || "", selectionInput.checked, event.shiftKey);
+    return;
+  }
+
+  const playerLink = event.target.closest(".playerNameLink[data-player-id]");
+  if (playerLink instanceof HTMLAnchorElement && tableBody.contains(playerLink)) {
+    event.preventDefault();
+    openPlayerPage(playerLink.dataset.playerId || "");
+    return;
+  }
+
+  const agentLink = event.target.closest(".agentTableLink[data-wallet-address]");
+  if (agentLink instanceof HTMLAnchorElement && tableBody.contains(agentLink)) {
+    event.preventDefault();
+    openAgentPage(agentLink.dataset.walletAddress || "", agentLink.dataset.agentName || agentLink.textContent || "");
+    return;
+  }
+
+  const clubLink = event.target.closest(".agentTableLink[data-club-id]");
+  if (clubLink instanceof HTMLAnchorElement && tableBody.contains(clubLink) && typeof window.mflOpenClubPage === "function") {
+    event.preventDefault();
+    window.mflOpenClubPage(clubLink.dataset.clubId || "", "attributes");
+  }
+});
+
+tableBody?.addEventListener("pointermove", (event) => {
+  const row = event.target?.closest?.("#tableBody tr");
+  const nextId = String(row?.dataset?.playerId || "").trim();
+  const interactive = event.target?.closest?.("[data-table-interactive-key]");
+  const interactiveKey = String(interactive?.dataset?.tableInteractiveKey || "");
+
+  if (row && nextId && state.hoveredTablePlayerId !== nextId) {
+    state.hoveredTablePlayerId = nextId;
+    tableBody.querySelectorAll("tr.tableRowHovered").forEach((tableRow) => tableRow.classList.remove("tableRowHovered"));
+    row.classList.add("tableRowHovered");
+  }
+
+  if (state.hoveredTableInteractiveKey !== interactiveKey) {
+    state.hoveredTableInteractiveKey = interactiveKey;
+    tableBody.querySelectorAll(".tableInteractiveHovered").forEach((element) => element.classList.remove("tableInteractiveHovered"));
+    if (interactive) {
+      interactive.classList.add("tableInteractiveHovered");
+    }
+  }
+});
+
+tableBody?.addEventListener("pointerleave", () => {
+  state.hoveredTablePlayerId = "";
+  state.hoveredTableInteractiveKey = "";
+  tableBody.querySelectorAll("tr.tableRowHovered").forEach((tableRow) => tableRow.classList.remove("tableRowHovered"));
+  tableBody.querySelectorAll(".tableInteractiveHovered").forEach((element) => element.classList.remove("tableInteractiveHovered"));
+});
+
 __mflTableTitleForPageOwner = tableTitleForPageOwner;
 __mflTableEnsureAgentPageTitleNameOwner = tableEnsureAgentPageTitleNameOwner;
 __mflTableBuildTableColGroupOwner = tableBuildTableColGroupOwner;
