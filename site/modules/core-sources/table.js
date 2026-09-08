@@ -845,7 +845,7 @@ function openPlayerTableActionMenu(trigger, playerId) {
   const menu = ensurePlayerTableActionMenu();
   const key = String(playerId || "").trim();
   if (!(trigger instanceof HTMLButtonElement) || !key) return false;
-  if (playerTableActionTrigger === trigger && menu.dataset.open !== "true") {
+  if (playerTableActionTrigger === trigger && menu.dataset.open === "true") {
     closePlayerTableActionMenu({ restoreFocus: true });
     return false;
   }
