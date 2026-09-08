@@ -167,6 +167,17 @@ Cross-site semantic values live in `ui-foundations.css`:
 
 Specialized tiny steppers, table action buttons, mobile-only touch geometry, and other domain-specific controls keep their own sizes. View and Filters share the standard 14px label size and 700 weight; View, Filters, Search, and refresh-first-paint View controls share the ordinary resting/hover state language. Smaller Stats and Player controls retain locally owned font sizes, and navigation, Stats, Player, dropdown, destructive, opt-in, and other specialist states remain independently owned even when their current colors match.
 
+## Dropdowns and menus
+
+- Ordinary dropdown/menu surface: `var(--surface)` (`--mfl-dropdown-background`)
+- Ordinary dropdown/menu border: `1px solid var(--border-strong)` (`--mfl-dropdown-border`)
+- Ordinary dropdown/menu radius: `8px` (`--mfl-radius-dropdown`)
+- Ordinary dropdown/menu shadow: `0 12px 36px rgba(0, 0, 0, 0.16)` (`--mfl-shadow-dropdown`)
+- Ordinary option radius: `6px` (`--mfl-radius-dropdown-option`)
+- Ordinary option rest/hover/selected colors are semantic foundation tokens; enhanced native pickers and generic custom menus consume them where their visual role matches.
+- `dropdowns.css` remains the sole owner of dropdown mechanics: positioning, gaps, max-height, z-index, chevrons, transitions, native picker enhancement, and responsive/menu-specific geometry.
+- Watchlist active rows/actions, Account wallet semantic colors, destructive items, Player action geometry/icons, and Database Stats Custom layout remain specialist-owned.
+
 ## Dialogs and overlays
 
 - Canonical backdrop surface: `rgba(0, 0, 0, 0.45)` (`--mfl-modal-backdrop-background`)
