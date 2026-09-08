@@ -14,7 +14,9 @@ from pathlib import Path
 from typing import Any
 
 MFL_WALLET_ADDRESS = "0xff8d2bbed8164db0"
-EXCLUDED_WALLET_NAMES = ("mfl", "mfl wallet", "mfl trade")
+MFL_TRADE_WALLET_ADDRESS = "0x6fec8986261ecf49"
+EXCLUDED_WALLET_ADDRESSES = (MFL_WALLET_ADDRESS, MFL_TRADE_WALLET_ADDRESS)
+DATABASE_STATS_CONTRACT = "ownership-addresses-v1"
 RUNTIME_TABLES = frozenset({
     "runtime_player_search",
     "runtime_agents",
@@ -332,21 +334,8 @@ def prepare_runtime_database(database_path: Path) -> None:
             ELSE CAST(overall AS INTEGER)
           END
         """
-        placeholders = ", ".join("?" for _ in EXCLUDED_WALLET_NAMES)
-        excluded_sql = (
-            "lower(coalesce(wallet_address, '')) <> lower(?) "
-            "AND lower(coalesce(wallet_address, '')) NOT IN ("
-            "SELECT lower(wallet_address) FROM wallets "
-            "WHERE coalesce(wallet_address, '') <> '' "
-            f"AND normalize_wallet_name(name) IN ({placeholders})"
-            ") "
-            f"AND normalize_wallet_name(wallet_name) NOT IN ({placeholders})"
-        )
-        parameters = (
-            MFL_WALLET_ADDRESS,
-            *EXCLUDED_WALLET_NAMES,
-            *EXCLUDED_WALLET_NAMES,
-        )
+        excluded_sql = "lower(coalesce(wallet_address, '')) NOT IN (?, ?)"
+        parameters = tuple(address.lower() for address in EXCLUDED_WALLET_ADDRESSES)
 
         connection.execute(
             f"""
@@ -397,6 +386,7 @@ def prepare_runtime_database(database_path: Path) -> None:
         )
         metadata = {
             "generated_at": generated_at,
+            "database_stats_contract": DATABASE_STATS_CONTRACT,
             "database_stats_total_players": str(int(total_players or 0)),
             "database_stats_total_active_players": str(int(total_active_players or 0)),
         }

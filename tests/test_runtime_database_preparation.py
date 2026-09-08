@@ -106,7 +106,82 @@ class RuntimeDatabasePreparationTests(unittest.TestCase):
             self.assertTrue(generated_at.endswith("Z"))
             with sqlite3.connect(database_path) as connection:
                 tables = runtime_db.table_names(connection)
+                metadata = dict(connection.execute("SELECT key, value FROM runtime_metadata"))
+                prepared_total = connection.execute(
+                    "SELECT coalesce(sum(player_count), 0) FROM runtime_database_stats"
+                ).fetchone()[0]
             self.assertTrue(runtime_db.RUNTIME_TABLES.issubset(tables))
+            self.assertEqual(
+                metadata.get("database_stats_contract"),
+                runtime_db.DATABASE_STATS_CONTRACT,
+            )
+            self.assertEqual(int(metadata.get("database_stats_total_players", -1)), 1)
+            self.assertEqual(int(metadata.get("database_stats_total_active_players", -1)), 1)
+            self.assertEqual(prepared_total, 1)
+
+    def test_database_stats_exclude_only_canonical_mfl_wallet_addresses(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            database_path = Path(directory) / "mfl_database.db"
+            create_source_database(database_path)
+            with sqlite3.connect(database_path) as connection:
+                player_template = (
+                    "MFL Runtime Player",
+                    "ST",
+                    25,
+                    0,
+                    1,
+                    "",
+                    "",
+                    "",
+                    71,
+                    10,
+                    2,
+                )
+                connection.execute(
+                    """
+                    INSERT INTO players(
+                        player_id, wallet_address, wallet_name, name, positions, age,
+                        retirement_years, owned_since, active_contract_club_id,
+                        active_contract_club_name, active_contract_club_division,
+                        overall, goalkeeping, player_seasons
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (43, runtime_db.MFL_WALLET_ADDRESS, "MFL", *player_template),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO players(
+                        player_id, wallet_address, wallet_name, name, positions, age,
+                        retirement_years, owned_since, active_contract_club_id,
+                        active_contract_club_name, active_contract_club_division,
+                        overall, goalkeeping, player_seasons
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (44, runtime_db.MFL_TRADE_WALLET_ADDRESS, "MFL Trade", *player_template),
+                )
+                connection.execute(
+                    """
+                    INSERT INTO players(
+                        player_id, wallet_address, wallet_name, name, positions, age,
+                        retirement_years, owned_since, active_contract_club_id,
+                        active_contract_club_name, active_contract_club_division,
+                        overall, goalkeeping, player_seasons
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    """,
+                    (45, "0x456", "mfl", *player_template),
+                )
+                connection.commit()
+
+            runtime_db.prepare_runtime_database(database_path)
+
+            with sqlite3.connect(database_path) as connection:
+                prepared_total = connection.execute(
+                    "SELECT coalesce(sum(player_count), 0) FROM runtime_database_stats"
+                ).fetchone()[0]
+                metadata = dict(connection.execute("SELECT key, value FROM runtime_metadata"))
+            self.assertEqual(prepared_total, 2)
+            self.assertEqual(int(metadata["database_stats_total_players"]), 2)
+            self.assertEqual(int(metadata["database_stats_total_active_players"]), 1)
 
     def test_validation_api_does_not_mutate_prepared_database(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
