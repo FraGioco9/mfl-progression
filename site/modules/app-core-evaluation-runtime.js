@@ -1715,3 +1715,147 @@ setupBackdropClickClose(advancedSettingsModal, closeAdvancedSettings);
 
 renderEvaluationMflPerUsdControl(false);
 evaluationDiscountRate.textContent = formatEvaluationRate(evaluationDiscountRateValue());
+
+if (evaluationDeleteButton) {
+  evaluationDeleteButton.addEventListener("click", async () => {
+    const savedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
+    const playerId = String(state.evaluationPlayerId || evaluationPlayerIdFromUrl() || "").trim();
+
+    if (!savedId) {
+      showToast("No saved evaluation to delete.");
+      return;
+    }
+
+    evaluationDeleteButton.disabled = true;
+
+    try {
+      await deleteSavedEvaluation(savedId);
+      resetEvaluationToDefaultForPlayer(playerId);
+      showToast("Saved evaluation deleted.");
+    } catch (error) {
+      showToast(error?.message || "Could not delete saved evaluation.");
+    } finally {
+      evaluationDeleteButton.disabled = false;
+    }
+  });
+}
+if (evaluationSaveButton) {
+  evaluationSaveButton.addEventListener("click", async () => {
+    evaluationSaveButton.disabled = true;
+    try {
+      const saveResult = await createSavedEvaluation();
+      if (saveResult) {
+        window.history.replaceState({}, "", saveResult.url);
+        updateEvaluationFooterActions();
+        showToast(saveResult.overwritten ? "Evaluation overwritten and saved." : "Evaluation saved.");
+      }
+    } catch (error) {
+      showToast(error?.message || "Could not save evaluation.");
+    } finally {
+      evaluationSaveButton.disabled = false;
+    }
+  });
+}
+if (evaluationLoadButton) {
+  evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);
+}
+if (closeEvaluationLoadButton) {
+  closeEvaluationLoadButton.addEventListener("click", () => {
+    hideModal(evaluationLoadModal);
+  });
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;
+  event.preventDefault();
+  hideEvaluationLoadActionTooltip();
+  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+});
+setupBackdropClickClose(evaluationLoadModal, () => hideModal(evaluationLoadModal));
+if (evaluationLoadList) {
+  evaluationLoadList.addEventListener("scroll", hideEvaluationLoadActionTooltip, { passive: true });
+}
+if (evaluationShareButton) {
+  evaluationShareButton.addEventListener("click", async () => {
+    evaluationShareButton.disabled = true;
+    try {
+      const shareUrl = await createSharedEvaluation();
+      if (shareUrl) {
+        const parsedShareUrl = new URL(shareUrl, window.location.origin);
+        state.evaluationShareId = parsedShareUrl.searchParams.get("share") || "";
+        state.evaluationSavedId = "";
+        window.history.replaceState({}, "", shareUrl);
+        updateEvaluationFooterActions();
+      }
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast("Evaluation share link copied.");
+      } catch {
+        showToast("Share link: " + shareUrl);
+      }
+    } catch (error) {
+      showToast(error?.message || "Could not create evaluation share link.");
+    } finally {
+      evaluationShareButton.disabled = false;
+    }
+  });
+}
+
+evaluationResetButton.addEventListener("click", () => {
+  const row = rowByPlayerId(state.evaluationPlayerId);
+
+  if (!row) {
+    return;
+  }
+
+  resetEvaluationToDefaultForPlayer(getValue(row, "player_id") || state.evaluationPlayerId);
+});
+
+const openEvaluationPlayerPage = (event) => {
+  if (event.type === "mouseup" && event.button !== 1) {
+    return;
+  }
+
+  const row = rowByPlayerId(state.evaluationPlayerId);
+
+  if (!row) {
+    return;
+  }
+
+  const playerId = String(getValue(row, "player_id"));
+  rememberSearchResult(playerId);
+
+  if (event.type === "mouseup" && event.button === 1) {
+    event.preventDefault();
+    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
+    window.focus();
+    if (playerWindow) {
+      playerWindow.blur();
+    }
+    return;
+  }
+
+  if (event.ctrlKey || event.metaKey) {
+    event.preventDefault();
+    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
+    window.focus();
+    if (playerWindow) {
+      playerWindow.blur();
+    }
+    return;
+  }
+
+  openPlayerPage(playerId);
+};
+
+const preventEvaluationPlayerPageAutoscroll = (event) => {
+  if (event.button === 1) {
+    event.preventDefault();
+  }
+};
+
+evaluationPlayerPageButton.addEventListener("mousedown", preventEvaluationPlayerPageAutoscroll);
+evaluationPlayerPageButton.addEventListener("auxclick", preventEvaluationPlayerPageAutoscroll);
+evaluationPlayerPageButton.addEventListener("click", openEvaluationPlayerPage);
+evaluationPlayerPageButton.addEventListener("mouseup", openEvaluationPlayerPage);

@@ -48,16 +48,18 @@ invariant(
 );
 
 invariant(
-  sharedCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
+  evaluationCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
+    && !sharedCore.includes('evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);')
     && sharedCore.includes('async function openSavedEvaluationsModal() {\n  evaluationSearchInput.blur();\n  if (document.activeElement === evaluationLoadButton) evaluationLoadButton.blur();')
     && !sharedCore.includes('async function openSavedEvaluationsModal() {\n  clearEvaluationSearchFocus();'),
-  "Clicking Load must preserve the direct universal binding while clearing both Evaluation-search focus and stale trigger focus before opening the modal.",
+  "Clicking Load must use the lazy Evaluation binding while the stable shared facade clears both Evaluation-search focus and stale trigger focus before opening the modal.",
 );
 
 invariant(
-  sharedCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;')
-    && sharedCore.includes('event.preventDefault();\n  hideEvaluationLoadActionTooltip();\n  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {\n    document.activeElement.blur();'),
-  "Saved Evaluations must stay open on Escape while the active control is deselected.",
+  evaluationCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;')
+    && evaluationCore.includes('event.preventDefault();\n  hideEvaluationLoadActionTooltip();\n  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {\n    document.activeElement.blur();')
+    && !sharedCore.includes('document.addEventListener("keydown", (event) => {\n  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;'),
+  "Saved Evaluations must keep Escape focus-release behavior in the lazy Evaluation owner without a duplicate Shared listener.",
 );
 
 for (const required of [
@@ -161,4 +163,4 @@ invariant(
 
 new Function(sharedCore);
 new Function(evaluationCore);
-console.log("Source-owned Evaluation Saved cache validation passed: Saved lists/player rows preload in the background, Load reuses cache/in-flight work, cached rows retain names and valuations, canonical transport is enforced, and saved hydration remains source-owned.");
+console.log("Source-owned Evaluation Saved cache validation passed: Saved lists/player rows preload in the background, lazy Load interactions reuse cache/in-flight work, cached rows retain names and valuations, canonical transport is enforced, and saved hydration remains source-owned.");

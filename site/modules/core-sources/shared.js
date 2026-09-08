@@ -423,9 +423,9 @@ const evaluationButtons = document.querySelector("#evaluationButtons");
 const evaluationResetButton = document.querySelector("#evaluationResetButton");
 const evaluationLoadButton = document.querySelector("#evaluationLoadButton");
 const evaluationPlayerPageButton = document.querySelector("#evaluationPlayerPageButton");
-const evaluationSaveButton = document.querySelector("#evaluationSaveButton");
-const evaluationShareButton = document.querySelector("#evaluationShareButton");
-const evaluationDeleteButton = document.querySelector("#evaluationDeleteButton");
+const evaluationSaveButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationSaveButton"));
+const evaluationShareButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationShareButton"));
+const evaluationDeleteButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationDeleteButton"));
 const evaluationOptionFilters = document.querySelector("#evaluationOptionFilters");
 const ignoreDiscountRateInput = document.querySelector("#ignoreDiscountRateInput");
 const ignoreFirstSeasonInput = document.querySelector("#ignoreFirstSeasonInput");
@@ -468,7 +468,7 @@ const advancedPlayerTableHead = document.querySelector("#advancedPlayerTableHead
 const advancedPlayerTableBody = document.querySelector("#advancedPlayerTableBody");
 const evaluationSummaryBody = document.querySelector("#evaluationSummaryBody");
 const evaluationTableBody = document.querySelector("#evaluationTableBody");
-const evaluationLoadModal = document.querySelector("#evaluationLoadModal");
+const evaluationLoadModal = /** @type {HTMLElement} */ (document.querySelector("#evaluationLoadModal"));
 const closeEvaluationLoadButton = document.querySelector("#closeEvaluationLoadButton");
 const evaluationLoadList = document.querySelector("#evaluationLoadList");
 const selectionBar = document.querySelector("#selectionBar");
@@ -7137,150 +7137,6 @@ closeSearchButton.addEventListener("click", closeSearch);
 playerSearchClearButton.addEventListener("click", clearPlayerSearch);
 window.addEventListener("storage", syncRecentSearchStateFromStorage);
 playerSearchInput.addEventListener("input", renderSearchResults);
-if (evaluationDeleteButton) {
-  evaluationDeleteButton.addEventListener("click", async () => {
-    const savedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
-    const playerId = String(state.evaluationPlayerId || evaluationPlayerIdFromUrl() || "").trim();
-
-    if (!savedId) {
-      showToast("No saved evaluation to delete.");
-      return;
-    }
-
-    evaluationDeleteButton.disabled = true;
-
-    try {
-      await deleteSavedEvaluation(savedId);
-      resetEvaluationToDefaultForPlayer(playerId);
-      showToast("Saved evaluation deleted.");
-    } catch (error) {
-      showToast(error?.message || "Could not delete saved evaluation.");
-    } finally {
-      evaluationDeleteButton.disabled = false;
-    }
-  });
-}
-if (evaluationSaveButton) {
-  evaluationSaveButton.addEventListener("click", async () => {
-    evaluationSaveButton.disabled = true;
-    try {
-      const saveResult = await createSavedEvaluation();
-      if (saveResult?.url) {
-        window.history.replaceState({}, "", saveResult.url);
-        updateEvaluationFooterActions();
-        showToast(saveResult.overwritten ? "Evaluation overwritten and saved." : "Evaluation saved.");
-      }
-    } catch (error) {
-      showToast(error?.message || "Could not save evaluation.");
-    } finally {
-      evaluationSaveButton.disabled = false;
-    }
-  });
-}
-if (evaluationLoadButton) {
-  evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);
-}
-if (closeEvaluationLoadButton) {
-  closeEvaluationLoadButton.addEventListener("click", () => {
-    hideModal(evaluationLoadModal);
-  });
-}
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;
-  event.preventDefault();
-  hideEvaluationLoadActionTooltip();
-  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {
-    document.activeElement.blur();
-  }
-});
-setupBackdropClickClose(evaluationLoadModal, () => hideModal(evaluationLoadModal));
-if (evaluationLoadList) {
-  evaluationLoadList.addEventListener("scroll", hideEvaluationLoadActionTooltip, { passive: true });
-}
-if (evaluationShareButton) {
-  evaluationShareButton.addEventListener("click", async () => {
-    evaluationShareButton.disabled = true;
-    try {
-      const shareUrl = await createSharedEvaluation();
-      if (shareUrl) {
-        const parsedShareUrl = new URL(shareUrl, window.location.origin);
-        state.evaluationShareId = parsedShareUrl.searchParams.get("share") || "";
-        state.evaluationSavedId = "";
-        window.history.replaceState({}, "", shareUrl);
-        updateEvaluationFooterActions();
-      }
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast("Evaluation share link copied.");
-      } catch {
-        showToast("Share link: " + shareUrl);
-      }
-    } catch (error) {
-      showToast(error?.message || "Could not create evaluation share link.");
-    } finally {
-      evaluationShareButton.disabled = false;
-    }
-  });
-}
-
-evaluationResetButton.addEventListener("click", () => {
-  const row = rowByPlayerId(state.evaluationPlayerId);
-
-  if (!row) {
-    return;
-  }
-
-  resetEvaluationToDefaultForPlayer(getValue(row, "player_id") || state.evaluationPlayerId);
-});
-
-const openEvaluationPlayerPage = (event) => {
-  if (event.type === "mouseup" && event.button !== 1) {
-    return;
-  }
-
-  const row = rowByPlayerId(state.evaluationPlayerId);
-
-  if (!row) {
-    return;
-  }
-
-  const playerId = String(getValue(row, "player_id"));
-  rememberSearchResult(playerId);
-
-  if (event.type === "mouseup" && event.button === 1) {
-    event.preventDefault();
-    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
-    window.focus();
-    if (playerWindow) {
-      playerWindow.blur();
-    }
-    return;
-  }
-
-  if (event.ctrlKey || event.metaKey) {
-    event.preventDefault();
-    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
-    window.focus();
-    if (playerWindow) {
-      playerWindow.blur();
-    }
-    return;
-  }
-
-  openPlayerPage(playerId);
-};
-
-const preventEvaluationPlayerPageAutoscroll = (event) => {
-  if (event.button === 1) {
-    event.preventDefault();
-  }
-};
-
-evaluationPlayerPageButton.addEventListener("mousedown", preventEvaluationPlayerPageAutoscroll);
-evaluationPlayerPageButton.addEventListener("auxclick", preventEvaluationPlayerPageAutoscroll);
-evaluationPlayerPageButton.addEventListener("click", openEvaluationPlayerPage);
-evaluationPlayerPageButton.addEventListener("mouseup", openEvaluationPlayerPage);
-
 const setPageWithoutRouteLoading = setPage;
 
 navButtons.forEach((button) => {
