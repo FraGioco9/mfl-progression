@@ -35,15 +35,17 @@
     if (snapshotPromise) return snapshotPromise;
 
     const dataClient = window.__mflDataClient;
-    const request = typeof dataClient?.fetch === "function"
-      ? dataClient.fetch("/api/marketplace", { cache: "no-store" }, {
-          dedupe: true,
-          cacheTtlMs: force ? 0 : MARKETPLACE_TTL_MS,
-          key: "marketplace-overlay",
-        })
-      : fetch("/api/marketplace", { cache: "no-store", headers: { Accept: "application/json" } });
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      snapshot = emptySnapshot();
+      snapshotLoadedAt = Date.now();
+      return snapshot;
+    }
 
-    snapshotPromise = Promise.resolve(request)
+    snapshotPromise = dataClient.fetch("/api/marketplace", { cache: "no-store" }, {
+      dedupe: true,
+      cacheTtlMs: force ? 0 : MARKETPLACE_TTL_MS,
+      key: "marketplace-overlay",
+    })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(payload?.error || "Could not load marketplace snapshot.");
