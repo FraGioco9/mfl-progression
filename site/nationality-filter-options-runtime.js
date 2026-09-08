@@ -10,6 +10,14 @@
   let coreObserver = null;
   let bridgeInstalled = false;
 
+  function dataClientFetch(input, init = {}, options = {}) {
+    const dataClient = Reflect.get(window, "__mflDataClient");
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      return Promise.reject(new Error("Canonical data client is unavailable."));
+    }
+    return dataClient.fetch(input, init, options);
+  }
+
   function clubRouteActive() {
     const root = document.documentElement;
     const bodyPage = String(document.body?.dataset.page || "").toLowerCase();
@@ -81,9 +89,12 @@
     if (nationalityOptions.length) return nationalityOptions;
     if (loadingPromise) return loadingPromise;
 
-    loadingPromise = fetch("/api/data?mode=filter-options", {
+    loadingPromise = dataClientFetch("/api/data?mode=filter-options", {
       cache: "no-store",
       headers: { Accept: "application/json" },
+    }, {
+      dedupe: true,
+      key: "nationality-filter-options",
     })
       .then(async (response) => {
         const payload = await response.json().catch(() => ({}));
