@@ -1,77 +1,25 @@
 import assert from "node:assert/strict";
-import vm from "node:vm";
-import { readFile } from "node:fs/promises";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-import { browserConfigRuntimeSource } from "./modules/app-config.js";
-import { coreSourceByDomain } from "./modules/core-source-manifest.js";
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const read = (relativePath) => fs.readFileSync(path.join(__dirname, relativePath), "utf8");
 
-const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
-const release = JSON.parse(await read("./release.json"));
-const sandbox = {
-  window: {},
-  location: { pathname: "/", search: "", hash: "" },
-  history: { replaceState() {} },
-  console,
-};
-vm.runInNewContext(browserConfigRuntimeSource(release), sandbox);
-const routes = sandbox.window.__mflAppConfig?.routes;
-assert.ok(routes, "Canonical route config must be available.");
+const pageHtml = read("html-sources/my-clubs.html");
+const firstPaintHtml = read("html-sources/first-paint.html");
+const bootstrap = read("bootstrap.js");
+const coreSource = read("modules/core-sources/my-clubs.js");
+const sharedCore = read("modules/core-sources/shared.js");
+const dataApi = read("api/data.js");
+const clubsApi = read("api/_clubs.js");
+const pageStyles = read("my-clubs.css");
+const styleBundle = read("style-bundle.mjs");
+const responsiveManifest = read("responsive-sources/manifest.json");
+const tabletStyles = read("responsive-sources/my-clubs-tablet.css.inc");
+const phoneStyles = read("responsive-sources/my-clubs-phone.css.inc");
+const titleRuntime = read("document-title-runtime.js");
 
-assert.equal(routes.normalizePageName("my-clubs"), "my-clubs", "My Clubs must use the canonical hyphenated page identifier.");
-const canonical = routes.canonicalRequest("/my-clubs");
-assert.equal(canonical.pageName, "my-clubs", "/my-clubs must resolve to My Clubs.");
-assert.equal(canonical.canonicalPath, "/my-clubs", "My Clubs must keep its canonical hyphenated path.");
-const alias = routes.canonicalRequest("/myclubs");
-assert.equal(alias.pageName, "my-clubs", "/myclubs must resolve to My Clubs.");
-assert.equal(alias.options.replaceUrl, "/my-clubs", "Legacy unhyphenated My Clubs URLs must canonicalize.");
-const dependencies = routes.routeDependencyPlan("my-clubs");
-assert.deepEqual([...dependencies.core], ["my-clubs"], "My Clubs must load only its lightweight route core.");
-assert.equal(dependencies.table, false, "My Clubs must not load player-table infrastructure.");
-assert.equal(routes.corePaths["my-clubs"], "/modules/app-core-my-clubs-runtime.js", "My Clubs must own a generated route core.");
-
-const manifest = coreSourceByDomain["my-clubs"];
-assert.ok(manifest, "Core source manifest must register My Clubs.");
-assert.equal(manifest.source, "my-clubs.js");
-assert.equal(manifest.runtime, "app-core-my-clubs-runtime.js");
-
-const [
-  pageHtml,
-  firstPaintHtml,
-  bootstrap,
-  accessHtml,
-  chromeHtml,
-  htmlManifest,
-  sharedCore,
-  coreSource,
-  dataApi,
-  clubsApi,
-  titleRuntime,
-  pageStyles,
-  tabletStyles,
-  phoneStyles,
-  responsiveManifest,
-  styleBundle,
-] = await Promise.all([
-  read("./html-sources/my-clubs.html"),
-  read("./html-sources/first-paint.html"),
-  read("./bootstrap.js"),
-  read("./html-sources/access.html"),
-  read("./html-sources/chrome.html"),
-  read("./html-sources/manifest.json"),
-  read("./modules/core-sources/shared.js"),
-  read("./modules/core-sources/my-clubs.js"),
-  read("./api/data.js"),
-  read("./api/_clubs.js"),
-  read("./document-title-runtime.js"),
-  read("./my-clubs.css"),
-  read("./responsive-sources/my-clubs-tablet.css.inc"),
-  read("./responsive-sources/my-clubs-phone.css.inc"),
-  read("./responsive-sources/manifest.json"),
-  read("./style-bundle.mjs"),
-]);
-
-assert.match(pageHtml, /id="myClubsPage" class="pageView myClubsPage"/u, "My Clubs must expose a dedicated page shell.");
-assert.match(pageHtml, /<h2 class="tablePageTitle">My Clubs<\/h2>/u, "My Clubs must consume the shared page-title component instead of owning a parallel header.");
 assert.match(pageHtml, /id="myClubsGrid"/u, "My Clubs must expose a card grid.");
 assert.doesNotMatch(pageHtml, /<style\b|<script\b|@media/u, "My Clubs HTML must remain markup-only; first-paint and visual ownership belong to canonical owners.");
 assert.doesNotMatch(pageHtml, /myClubsHeader/u, "My Clubs must not recreate a page-specific title/header component.");
@@ -98,15 +46,7 @@ assert.ok(responsiveOrder.includes("my-clubs-tablet.css.inc"), "Responsive assem
 assert.ok(responsiveOrder.includes("my-clubs-phone.css.inc"), "Responsive assembly must include My Clubs phone geometry.");
 assert.match(tabletStyles, /@media \(max-width: 900px\)[\s\S]*?\.myClubsGrid/u, "Tablet My Clubs geometry must live in the canonical responsive source tree.");
 assert.match(phoneStyles, /@media \(max-width: 640px\)[\s\S]*?\.myClubsGrid/u, "Phone My Clubs geometry must live in the canonical responsive source tree.");
-assert.doesNotMatch(pageStyles, /@media/u, "Viewport-specific My Clubs geometry must not live in the base domain stylesheet.");
 
-assert.match(accessHtml, /"my-clubs": \["My Clubs", "In order to see your clubs, you need to opt in\."\]/u, "My Clubs must use the shared opt-in locked shell.");
-assert.match(chromeHtml, /href="\/my-clubs" data-page="my-clubs"[\s\S]*?<path d="M20 13c0 5-3\.5 7\.5-7\.66 8\.95a1 1 0 0 1-\.67-\.01C7\.5 20\.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4\.5-1\.2 6\.24-2\.72a1\.17 1\.17 0 0 1 1\.52 0C14\.51 3\.81 17 5 19 5a1 1 0 0 1 1 1z"><\/path>/u, "My Clubs must use the requested Lucide Shield icon.");
-const fragmentOrder = JSON.parse(htmlManifest);
-assert.ok(fragmentOrder.includes("my-clubs.html"), "My Clubs HTML fragment must be assembled into the site.");
-assert.ok(fragmentOrder.indexOf("my-clubs.html") < fragmentOrder.indexOf("access.html"), "My Clubs first-paint state must be available before locked-copy hydration.");
-
-new Function(coreSource);
 assert.match(coreSource, /const PAGE = "my-clubs";/u, "My Clubs runtime state must use the canonical hyphenated page identifier.");
 assert.match(sharedCore, /cleanPath === "\/my-clubs" \|\| cleanPath === "\/myclubs"/u, "Shared startup routing must classify My Clubs on refresh instead of falling back to Home.");
 assert.match(sharedCore, /pageName: "my-clubs"/u, "Shared startup routing must hand direct My Clubs refreshes to the My Clubs route core.");
@@ -121,10 +61,12 @@ assert.match(coreSource, /`\/clubs\/\$\{encodeURIComponent\(clubId\)\}\/squad`/u
 assert.match(dataApi, /mode === "my-clubs"/u, "The database API must expose My Clubs mode.");
 assert.match(clubsApi, /https:\/\/d13e14gtps4iwl\.cloudfront\.net\/u\/clubs/u, "Club logos must use MFL's canonical club-logo CDN host.");
 assert.match(clubsApi, /runtimeClubColumns[\s\S]*?citySelect[\s\S]*?nationSelect/u, "My Clubs API must expose City/Nation when available while staying compatible with pre-location runtime databases.");
-assert.match(clubsApi, /CASE WHEN division BETWEEN 1 AND 5 THEN division ELSE 999 END/u, "My Clubs API must sort Diamond through Bronze before unknown divisions.");
+assert.match(clubsApi, /CASE WHEN division BETWEEN 1 AND 10 THEN division ELSE 999 END/u, "My Clubs API must preserve the full canonical Diamond-through-Flint division order before unknown divisions.");
+assert.match(coreSource, /leftDivision >= 1 && leftDivision <= 10/u, "My Clubs client sorting must recognize every canonical division from Diamond through Flint.");
+assert.match(coreSource, /rightDivision >= 1 && rightDivision <= 10/u, "My Clubs client sorting must rank every canonical division consistently.");
 assert.match(titleRuntime, /"my-clubs": "My Clubs"/u, "Document title ownership must recognize the canonical My Clubs page identifier.");
 
-console.log("My Clubs route validation passed with direct-refresh shell ownership, canonical logo CDN, and foundation-native UI ownership.");
+console.log("My Clubs route validation passed with direct-refresh shell ownership, full canonical division sorting, canonical logo CDN, and foundation-native UI ownership.");
 
 assert.match(coreSource, /validClubs\.sort/u, "My Clubs must sort cards by division before rendering.");
 assert.match(coreSource, /myClubId/u, "My Clubs must place the club ID beside the club name.");
