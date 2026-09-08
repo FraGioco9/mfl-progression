@@ -1,6 +1,31 @@
 import { spawnSync } from "node:child_process";
 import process from "node:process";
 
+const BASELINE = Object.freeze({
+  "modules/core-sources/club.js:TS2339": 24,
+  "modules/core-sources/club.js:TS2551": 2,
+  "modules/core-sources/club.js:TS2630": 1,
+  "modules/core-sources/evaluation.js:TS2322": 1,
+  "modules/core-sources/evaluation.js:TS2339": 77,
+  "modules/core-sources/evaluation.js:TS2551": 6,
+  "modules/core-sources/mfl-stats.js:TS2339": 11,
+  "modules/core-sources/player.js:TS2339": 40,
+  "modules/core-sources/player.js:TS2551": 1,
+  "modules/core-sources/settings.js:TS2339": 56,
+  "modules/core-sources/settings.js:TS2551": 1,
+  "modules/core-sources/shared.js:TS2304": 9,
+  "modules/core-sources/shared.js:TS2339": 351,
+  "modules/core-sources/shared.js:TS2345": 4,
+  "modules/core-sources/shared.js:TS2551": 6,
+  "modules/core-sources/shared.js:TS2552": 1,
+  "modules/core-sources/shared.js:TS2554": 8,
+  "modules/core-sources/shared.js:TS2630": 30,
+  "modules/core-sources/table.js:TS2339": 76,
+  "modules/core-sources/table.js:TS2551": 1,
+  "modules/core-sources/wallet.js:TS2339": 6,
+  "modules/core-sources/watchlist.js:TS2339": 10,
+});
+
 const tscCommand = process.platform === "win32" ? "tsc.cmd" : "tsc";
 const result = spawnSync(tscCommand, ["-p", "jsconfig.core.json", "--noEmit", "--pretty", "false"], {
   cwd: process.cwd(),
@@ -11,15 +36,24 @@ const result = spawnSync(tscCommand, ["-p", "jsconfig.core.json", "--noEmit", "-
 if (result.error) throw result.error;
 const output = `${result.stdout || ""}\n${result.stderr || ""}`;
 const counts = Object.create(null);
+const unexpectedDiagnostics = [];
 let total = 0;
 for (const line of output.split(/\r?\n/)) {
-  const match = /^(modules\/core-sources\/[^(:]+\.js)\(\d+,\d+\): error TS(\d+):/.exec(line.trim());
-  if (!match) continue;
+  const trimmed = line.trim();
+  if (!trimmed.includes("error TS")) continue;
+  const match = /^(modules\/core-sources\/[^(:]+\.js)\(\d+,\d+\): error TS(\d+):/.exec(trimmed);
+  if (!match) {
+    unexpectedDiagnostics.push(trimmed);
+    continue;
+  }
   total += 1;
   const key = `${match[1]}:TS${match[2]}`;
   counts[key] = (counts[key] || 0) + 1;
 }
 
+if (unexpectedDiagnostics.length) {
+  throw new Error(`Canonical core TypeScript produced diagnostics outside the tracked source buckets:\n${unexpectedDiagnostics.join("\n")}`);
+}
 if (result.status === 0 && total === 0) {
   console.log("Canonical core TypeScript check passed without diagnostics.");
   process.exit(0);
@@ -29,6 +63,14 @@ if (!total) {
   throw new Error(`Canonical core TypeScript process failed with status ${result.status} without parseable diagnostics.`);
 }
 
-const sortedCounts = Object.fromEntries(Object.entries(counts).sort(([left], [right]) => left.localeCompare(right)));
-console.log(`Canonical core TypeScript baseline discovery: ${total} diagnostics.`);
-console.log(JSON.stringify(sortedCounts));
+const regressions = [];
+for (const [key, count] of Object.entries(counts)) {
+  const allowed = BASELINE[key] || 0;
+  if (count > allowed) regressions.push(`${key}: ${count} > ${allowed}`);
+}
+if (regressions.length) {
+  throw new Error(`Canonical core TypeScript diagnostic baseline regressed:\n${regressions.join("\n")}`);
+}
+
+const baselineTotal = Object.values(BASELINE).reduce((sum, count) => sum + count, 0);
+console.log(`Canonical core TypeScript regression check passed: ${total}/${baselineTotal} diagnostics remain; no bucket increased.`);
