@@ -108,7 +108,6 @@ export default [
       "validation-text.mjs",
       "vercel-config-source.mjs",
       "ci-quality-scope.mjs",
-      "sync-release-projections.mjs",
       "validate*.mjs",
       "validation/*.mjs",
     ],
