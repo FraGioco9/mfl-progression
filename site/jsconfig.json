@@ -19,7 +19,6 @@
   "include": [
     "bootstrap.js",
     "modules/app-entry.js",
-    "modules/core-sources/*.js",
     "types/**/*.d.ts"
   ],
   "exclude": [
