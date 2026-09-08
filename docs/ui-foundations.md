@@ -10,7 +10,7 @@ The goal is **shared ownership, not forced sameness**. Responsive geometry, Play
 | --- | --- |
 | Cross-site shared control/surface/page-layout tokens | `site/ui-foundations.css` |
 | Theme palette and desktop shell geometry | `site/styles-base.css` |
-| Table geometry and Uniform Width | `site/styles.css` |
+| Table visual foundations, geometry, and Uniform Width | `site/styles.css` |
 | Motion timings | `site/motion.css` |
 | Dropdown mechanics | `site/dropdowns.css` |
 | Scrollbars | `site/scrollbars.css` |
@@ -179,13 +179,26 @@ Specialized tiny steppers, table action buttons, mobile-only touch geometry, and
 
 ## Tables
 
+Table visual foundations are specialist Table-domain contracts owned by `site/styles.css`; they do not collapse tables into the ordinary panel/control surface language.
+
+- Table surface: `var(--surface)` (`--mfl-table-surface`)
+- Table border/divider color: `var(--border)` (`--mfl-table-border-color`)
+- Table radius: `8px` (`--mfl-table-radius`)
+- Header background/text: `var(--header-bg)` / `var(--text)` (`--mfl-table-header-background` / `--mfl-table-header-text-color`)
+- Sortable-header hover background: `var(--surface-muted)` (`--mfl-table-sort-hover-background`)
+- Row-hover background: `var(--row-hover)` (`--mfl-table-row-hover-background`)
+- Standard desktop header/body typography: `12px` / `14px` (`--mfl-table-header-font-size` / `--mfl-table-row-font-size`)
+
+The shared player table and equivalent Advanced Settings surface/header/divider roles consume these foundations. Advanced Settings retains its smaller row/header typography, sticky cells, and Contracts-cell hover behavior. Mobile sticky Name cells reuse the same table surface/header/row-hover tokens while retaining their stronger stuck separator and responsive geometry.
+
 Uniform Width remains the only numeric player-table column-width contract.
 
 - Header height: `38px`
 - Body row height: `34px`
 - Outer row pitch: `39px`
 - Column percentages remain owned by the `--mfl-table-col-*` variables
-- Responsive table geometry may scale at its existing breakpoints
+- Responsive table typography and geometry remain in the responsive owner and may scale at the existing breakpoints
+- Evaluation-specific geometry, loading surfaces, table action controls, sticky mechanics, and specialist cell states remain domain-owned
 
 ## Motion
 
@@ -256,6 +269,7 @@ Component-local z-index values stay below the global application layers.
 12. Standard View/Filters controls consume one 14px control-label size and 700 weight, while equivalent selector controls consume the shared line-height foundation without flattening smaller Stats or Player-specific sizes.
 13. Equivalent ordinary Home, Stats, Settings, and Privacy panels consume shared surface background and normal/strong border contracts alongside the shared panel radius; specialist surfaces keep local ownership.
 14. View, Filters, Search, and refresh-first-paint View controls consume shared ordinary resting/hover surface-state contracts, while navigation, Stats, Player, dropdown, destructive, opt-in, and other specialist states remain locally owned.
+15. Equivalent table surfaces, headers, dividers, sortable-header hover, row hover, and standard desktop table typography consume Table-domain semantic foundations from `styles.css`; Uniform Width, responsive geometry, Advanced Settings specialist interactions, Evaluation geometry, loading surfaces, and table action controls keep their existing owners.
 
 ## What must remain intentionally separate
 

@@ -7,19 +7,22 @@ const root = dirname(fileURLToPath(import.meta.url));
 const read = (path) => readFileSync(resolve(root, path), "utf8");
 
 const base = read("styles-base.css");
+const styles = read("styles.css");
 const responsive = read("responsive.css");
 const sharedRuntime = read("shared-table-ui-runtime.js");
 const projections = read("sync-release-projections.mjs");
 
 assert.ok(
-  base.includes("th {\n  background: var(--header-bg);\n  color: var(--text);\n  font-size: 12px;")
-    && base.includes("td {\n  font-size: 14px;\n}"),
-  "Shared desktop tables must keep 12px headers against 14px row text.",
+  styles.includes("--mfl-table-header-font-size: 12px;")
+    && styles.includes("--mfl-table-row-font-size: 14px;")
+    && base.includes("th {\n  background: var(--mfl-table-header-background);\n  color: var(--mfl-table-header-text-color);\n  font-size: var(--mfl-table-header-font-size);")
+    && base.includes("td {\n  font-size: var(--mfl-table-row-font-size);\n}"),
+  "Shared desktop tables must consume the 12px header / 14px row Table-domain typography foundations.",
 );
 
 assert.ok(
-  base.includes("background: var(--surface);\n  font-size: 12px;\n  isolation: isolate;")
-    && base.includes(".advancedPlayerTable th {\n  background: var(--header-bg);\n  color: var(--text);\n  font-size: inherit;")
+  base.includes("background: var(--mfl-table-surface);\n  font-size: 12px;\n  isolation: isolate;")
+    && base.includes(".advancedPlayerTable th {\n  background: var(--mfl-table-header-background);\n  color: var(--mfl-table-header-text-color);\n  font-size: inherit;")
     && base.includes(".advancedPlayerTable thead th {\n  position: sticky;\n  font-size: 10px;"),
   "Advanced desktop tables must use 10px column headers against 12px rows while row-header cells inherit row typography.",
 );
