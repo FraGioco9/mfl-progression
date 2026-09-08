@@ -6,6 +6,18 @@ const recommendedRules = {
   "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 };
 
+const canonicalCoreRules = {
+  ...recommendedRules,
+  "no-empty": ["error", { allowEmptyCatch: true }],
+  // Canonical core files are build-time script fragments that share declarations
+  // and intentionally rebind stable facades after lazy domain cores load.
+  "no-undef": "off",
+  "no-unused-vars": "off",
+  "no-func-assign": "off",
+  "no-useless-assignment": "off",
+  "preserve-caught-error": "off",
+};
+
 const nodeWebGlobals = {
   ...globals.node,
   fetch: "readonly",
@@ -45,6 +57,15 @@ export default [
       globals: globals.browser,
     },
     rules: recommendedRules,
+  },
+  {
+    files: ["modules/core-sources/*.js"],
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "script",
+      globals: globals.browser,
+    },
+    rules: canonicalCoreRules,
   },
   {
     files: ["bootstrap-core.js", "*-runtime.js"],
