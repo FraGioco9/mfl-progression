@@ -11,6 +11,7 @@ const validators = [
   "validate-table-filter-selection-lifecycle.mjs",
   "validate-listing-column.mjs",
   "validate-marketplace-state-freshness.mjs",
+  "validate-table-count-fast-path.mjs",
   "validate-player-table-actions.mjs",
   "validate-player-table-action-menu-rerender.mjs",
   "validate-player-table-action-menu-scroll.mjs",
