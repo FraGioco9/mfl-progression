@@ -273,8 +273,8 @@
 
     cacheWallet = wallet;
     const sequence = ++requestSequence;
-    const hasLoadingCards = renderLoadingCards(storedClubCount(wallet));
-    setStatus(hasLoadingCards ? "" : "Loading...");
+    renderLoadingCards(storedClubCount(wallet));
+    setStatus("");
     if (retryButton) retryButton.hidden = true;
 
     const promise = (async () => {
