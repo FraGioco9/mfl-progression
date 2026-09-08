@@ -23,6 +23,14 @@
     return /^\d+\.\d+\.\d+$/.test(version) ? version : "";
   }
 
+  function dataClientFetch(input, init = {}, options = {}) {
+    const dataClient = Reflect.get(window, "__mflDataClient");
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      return Promise.reject(new Error("Canonical data client is unavailable."));
+    }
+    return dataClient.fetch(input, init, options);
+  }
+
   function modalMarkup() {
     return `<section class="mflDialog bugReportDialog" role="dialog" aria-modal="true" aria-labelledby="bugReportTitle">
       <header class="mflDialogHeader">
@@ -173,7 +181,7 @@
     setStatus();
 
     try {
-      const response = await fetch("/api/bug-reports", {
+      const response = await dataClientFetch("/api/bug-reports", {
         method: "POST",
         cache: "no-store",
         headers: {
