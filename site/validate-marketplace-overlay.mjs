@@ -41,6 +41,15 @@ invariant(
   "Marketplace overlay must react to the canonical data-client lifecycle rather than intercept fetch.",
 );
 invariant(
+  overlayRuntime.includes('const dataClient = window.__mflDataClient;')
+    && overlayRuntime.includes('snapshotPromise = dataClient.fetch("/api/marketplace"'),
+  "Marketplace overlay must fetch its snapshot through the canonical data client.",
+);
+invariant(
+  !overlayRuntime.includes('fetch("/api/marketplace"'),
+  "Marketplace overlay must not keep a native-fetch fallback for its API request.",
+);
+invariant(
   overlayRuntime.includes("state.incrementalLastKey !== requestKey"),
   "Marketplace overlay must reject stale route completions.",
 );
@@ -53,4 +62,4 @@ invariant(
   "Table infrastructure must load the marketplace overlay independently of application-core readiness.",
 );
 
-console.log("Marketplace overlay separation validation passed.");
+console.log("Marketplace overlay separation and canonical data-client ownership validation passed.");
