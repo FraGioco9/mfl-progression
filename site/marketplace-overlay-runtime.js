@@ -1,3 +1,4 @@
+/* global state, renderTable */
 (() => {
   "use strict";
 
