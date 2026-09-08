@@ -106,8 +106,7 @@ REPRESENTATIVE_TABLE_QUERY_BUDGETS = (
             "LIMIT ? OFFSET ?"
         ),
         parameters=("club-a", 5000, 0),
-        required_index="players_club_index",
-        max_temp_btrees=1,
+        required_index="players_club_position_index",
     ),
     QueryPlanBudget(
         name="watchlist_attributes",

@@ -127,7 +127,13 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                     for budget in runtime_query_plans.REPRESENTATIVE_TABLE_QUERY_BUDGETS
                 },
             )
-            self.assertEqual(metrics["club_attributes"].temp_btrees, 1)
+            self.assertEqual(metrics["club_attributes"].temp_btrees, 0)
+            self.assertTrue(
+                any(
+                    "players_club_position_index" in detail
+                    for detail in metrics["club_attributes"].details
+                )
+            )
             self.assertEqual(
                 metrics["database_attributes_first_page"].details,
                 metrics["database_attributes_deep_page"].details,
