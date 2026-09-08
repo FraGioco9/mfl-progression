@@ -152,7 +152,7 @@ function evaluationPresentValueTotalFromSharePayload(payload, playerContext = {}
 
   if (!overallValues.length || !POSITION_MULTIPLIERS[position] || rawExpectedSeasons <= 0) return null;
 
-  const seasonOffset = Boolean(data.ignoreFirstSeason ?? data.ignore_first_season) ? 1 : 0;
+  const seasonOffset = (data.ignoreFirstSeason ?? data.ignore_first_season) ? 1 : 0;
   const expectedSeasons = Math.max(0, rawExpectedSeasons - seasonOffset);
   const parsedMflPerUsd = Number(data.mflPerUsd ?? data.mfl_per_usd);
   const mflPerUsd = Number.isFinite(parsedMflPerUsd) && parsedMflPerUsd > 0
