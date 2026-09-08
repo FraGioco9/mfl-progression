@@ -19,6 +19,8 @@
     return Promise.resolve(resources.load("/marketplace-overlay-runtime.js")).then(() => true);
   }
 
+  void loadMarketplaceOverlayRuntime();
+
   function coreContracts() {
     const contracts = Reflect.get(window, "__mflCoreContracts");
     return contracts && typeof contracts === "object" ? contracts : null;
@@ -305,7 +307,6 @@
   }
 
   normalizeInitialClubHeaderGeometry();
-  void loadMarketplaceOverlayRuntime();
 
   if (typeof controller?.subscribe === "function") {
     unsubscribe = controller.subscribe(sync);
