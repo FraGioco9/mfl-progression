@@ -131,8 +131,8 @@
     validClubs.sort((left, right) => {
       const leftDivision = Number(left?.division);
       const rightDivision = Number(right?.division);
-      const leftRank = leftDivision >= 1 && leftDivision <= 5 ? leftDivision : 999;
-      const rightRank = rightDivision >= 1 && rightDivision <= 5 ? rightDivision : 999;
+      const leftRank = leftDivision >= 1 && leftDivision <= 10 ? leftDivision : 999;
+      const rightRank = rightDivision >= 1 && rightDivision <= 10 ? rightDivision : 999;
       if (leftRank !== rightRank) return leftRank - rightRank;
       const byName = String(left?.name || "").localeCompare(String(right?.name || ""));
       if (byName) return byName;
