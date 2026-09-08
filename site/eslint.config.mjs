@@ -6,6 +6,27 @@ const recommendedRules = {
   "no-unused-vars": ["error", { argsIgnorePattern: "^_" }],
 };
 
+const nodeWebGlobals = {
+  ...globals.node,
+  fetch: "readonly",
+  AbortController: "readonly",
+  AbortSignal: "readonly",
+  Blob: "readonly",
+  File: "readonly",
+  FormData: "readonly",
+  Headers: "readonly",
+  Request: "readonly",
+  Response: "readonly",
+  TextDecoder: "readonly",
+  TextEncoder: "readonly",
+  URL: "readonly",
+  URLSearchParams: "readonly",
+  atob: "readonly",
+  btoa: "readonly",
+  crypto: "readonly",
+  structuredClone: "readonly",
+};
+
 export default [
   {
     ignores: [
@@ -48,13 +69,16 @@ export default [
     rules: {},
   },
   {
-    files: ["api/releases.js", "api/mfl-season-ratios-v2.js"],
+    files: ["api/**/*.js"],
     languageOptions: {
       ecmaVersion: "latest",
       sourceType: "commonjs",
-      globals: { ...globals.node, fetch: "readonly", AbortController: "readonly" },
+      globals: nodeWebGlobals,
     },
-    rules: js.configs.recommended.rules,
+    rules: {
+      ...recommendedRules,
+      "no-empty": ["error", { allowEmptyCatch: true }],
+    },
   },
   {
     files: [
