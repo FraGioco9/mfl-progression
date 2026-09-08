@@ -27,9 +27,21 @@ jobs:
         working-directory: site
         run: npm install --no-audit --no-fund
 
-      - name: Verify migrated tree
+      - name: Lint
         working-directory: site
-        run: npm run check
+        run: npm run lint
+
+      - name: Typecheck
+        working-directory: site
+        run: npm run typecheck
+
+      - name: Build generated projections
+        working-directory: site
+        run: npm run build
+
+      - name: Repository validation
+        working-directory: site
+        run: npm run validate
 
       - name: Commit canonical migration
         shell: bash
