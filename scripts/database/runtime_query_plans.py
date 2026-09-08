@@ -41,6 +41,7 @@ POSITION_RANK_SQL = (
     )
     + f" ELSE {len(POSITION_ORDER)} END"
 )
+DEFAULT_OVERALL_ORDER_SQL = "overall IS NULL, overall DESC, player_id DESC"
 
 
 @dataclass(frozen=True)
@@ -71,19 +72,21 @@ REPRESENTATIVE_TABLE_QUERY_BUDGETS = (
         name="database_attributes_first_page",
         sql=(
             "SELECT player_id, overall FROM players "
-            "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?"
+            f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 0),
-        required_index="players_overall_index",
+        max_full_player_scans=1,
+        max_temp_btrees=1,
     ),
     QueryPlanBudget(
         name="database_attributes_deep_page",
         sql=(
             "SELECT player_id, overall FROM players "
-            "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?"
+            f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 4000),
-        required_index="players_overall_index",
+        max_full_player_scans=1,
+        max_temp_btrees=1,
     ),
     QueryPlanBudget(
         name="agent_attributes",
