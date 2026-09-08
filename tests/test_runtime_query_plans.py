@@ -139,6 +139,48 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                 metrics["database_attributes_deep_page"].details,
             )
 
+    def test_deep_database_seek_query_uses_far_less_sqlite_work_than_offset(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            database_path = self.prepare_database(directory)
+            with sqlite3.connect(database_path) as connection:
+                cursor = connection.execute(
+                    "SELECT player_id, overall FROM players "
+                    "ORDER BY overall DESC, player_id DESC LIMIT 1 OFFSET 3999"
+                ).fetchone()
+                self.assertIsNotNone(cursor)
+
+                offset = runtime_query_plans.measure_query_work(
+                    connection,
+                    "SELECT player_id, overall FROM players "
+                    "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?",
+                    (100, 4000),
+                )
+                seek = runtime_query_plans.measure_query_work(
+                    connection,
+                    "SELECT player_id, overall FROM players "
+                    "WHERE (overall, player_id) < (?, ?) "
+                    "ORDER BY overall DESC, player_id DESC LIMIT ?",
+                    (cursor[1], cursor[0], 100),
+                )
+                seek_plan = runtime_query_plans.explain_query_plan(
+                    connection,
+                    "SELECT player_id, overall FROM players "
+                    "WHERE (overall, player_id) < (?, ?) "
+                    "ORDER BY overall DESC, player_id DESC LIMIT ?",
+                    (cursor[1], cursor[0], 100),
+                )
+
+            self.assertEqual(seek.rows, offset.rows)
+            self.assertTrue(
+                any("players_overall_index" in detail for detail in seek_plan),
+                seek_plan,
+            )
+            self.assertLessEqual(
+                seek.vm_steps * 100,
+                offset.vm_steps * 35,
+                f"seek={seek.vm_steps} VM steps, offset={offset.vm_steps} VM steps",
+            )
+
     def test_budget_detects_loss_of_hot_database_sort_index(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             database_path = self.prepare_database(directory)
