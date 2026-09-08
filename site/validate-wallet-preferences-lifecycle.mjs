@@ -28,8 +28,8 @@ invariant(
 invariant(
   !settingsCore.includes('fetch("/api/wallet-preferences"')
     && appCore.includes("async function settingsRefreshCommittedFromSupabase(options = {})")
-    && appCore.includes('const response = await fetch("/api/wallet-preferences", {'),
-  "Settings route UI must delegate fresh committed-state reads to the shared canonical wallet-preferences owner instead of issuing a route-local GET.",
+    && appCore.includes('const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {'),
+  "Settings route UI must delegate fresh committed-state reads to the shared canonical wallet-preferences owner through the data client instead of issuing a route-local GET.",
 );
 invariant(
   !appCore.includes("await loadWalletPreferences({ force: true });\n    return evaluationRecentStateHydrated;")
@@ -87,4 +87,4 @@ invariant(
   "Save responses and failure cleanup must remain domain-scoped so unrelated saves cannot clear or overwrite pending local state.",
 );
 
-console.log("Wallet preference hydration, ordered persistence, atomic domain isolation, canonical Settings convergence, and table-control synchronization validation passed.");
+console.log("Wallet preference hydration, ordered persistence, atomic domain isolation, canonical data-client transport, Settings convergence, and table-control synchronization validation passed.");
