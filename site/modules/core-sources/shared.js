@@ -3811,7 +3811,9 @@ function normalizeSearchText(value) {
   return String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function loadRecentIdsFromStorage(storageKey) {
@@ -8434,15 +8436,6 @@ async function startApp() {
 
   function installSearchMatching() {
     if (typeof normalizeSearchText !== "function") return false;
-
-    if (!normalizeSearchText.__mflWhitespaceAware) {
-      const originalNormalizeSearchText = normalizeSearchText;
-      const whitespaceAwareNormalizeSearchText = function(value) {
-        return originalNormalizeSearchText(value).replace(/\s+/g, " ").trim();
-      };
-      Object.defineProperty(whitespaceAwareNormalizeSearchText, "__mflWhitespaceAware", { value: true });
-      normalizeSearchText = whitespaceAwareNormalizeSearchText;
-    }
 
     if (typeof searchMatchScore === "function" && !searchMatchScore.__mflSurnameFirst) {
       const surnameFirstSearchMatchScore = function(query, primaryText, secondaryText = "") {

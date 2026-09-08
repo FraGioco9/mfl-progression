@@ -295,4 +295,15 @@ invariant(
   "Global Search behavior must not be implemented through runtime CSS or priority overrides.",
 );
 
+
+invariant(
+  core.includes('function normalizeSearchText(value) {')
+    && core.includes('.replace(/\\s+/g, " ")')
+    && core.includes('.trim();')
+    && !core.includes("__mflWhitespaceAware")
+    && !core.includes("whitespaceAwareNormalizeSearchText")
+    && !core.includes("originalNormalizeSearchText"),
+  "Search whitespace normalization must live in the canonical normalizer without a post-start reassignment.",
+);
+
 console.log("Global Search starts preloading during startup, may finish after visible route readiness, settles before application-wide readiness, preserves canonical mixed recents across partial/concurrent saves, derives legacy response arrays without duplicate cloud storage, promotes clicks before core persistence without suppressing canonical result navigation, and shares the canonical centered 4px name/info text stack while using identical desktop 66px boxes plus fixed 54/48/44px responsive boxes for recent and typed results.");
