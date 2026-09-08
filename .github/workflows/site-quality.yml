@@ -68,7 +68,7 @@ jobs:
 
       - name: Install site dependencies
         if: steps.changes.outputs.quality == 'true'
-        run: npm install --no-audit --no-fund
+        run: npm ci --no-audit --no-fund
 
       - name: Build canonical site assets
         if: steps.changes.outputs.quality == 'true'
