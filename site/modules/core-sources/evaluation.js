@@ -665,7 +665,7 @@ async function loadSharedEvaluation(shareId) {
       requestUrl.searchParams.set("id", id);
       if (playerId) requestUrl.searchParams.set("player", playerId);
 
-      const response = await fetch(requestUrl.toString(), { cache: "no-store" });
+      const response = await window.__mflDataClient.fetch(requestUrl.toString(), { cache: "no-store" });
       if (!evaluationSnapshotLoadIsCurrent(load)) return false;
       if (!response.ok) throw new Error("Share not found.");
 
@@ -715,7 +715,7 @@ async function createSharedEvaluationFromPayload(payload, fallbackPlayerId = "")
     throw new Error("Select a player to share.");
   }
 
-  const response = await fetch("/api/evaluation-share", {
+  const response = await window.__mflDataClient.fetch("/api/evaluation-share", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -858,7 +858,7 @@ async function createSavedEvaluation() {
   const currentSavedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
   const payload = currentEvaluationSharePayload();
 
-  const response = await fetch("/api/evaluation-save", {
+  const response = await window.__mflDataClient.fetch("/api/evaluation-save", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -908,7 +908,7 @@ async function loadSavedEvaluation(savedId, playerId = "") {
         requestUrl.searchParams.set("id", id);
         if (selectedPlayerId) requestUrl.searchParams.set("player", selectedPlayerId);
 
-        const response = await fetch(requestUrl.toString(), {
+        const response = await window.__mflDataClient.fetch(requestUrl.toString(), {
           cache: "no-store",
           headers: walletProofHeaders(true),
         });
@@ -999,7 +999,7 @@ async function deleteSavedEvaluation(savedId) {
   const requestUrl = new URL("/api/evaluation-save", window.location.origin);
   requestUrl.searchParams.set("id", id);
 
-  const response = await fetch(requestUrl.toString(), {
+  const response = await window.__mflDataClient.fetch(requestUrl.toString(), {
     method: "DELETE",
     cache: "no-store",
     headers: walletProofHeaders(true),
@@ -1203,7 +1203,7 @@ async function loadSavedEvaluationListData() {
   if (savedEvaluationListPreloadPromise) return savedEvaluationListPreloadPromise;
 
   savedEvaluationListPreloadPromise = (async () => {
-    const response = await fetch("/api/evaluation-save", {
+    const response = await window.__mflDataClient.fetch("/api/evaluation-save", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
