@@ -247,7 +247,8 @@ for (const token of [
 ]) {
   includes(stylesBase, token, `Equivalent page/content surfaces must consume the shared panel radius: ${token}`);
 }
-includes(stylesBase, ".tableShell {\n  position: relative;\n  background: var(--surface);\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Table radius must remain table-owned rather than consuming the generic panel radius.");
+includes(styles, "--mfl-table-radius: 8px;", "Table radius must remain table-owned rather than consuming the generic panel radius.");
+includes(stylesBase, ".tableShell {\n  position: relative;\n  background: var(--mfl-table-surface);\n  border: 1px solid var(--mfl-table-border-color);\n  border-radius: var(--mfl-table-radius);", "Table shell must consume the Table-domain surface/border/radius contract rather than generic panel foundations.");
 includes(stylesBase, ".playerHero,\n.playerPanel {\n  border: 1px solid var(--border);\n  border-radius: 8px;", "Player surface radius must remain Player-owned.");
 const tableShellSurface = exactRule(stylesBase, ".tableShell");
 excludes(tableShellSurface, "var(--mfl-panel-", "Table surfaces must remain table-owned rather than consuming ordinary panel surface tokens.");

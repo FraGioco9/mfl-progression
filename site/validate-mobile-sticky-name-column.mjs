@@ -42,10 +42,10 @@ for (const token of [
   "bottom: -1px;",
   "border-right: 1px solid var(--border-strong);",
   "pointer-events: none;",
-  "#progressionPage .playerTableScroller th.col-name {\n    z-index: 6;\n    background: var(--header-bg);",
-  "z-index: 5;\n    isolation: isolate;\n    container-type: scroll-state;\n    container-name: mfl-sticky-name;\n    background: var(--surface);\n    background-image: linear-gradient(var(--surface), var(--surface));\n    background-clip: border-box;",
+  "#progressionPage .playerTableScroller th.col-name {\n    z-index: 6;\n    background: var(--mfl-table-header-background);",
+  "z-index: 5;\n    isolation: isolate;\n    container-type: scroll-state;\n    container-name: mfl-sticky-name;\n    background: var(--mfl-table-surface);\n    background-image: linear-gradient(var(--mfl-table-surface), var(--mfl-table-surface));\n    background-clip: border-box;",
   "#progressionPage #tableBody tr.tableRowHovered > :is(",
-  "background: var(--row-hover);\n    background-image: linear-gradient(var(--row-hover), var(--row-hover));",
+  "background: var(--mfl-table-row-hover-background);\n    background-image: linear-gradient(var(--mfl-table-row-hover-background), var(--mfl-table-row-hover-background));",
   "#progressionPage #tableBody > .mflTableLoadingRow > td:has(> .playerNameCell) {",
   "background: var(--surface-muted);\n    background-image: linear-gradient(var(--surface-muted), var(--surface-muted));",
 ]) {
