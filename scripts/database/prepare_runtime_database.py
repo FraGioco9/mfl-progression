@@ -114,6 +114,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
           club_id TEXT PRIMARY KEY,
           name TEXT NOT NULL,
           normalized_name TEXT NOT NULL,
+          city TEXT NOT NULL DEFAULT '',
+          country TEXT NOT NULL DEFAULT '',
           division INTEGER,
           owner_wallet_address TEXT NOT NULL DEFAULT '',
           owner_name TEXT NOT NULL DEFAULT '',
@@ -125,12 +127,17 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
     )
 
     if "clubs" in table_names(connection):
+        club_columns = {str(row[1]) for row in connection.execute("PRAGMA table_info(clubs)")}
+        city_expression = "coalesce(city, '')" if "city" in club_columns else "''"
+        country_expression = "coalesce(country, '')" if "country" in club_columns else "''"
         connection.execute(
-            """
+            f"""
             INSERT INTO runtime_clubs (
               club_id,
               name,
               normalized_name,
+              city,
+              country,
               division,
               owner_wallet_address,
               owner_name,
@@ -142,6 +149,8 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               club_id,
               name,
               normalize_search(name),
+              {city_expression},
+              {country_expression},
               CAST(NULLIF(division, '') AS INTEGER),
               lower(coalesce(owner_wallet_address, '')),
               coalesce(owner_name, ''),
