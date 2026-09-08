@@ -9,6 +9,44 @@
   const UNIFORM_NAVIGATION_WORKFLOW_NAME = "Uniform Navigation Workflow";
   const ROUTE_LOADING_REASON = "route-loading";
   const INITIAL_ROUTE_BOOTSTRAP_REASON = "initial-route-bootstrap";
+  const CLIENT_TIMING_ENTRY_LIMIT = 200;
+
+  function createClientPerformanceTimeline() {
+    const entries = [];
+    let sequence = 0;
+
+    function record(phase, detail = {}) {
+      const normalizedPhase = String(phase || "").trim();
+      if (!normalizedPhase) return null;
+      const normalizedDetail = detail && typeof detail === "object" && !Array.isArray(detail)
+        ? Object.freeze({ ...detail })
+        : Object.freeze({});
+      const entry = Object.freeze({
+        sequence: ++sequence,
+        phase: normalizedPhase,
+        at: performance.now(),
+        detail: normalizedDetail,
+      });
+      entries.push(entry);
+      if (entries.length > CLIENT_TIMING_ENTRY_LIMIT) {
+        entries.splice(0, entries.length - CLIENT_TIMING_ENTRY_LIMIT);
+      }
+      performance.mark(`mfl:${normalizedPhase}`, { detail: entry });
+      window.dispatchEvent(new CustomEvent("mfl:client-timing", { detail: entry }));
+      return entry;
+    }
+
+    return Object.freeze({
+      record,
+      snapshot: () => Object.freeze(entries.slice()),
+    });
+  }
+
+  const clientPerformance = createClientPerformanceTimeline();
+  window.__mflClientPerformance = clientPerformance;
+  clientPerformance.record("bootstrap-start", {
+    path: `${window.location.pathname}${window.location.search}`,
+  });
 
   function normalizeWalletAddress(value) {
     const address = String(value || "").trim().toLowerCase();
@@ -63,7 +101,9 @@
       ".viewButton[data-view]:not(.active)",
     ].join(", ");
     const activeTokens = new Map();
+    const transitionTimings = new Map();
     let sequence = 0;
+    let transitionSequence = 0;
 
     function eligibleControl(target, selector) {
       if (!(target instanceof Element)) return null;
@@ -85,10 +125,45 @@
       document.documentElement.classList.toggle(PENDING_CLASS, activeTokens.size > 0);
     }
 
+    function isRouteTransitionReason(reason) {
+      return reason === "page-transition" || reason === "view-transition";
+    }
+
+    function trackTransitionStart(token, reason) {
+      if (!token || !isRouteTransitionReason(reason)) return;
+      const transition = Object.freeze({
+        sequence: ++transitionSequence,
+        kind: reason === "view-transition" ? "view" : "page",
+      });
+      transitionTimings.set(token, transition);
+      clientPerformance.record("route-transition-start", {
+        kind: transition.kind,
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+    }
+
+    function trackTransitionEnd(token) {
+      const transition = transitionTimings.get(token);
+      if (!transition) return;
+      transitionTimings.delete(token);
+      clientPerformance.record("route-transition-complete", {
+        kind: transition.kind,
+        path: `${window.location.pathname}${window.location.search}`,
+      });
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        if (transition.sequence !== transitionSequence) return;
+        clientPerformance.record("route-visually-settled", {
+          kind: transition.kind,
+          path: `${window.location.pathname}${window.location.search}`,
+        });
+      }));
+    }
+
     function begin(reason = "navigation") {
       const normalizedReason = String(reason || "navigation");
       const token = `${normalizedReason}-${++sequence}`;
       activeTokens.set(token, normalizedReason);
+      trackTransitionStart(token, normalizedReason);
       applyState();
       return token;
     }
@@ -97,7 +172,9 @@
       const normalizedReason = String(reason || "navigation");
       const token = `${normalizedReason}-${++sequence}`;
       activeTokens.clear();
+      transitionTimings.clear();
       activeTokens.set(token, normalizedReason);
+      trackTransitionStart(token, normalizedReason);
       applyState();
       return token;
     }
@@ -107,7 +184,10 @@
     }
 
     function end(token) {
-      if (token && activeTokens.delete(token)) applyState();
+      if (token && activeTokens.delete(token)) {
+        applyState();
+        trackTransitionEnd(token);
+      }
     }
 
     function handoff(token) {
