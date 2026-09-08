@@ -12,6 +12,7 @@ const MIGRATED_RUNTIMES = Object.freeze([
 const MIGRATED_CORE_SOURCES = Object.freeze([
   "club.js",
   "evaluation.js",
+  "shared.js",
   "table.js",
   "wallet.js",
 ]);
@@ -86,4 +87,4 @@ if (!marketplace.includes('dataClient.fetch("/api/marketplace"')) {
   throw new Error("Marketplace overlay must use the canonical client directly.");
 }
 
-console.log("Data-client migration guard passed for all standalone runtimes plus migrated Club/Evaluation/Table/Wallet core API traffic.");
+console.log("Data-client migration guard passed for all standalone runtimes plus migrated Club/Evaluation/Shared/Table/Wallet core API traffic.");
