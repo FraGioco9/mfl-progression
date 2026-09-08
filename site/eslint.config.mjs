@@ -9,8 +9,13 @@ const recommendedRules = {
 const canonicalCoreRules = {
   ...recommendedRules,
   "no-empty": ["error", { allowEmptyCatch: true }],
+  // Canonical core files are build-time script fragments that share declarations
+  // and intentionally rebind stable facades after lazy domain cores load.
   "no-undef": "off",
-  "no-unused-vars": ["error", { vars: "local", argsIgnorePattern: "^_" }],
+  "no-unused-vars": "off",
+  "no-func-assign": "off",
+  "no-useless-assignment": "off",
+  "preserve-caught-error": "off",
 };
 
 const nodeWebGlobals = {
@@ -103,6 +108,7 @@ export default [
       "validation-text.mjs",
       "vercel-config-source.mjs",
       "ci-quality-scope.mjs",
+      "sync-release-projections.mjs",
       "validate*.mjs",
       "validation/*.mjs",
     ],
