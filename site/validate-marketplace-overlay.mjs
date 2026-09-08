@@ -17,8 +17,8 @@ invariant(
   "Paged data must decide explicitly whether marketplace belongs in the authoritative query.",
 );
 invariant(
-  dataPage.includes("const marketplace = marketplaceEmbedded ? await marketplaceState() : null;"),
-  "Ordinary table pages must not await marketplace state.",
+  dataPage.includes('const marketplace = marketplaceEmbedded\n    ? await measureAsync(timings, "marketplace", marketplaceState)\n    : null;'),
+  "Ordinary table pages must not await marketplace state, while authoritative listing reads may measure the canonical marketplace owner.",
 );
 invariant(
   dataPage.includes('["player", "evaluation"].includes(String(scope || "").toLowerCase())'),
@@ -62,4 +62,4 @@ invariant(
   "Table infrastructure must load the marketplace overlay independently of application-core readiness.",
 );
 
-console.log("Marketplace overlay separation and canonical data-client ownership validation passed.");
+console.log("Marketplace overlay separation, backend timing, and canonical data-client ownership validation passed.");

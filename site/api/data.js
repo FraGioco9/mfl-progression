@@ -112,7 +112,7 @@ module.exports = async function handler(request, response) {
     const queryStartedAt = performance.now();
     let data;
     if (mode === "bootstrap") data = bootstrapData();
-    else if (mode === "page") data = await pagedData(pageRequest, signedWallet, fullAccess, ownedProgression);
+    else if (mode === "page") data = await pagedData(pageRequest, signedWallet, fullAccess, ownedProgression, timings);
     else if (mode === "search") data = searchData(request);
     else if (mode === "summary") data = summaryData();
     else if (mode === "filter-options") data = filterOptionsData();

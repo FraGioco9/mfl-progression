@@ -1,3 +1,4 @@
+const { performance } = require("node:perf_hooks");
 const {
   PLAYER_COLUMNS,
   PUBLIC_COLUMNS,
@@ -337,7 +338,32 @@ function parametersEqual(left, right) {
     && left.every((value, index) => Object.is(value, right[index]));
 }
 
-async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
+function recordTiming(timings, name, duration) {
+  if (!timings || typeof timings !== "object") return;
+  const numericDuration = Number(duration);
+  if (!Number.isFinite(numericDuration) || numericDuration < 0) return;
+  timings[name] = Math.max(0, Number(timings[name]) || 0) + numericDuration;
+}
+
+function measureSync(timings, name, operation) {
+  const startedAt = performance.now();
+  try {
+    return operation();
+  } finally {
+    recordTiming(timings, name, performance.now() - startedAt);
+  }
+}
+
+async function measureAsync(timings, name, operation) {
+  const startedAt = performance.now();
+  try {
+    return await operation();
+  } finally {
+    recordTiming(timings, name, performance.now() - startedAt);
+  }
+}
+
+async function pagedData(request, signedWallet, fullAccess, ownedProgression, timings = null) {
   const query = request.query || {};
   const scope = String(query.scope || "database").toLowerCase();
   const view = String(query.view || "attributes").toLowerCase();
@@ -349,7 +375,9 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const databaseColumns = projectedDatabaseColumns(scope, view, includeProgression, rules);
   const columns = columnsWithListing(databaseColumns);
   const marketplaceEmbedded = marketplaceRequiredForPage(scope, sortKey, rules);
-  const marketplace = marketplaceEmbedded ? await marketplaceState() : null;
+  const marketplace = marketplaceEmbedded
+    ? await measureAsync(timings, "marketplace", marketplaceState)
+    : null;
   setMarketplacePrices(marketplace?.prices || {});
   const baseConditions = [];
   const baseParameters = [];
@@ -449,8 +477,10 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
 
   const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
   const sameResultSet = where === sourceWhere && parametersEqual(parameters, baseParameters);
-  const totalRows = countRows(where, parameters);
-  const sourceRows = sameResultSet ? totalRows : countRows(sourceWhere, baseParameters);
+  const totalRows = measureSync(timings, "sqlite", () => countRows(where, parameters));
+  const sourceRows = sameResultSet
+    ? totalRows
+    : measureSync(timings, "sqlite", () => countRows(sourceWhere, baseParameters));
 
   const allRows = ["player", "players", "evaluation", "club", "mflstats"].includes(scope);
   const maximumPageSize = allRows ? 5000 : 250;
@@ -480,10 +510,10 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
     sortKey,
     String(query.sortDirection || (scope === "club" ? "asc" : "desc")),
   );
-  const rows = queryRows(
+  const rows = measureSync(timings, "sqlite", () => queryRows(
     `SELECT ${selectListWithListing(columns)} FROM players${where} ORDER BY ${order} LIMIT ? OFFSET ?`,
     [...parameters, pageSize, offset],
-  );
+  ));
 
   return {
     columns,
