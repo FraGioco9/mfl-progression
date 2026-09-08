@@ -40,19 +40,20 @@ module.exports = async function handler(request, response) {
     const signedWallet = await signedWalletFromRequest(request);
     timings.auth = performance.now() - authStartedAt;
 
-    let permissionAllowed = false;
-    if (
-      accessMode === "full-progression"
-      && Boolean(signedWallet)
-      && !publicEntityProgression
-      && !publicWatchlistProgression
-    ) {
+    async function measuredWalletAllowed(wallet) {
       const permissionStartedAt = performance.now();
-      permissionAllowed = await walletAllowed(signedWallet);
-      timings.permission = performance.now() - permissionStartedAt;
+      try {
+        return await walletAllowed(wallet);
+      } finally {
+        timings.permission = performance.now() - permissionStartedAt;
+      }
     }
 
-    const fullAccess = publicEntityProgression || publicWatchlistProgression || permissionAllowed;
+    const fullAccess = publicEntityProgression || publicWatchlistProgression || (
+      accessMode === "full-progression"
+      && Boolean(signedWallet)
+      && await measuredWalletAllowed(signedWallet)
+    );
     const ownedProgression = accessMode === "owned-progression" && Boolean(signedWallet);
     const pageRequest = mode === "page" && playerEntityProgression
       ? { ...request, query: { ...query, includeProgression: "1" } }
