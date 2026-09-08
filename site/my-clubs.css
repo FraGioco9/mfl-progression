@@ -23,15 +23,24 @@
   overflow: hidden;
   border: var(--mfl-panel-border-strong);
   border-radius: var(--mfl-radius-panel);
-  background: var(--mfl-panel-background);
+  background-color: var(--mfl-panel-background);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.18) 14%, rgba(0, 0, 0, 0) 100%),
+    linear-gradient(
+      var(--my-club-primary, var(--surface-muted)) 0%,
+      var(--my-club-secondary, var(--surface-muted)) 100%
+    );
   color: var(--text);
   text-decoration: none;
-  transition: border-color var(--mfl-motion-fast) ease, background-color var(--mfl-motion-fast) ease;
+  transition: border-color var(--mfl-motion-fast) ease;
 }
 
 .myClubCard:hover {
   border-color: var(--primary-hover);
-  background: var(--row-hover);
+}
+
+.myClubCard:hover .myClubCardBody {
+  background-color: var(--row-hover);
 }
 
 .myClubCard.myClubCardNoLogo {
@@ -49,7 +58,7 @@
   min-width: 0;
   padding: 12px;
   border-right: 1px solid var(--border);
-  background: var(--surface-muted);
+  background: transparent;
 }
 
 .myClubLogo {
@@ -66,6 +75,8 @@
   justify-content: center;
   min-width: 0;
   padding: 16px 18px;
+  background-color: var(--mfl-panel-background);
+  transition: background-color var(--mfl-motion-fast) ease;
 }
 
 .myClubTitleRow {

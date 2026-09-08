@@ -21,6 +21,12 @@ function myClubsData(signedWallet) {
   );
   const citySelect = runtimeClubColumns.has("city") ? "city" : "'' AS city";
   const nationSelect = runtimeClubColumns.has("country") ? "country AS nation" : "'' AS nation";
+  const primaryColorSelect = runtimeClubColumns.has("primary_color")
+    ? "primary_color AS primaryColor"
+    : "NULL AS primaryColor";
+  const secondaryColorSelect = runtimeClubColumns.has("secondary_color")
+    ? "secondary_color AS secondaryColor"
+    : "NULL AS secondaryColor";
 
   const rows = queryRows(
     `SELECT
@@ -28,6 +34,8 @@ function myClubsData(signedWallet) {
        name,
        ${citySelect},
        ${nationSelect},
+       ${primaryColorSelect},
+       ${secondaryColorSelect},
        division,
        logo_version AS logoVersion
      FROM runtime_clubs

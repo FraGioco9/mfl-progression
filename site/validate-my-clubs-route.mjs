@@ -61,6 +61,8 @@ assert.match(coreSource, /`\/clubs\/\$\{encodeURIComponent\(clubId\)\}\/squad`/u
 assert.match(dataApi, /mode === "my-clubs"/u, "The database API must expose My Clubs mode.");
 assert.match(clubsApi, /https:\/\/d13e14gtps4iwl\.cloudfront\.net\/u\/clubs/u, "Club logos must use MFL's canonical club-logo CDN host.");
 assert.match(clubsApi, /runtimeClubColumns[\s\S]*?citySelect[\s\S]*?nationSelect/u, "My Clubs API must expose City/Nation when available while staying compatible with pre-location runtime databases.");
+assert.match(clubsApi, /primary_color AS primaryColor[\s\S]*?secondary_color AS secondaryColor/u, "My Clubs API must expose persisted club colours from runtime_clubs.");
+assert.match(clubsApi, /NULL AS primaryColor[\s\S]*?NULL AS secondaryColor/u, "My Clubs API must stay compatible with runtime databases created before club colours existed.");
 assert.match(clubsApi, /CASE WHEN division BETWEEN 1 AND 10 THEN division ELSE 999 END/u, "My Clubs API must preserve the full canonical Diamond-through-Flint division order before unknown divisions.");
 assert.match(coreSource, /leftDivision >= 1 && leftDivision <= 10/u, "My Clubs client sorting must recognize every canonical division from Diamond through Flint.");
 assert.match(coreSource, /rightDivision >= 1 && rightDivision <= 10/u, "My Clubs client sorting must rank every canonical division consistently.");
@@ -73,6 +75,12 @@ assert.match(coreSource, /myClubId/u, "My Clubs must place the club ID beside th
 assert.doesNotMatch(clubsApi, /mfl_points|nbMflPoints/u, "My Clubs API must not fetch or expose MFL points.");
 assert.match(clubsApi, /country AS nation/u, "My Clubs API must expose country using the Nation terminology.");
 assert.match(coreSource, /function firstLetterCaps\(value\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");
+assert.match(coreSource, /function clubColor\(value\)[\s\S]*?\^#\[0-9a-f\]\{6\}\$/u, "My Clubs must accept only canonical six-digit hex club colours.");
+assert.match(coreSource, /--my-club-primary[\s\S]*?--my-club-secondary/u, "My Clubs cards must pass canonical club colours to route-owned CSS variables.");
+assert.match(pageStyles, /linear-gradient\(rgba\(0, 0, 0, 0\.18\) 14%, rgba\(0, 0, 0, 0\) 100%\)[\s\S]*?var\(--my-club-primary[\s\S]*?var\(--my-club-secondary/u, "My Clubs cards must use dark top shading over the primary-to-secondary club gradient.");
+assert.match(pageStyles, /\.myClubLogoFrame \{[\s\S]*?background: transparent;/u, "The logo side must expose the club colour gradient.");
+assert.match(pageStyles, /\.myClubCardBody \{[\s\S]*?background-color: var\(--mfl-panel-background\);/u, "Club information must stay on the shared panel surface for readability.");
+assert.doesNotMatch(pageStyles + coreSource, /clubs-pattern\.svg/u, "My Clubs must not copy PlayMFL's decorative club pattern asset.");
 assert.match(coreSource, /primeClubDestinationTitle\(clubId, name, divisionInfo\)/u, "My Clubs must prime the known club identity before route navigation.");
 assert.match(coreSource, /localStorage\.setItem\(CLUB_DISPLAY_DATA_STORAGE_KEY/u, "My Clubs must share its known club identity with the Club route title cache.");
 assert.match(titleRuntime, /cachedClubTitleLabel\(request\?\.options\?\.clubId\)/u, "Document titles must consume the primed Club identity even while the destination route is busy.");
