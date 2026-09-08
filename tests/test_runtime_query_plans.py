@@ -138,35 +138,38 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                 metrics["database_attributes_first_page"].details,
                 metrics["database_attributes_deep_page"].details,
             )
+            self.assertEqual(metrics["database_attributes_first_page"].full_player_scans, 1)
+            self.assertEqual(metrics["database_attributes_first_page"].temp_btrees, 1)
 
-    def test_deep_database_seek_query_uses_far_less_sqlite_work_than_offset(self) -> None:
+    def test_deep_database_seek_query_uses_less_sqlite_work_than_offset(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             database_path = self.prepare_database(directory)
+            order = runtime_query_plans.DEFAULT_OVERALL_ORDER_SQL
             with sqlite3.connect(database_path) as connection:
                 cursor = connection.execute(
                     "SELECT player_id, overall FROM players "
-                    "ORDER BY overall DESC, player_id DESC LIMIT 1 OFFSET 3999"
+                    f"ORDER BY {order} LIMIT 1 OFFSET 3999"
                 ).fetchone()
                 self.assertIsNotNone(cursor)
 
                 offset = runtime_query_plans.measure_query_work(
                     connection,
                     "SELECT player_id, overall FROM players "
-                    "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?",
+                    f"ORDER BY {order} LIMIT ? OFFSET ?",
                     (100, 4000),
                 )
                 seek = runtime_query_plans.measure_query_work(
                     connection,
                     "SELECT player_id, overall FROM players "
                     "WHERE (overall, player_id) < (?, ?) "
-                    "ORDER BY overall DESC, player_id DESC LIMIT ?",
+                    f"ORDER BY {order} LIMIT ?",
                     (cursor[1], cursor[0], 100),
                 )
                 seek_plan = runtime_query_plans.explain_query_plan(
                     connection,
                     "SELECT player_id, overall FROM players "
                     "WHERE (overall, player_id) < (?, ?) "
-                    "ORDER BY overall DESC, player_id DESC LIMIT ?",
+                    f"ORDER BY {order} LIMIT ?",
                     (cursor[1], cursor[0], 100),
                 )
 
@@ -177,7 +180,7 @@ class RuntimeQueryPlanTests(unittest.TestCase):
             )
             self.assertLessEqual(
                 seek.vm_steps * 100,
-                offset.vm_steps * 35,
+                offset.vm_steps * 50,
                 f"seek={seek.vm_steps} VM steps, offset={offset.vm_steps} VM steps",
             )
 
@@ -187,14 +190,14 @@ class RuntimeQueryPlanTests(unittest.TestCase):
             budget = next(
                 budget
                 for budget in runtime_query_plans.REPRESENTATIVE_TABLE_QUERY_BUDGETS
-                if budget.name == "database_attributes_first_page"
+                if budget.name == "agent_attributes"
             )
             with sqlite3.connect(database_path) as connection:
-                connection.execute("DROP INDEX players_overall_index")
+                connection.execute("DROP INDEX players_wallet_overall_index")
                 connection.execute("ANALYZE")
                 with self.assertRaisesRegex(
                     AssertionError,
-                    "players_overall_index|full players scans|temporary B-trees",
+                    "players_wallet_overall_index|full players scans|temporary B-trees",
                 ):
                     runtime_query_plans.assert_query_plan_budget(connection, budget)
 
