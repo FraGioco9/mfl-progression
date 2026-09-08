@@ -288,6 +288,8 @@ def prepare_runtime_database(database_path: Path) -> None:
               );
             CREATE INDEX IF NOT EXISTS players_overall_index
               ON players(overall DESC, player_id DESC);
+            CREATE INDEX IF NOT EXISTS players_overall_order_index
+              ON players((overall IS NULL), overall DESC, player_id DESC);
             CREATE INDEX IF NOT EXISTS players_retirement_index
               ON players(retirement_years);
             CREATE INDEX IF NOT EXISTS players_seasons_index
