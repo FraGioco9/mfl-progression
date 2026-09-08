@@ -1,0 +1,40 @@
+name: Temporary 754 Shared data-client migration
+
+on:
+  push:
+    branches:
+      - perf/754-shared-data-client
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: perf/754-shared-data-client
+      - name: Route Shared API calls through canonical data client
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          target = Path("site/modules/core-sources/shared.js")
+          source = target.read_text(encoding="utf-8")
+          old = "await fetch("
+          expected = 7
+          actual = source.count(old)
+          if actual != expected:
+              raise SystemExit(f"Expected {expected} Shared fetch calls, found {actual}")
+          source = source.replace(old, "await window.__mflDataClient.fetch(")
+          target.write_text(source, encoding="utf-8")
+
+          Path(".github/workflows/temporary-754-shared-data-client.yml").unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- site/modules/core-sources/shared.js .github/workflows/temporary-754-shared-data-client.yml
+          git commit -m "Route Shared API calls through data client"
+          git push origin HEAD:perf/754-shared-data-client
