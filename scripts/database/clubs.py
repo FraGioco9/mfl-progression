@@ -94,6 +94,20 @@ def normalize_club(entry: dict[str, Any], leaderboard_rank: int) -> dict[str, An
         entry.get("clubName"),
         entry.get("name"),
     ) or "").strip()
+    location = _mapping(_first_value(club.get("location"), entry.get("location")))
+    city = str(_first_value(
+        club.get("city"),
+        entry.get("city"),
+        location.get("city"),
+    ) or "").strip()
+    country = str(_first_value(
+        club.get("country"),
+        club.get("nation"),
+        entry.get("country"),
+        entry.get("nation"),
+        location.get("country"),
+        location.get("nation"),
+    ) or "").strip()
     division = _first_value(
         club.get("division"),
         club.get("divisionId"),
@@ -120,6 +134,8 @@ def normalize_club(entry: dict[str, Any], leaderboard_rank: int) -> dict[str, An
     return {
         "club_id": club_id,
         "name": name,
+        "city": city,
+        "country": country,
         "division": "" if division is None else str(division).strip(),
         "owner_wallet_address": owner_wallet_address,
         "owner_name": owner_name,
@@ -144,6 +160,8 @@ def ensure_club_schema(connection: sqlite3.Connection) -> None:
         CREATE TABLE IF NOT EXISTS clubs (
             club_id TEXT PRIMARY KEY,
             name TEXT NOT NULL DEFAULT '',
+            city TEXT NOT NULL DEFAULT '',
+            country TEXT NOT NULL DEFAULT '',
             division TEXT NOT NULL DEFAULT '',
             owner_wallet_address TEXT NOT NULL DEFAULT '',
             owner_name TEXT NOT NULL DEFAULT '',
@@ -185,18 +203,22 @@ def refresh_clubs(
         INSERT INTO clubs (
             club_id,
             name,
+            city,
+            country,
             division,
             owner_wallet_address,
             owner_name,
             logo_version,
             leaderboard_rank,
             mfl_points
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
             (
                 club["club_id"],
                 club["name"],
+                club["city"],
+                club["country"],
                 club["division"],
                 club["owner_wallet_address"],
                 club["owner_name"],

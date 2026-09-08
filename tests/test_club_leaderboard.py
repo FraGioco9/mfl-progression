@@ -15,6 +15,8 @@ class ClubLeaderboardTests(unittest.TestCase):
                 "club": {
                     "id": 42,
                     "name": "Regression FC",
+                    "city": "Paris",
+                    "country": "France",
                     "division": 2,
                     "logoVersion": 7,
                     "ownedBy": {
@@ -28,6 +30,8 @@ class ClubLeaderboardTests(unittest.TestCase):
 
         self.assertEqual(normalized["club_id"], "42")
         self.assertEqual(normalized["name"], "Regression FC")
+        self.assertEqual(normalized["city"], "Paris")
+        self.assertEqual(normalized["country"], "France")
         self.assertEqual(normalized["division"], "2")
         self.assertEqual(normalized["owner_wallet_address"], "0xabcdef")
         self.assertEqual(normalized["owner_name"], "Regression Owner")
@@ -49,6 +53,8 @@ class ClubLeaderboardTests(unittest.TestCase):
                     {
                         "id": "club-1",
                         "name": "First Club",
+                        "city": "Rome",
+                        "country": "Italy",
                         "division": 1,
                         "logoVersion": "11",
                         "ownerWalletAddress": "0xAAA",
@@ -58,6 +64,7 @@ class ClubLeaderboardTests(unittest.TestCase):
                         "club": {
                             "id": "club-2",
                             "name": "Second Club",
+                            "location": {"city": "Madrid", "country": "Spain"},
                             "division": 3,
                             "logoVersion": 2,
                         },
@@ -74,7 +81,7 @@ class ClubLeaderboardTests(unittest.TestCase):
 
             count = clubs.refresh_clubs(connection, request_json)
             rows = connection.execute(
-                "SELECT club_id, owner_wallet_address, logo_version, leaderboard_rank "
+                "SELECT club_id, city, country, owner_wallet_address, logo_version, leaderboard_rank "
                 "FROM clubs ORDER BY leaderboard_rank"
             ).fetchall()
 
@@ -83,8 +90,8 @@ class ClubLeaderboardTests(unittest.TestCase):
             self.assertEqual(
                 rows,
                 [
-                    ("club-1", "0xaaa", "11", 1),
-                    ("club-2", "0xbbb", "2", 2),
+                    ("club-1", "Rome", "Italy", "0xaaa", "11", 1),
+                    ("club-2", "Madrid", "Spain", "0xbbb", "2", 2),
                 ],
             )
         finally:
@@ -113,6 +120,52 @@ class ClubLeaderboardTests(unittest.TestCase):
                 CREATE TABLE clubs (
                     club_id TEXT PRIMARY KEY,
                     name TEXT NOT NULL,
+                    city TEXT NOT NULL,
+                    country TEXT NOT NULL,
+                    division TEXT NOT NULL,
+                    owner_wallet_address TEXT NOT NULL,
+                    owner_name TEXT NOT NULL,
+                    logo_version TEXT NOT NULL,
+                    leaderboard_rank INTEGER NOT NULL,
+                    mfl_points REAL
+                )
+                """
+            )
+            connection.execute(
+                "INSERT INTO clubs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                ("club-1", "Canonical Club", "Bologna", "Italy", "2", "0xabc", "Owner", "5", 4, 777.0),
+            )
+
+            runtime_db.prepare_runtime_clubs(connection)
+            row = connection.execute(
+                "SELECT name, city, country, division, owner_wallet_address, logo_version, leaderboard_rank "
+                "FROM runtime_clubs WHERE club_id = 'club-1'"
+            ).fetchone()
+
+            self.assertEqual(row, ("Canonical Club", "Bologna", "Italy", 2, "0xabc", "5", 4))
+        finally:
+            connection.close()
+
+    def test_runtime_clubs_accepts_pre_location_canonical_table(self) -> None:
+        connection = sqlite3.connect(":memory:")
+        try:
+            connection.create_function(
+                "normalize_search", 1, runtime_db.normalize_search, deterministic=True
+            )
+            connection.execute(
+                """
+                CREATE TABLE players (
+                    active_contract_club_id TEXT,
+                    active_contract_club_name TEXT,
+                    active_contract_club_division TEXT
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE clubs (
+                    club_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
                     division TEXT NOT NULL,
                     owner_wallet_address TEXT NOT NULL,
                     owner_name TEXT NOT NULL,
@@ -124,16 +177,14 @@ class ClubLeaderboardTests(unittest.TestCase):
             )
             connection.execute(
                 "INSERT INTO clubs VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-                ("club-1", "Canonical Club", "2", "0xabc", "Owner", "5", 4, 777.0),
+                ("club-old", "Old Artifact Club", "1", "0xabc", "Owner", "2", 1, 100.0),
             )
 
             runtime_db.prepare_runtime_clubs(connection)
             row = connection.execute(
-                "SELECT name, division, owner_wallet_address, logo_version, leaderboard_rank "
-                "FROM runtime_clubs WHERE club_id = 'club-1'"
+                "SELECT city, country FROM runtime_clubs WHERE club_id = 'club-old'"
             ).fetchone()
-
-            self.assertEqual(row, ("Canonical Club", 2, "0xabc", "5", 4))
+            self.assertEqual(row, ("", ""))
         finally:
             connection.close()
 
