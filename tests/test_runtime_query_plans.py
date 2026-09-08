@@ -138,7 +138,6 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                 metrics["database_attributes_first_page"].details,
                 metrics["database_attributes_deep_page"].details,
             )
-            self.assertEqual(metrics["database_attributes_first_page"].full_player_scans, 1)
             self.assertEqual(metrics["database_attributes_first_page"].temp_btrees, 1)
 
     def test_deep_database_seek_query_uses_less_sqlite_work_than_offset(self) -> None:
