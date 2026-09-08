@@ -7331,37 +7331,8 @@ async function startApp() {
 }
 
 (() => {
-  const maxNoteLength = 100;
   const watchlistViewsKey = "watchlistViews";
   const watchlistViews = {};
-
-  if (typeof sanitizePlayerNote === "function") {
-    sanitizePlayerNote = function sanitizePlayerNote100(note) {
-      return String(note || "").replace(/\r\n/g, "\n").slice(0, maxNoteLength).trim();
-    };
-  }
-
-  if (typeof updatePlayerNoteCount === "function") {
-    updatePlayerNoteCount = function updatePlayerNoteCount100(input) {
-      if (input && input.value.length > maxNoteLength) input.value = input.value.slice(0, maxNoteLength);
-      const counter = playerDetail?.querySelector("#playerNotesCount");
-      if (counter) counter.textContent = `${input?.value?.length || 0}/${maxNoteLength}`;
-    };
-  }
-
-  if (typeof renderPlayerPage === "function") {
-    const originalRenderPlayerPage = renderPlayerPage;
-    renderPlayerPage = function renderPlayerPageWithNoteLimit(playerId) {
-      const result = originalRenderPlayerPage.apply(this, arguments);
-      const input = playerDetail?.querySelector("#playerNotesInput");
-      if (input) {
-        input.maxLength = maxNoteLength;
-        input.value = input.value.slice(0, maxNoteLength);
-        updatePlayerNoteCount(input);
-      }
-      return result;
-    };
-  }
 
   function rememberCurrentWatchlistView() {
     if (state.currentPage === "watchlist" && state.currentWatchlistId && state.view) {

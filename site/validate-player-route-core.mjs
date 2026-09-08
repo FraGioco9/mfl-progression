@@ -85,6 +85,9 @@ includes(playerCore, "const PLAYER_NOTE_MAX_LENGTH = 100;", "Player note limit m
 includes(playerCore, "input.maxLength = PLAYER_NOTE_MAX_LENGTH;", "Player note input must enforce the canonical note limit.");
 includes(bootstrap, ">0/100</span>", "Bootstrap Player notes shell must reserve the 100-character counter.");
 includes(walletPreferencesApi, "const PLAYER_NOTE_MAX_LENGTH = 100;", "Wallet preferences API must enforce the 100-character Player note limit.");
+excludes(sharedCore, "sanitizePlayerNote = function sanitizePlayerNote100", "Shared core must not reassign the canonical Player note sanitizer after startup.");
+excludes(sharedCore, "updatePlayerNoteCount = function updatePlayerNoteCount100", "Shared core must not patch Player note counters after startup.");
+excludes(sharedCore, "renderPlayerPage = function renderPlayerPageWithNoteLimit", "Shared core must not wrap Player rendering to reapply an already-canonical note limit.");
 
 includes(playerCore, 'return "\\u00A0";', "Pending Player values must remain blank rather than legacy dashes.");
 includes(playerCore, "pitch.innerHTML = pendingPitchHtml();", "Static pitch geometry must exist during pending Player paint.");
