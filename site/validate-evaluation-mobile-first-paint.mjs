@@ -198,13 +198,18 @@ const loadDialogRuleEnd = stylesBase.indexOf("\n}", loadDialogRuleStart);
 const loadDialogRule = loadDialogRuleStart >= 0 && loadDialogRuleEnd >= 0
   ? stylesBase.slice(loadDialogRuleStart, loadDialogRuleEnd + 2)
   : "";
+const sharedDialogRuleStart = stylesBase.indexOf(".mflDialog {");
+const sharedDialogRuleEnd = stylesBase.indexOf("\n}", sharedDialogRuleStart);
+const sharedDialogRule = sharedDialogRuleStart >= 0 && sharedDialogRuleEnd >= 0
+  ? stylesBase.slice(sharedDialogRuleStart, sharedDialogRuleEnd + 2)
+  : "";
 invariant(
-  loadDialogRule.includes("border-radius: 8px;")
-    && loadDialogRule.includes("background: var(--surface);")
+  sharedDialogRule.includes("border-radius: var(--mfl-radius-dialog);")
+    && sharedDialogRule.includes("background: var(--mfl-dialog-background);")
     && loadDialogRule.includes("background-clip: padding-box;")
     && loadDialogRule.includes("overflow: hidden;")
     && !stylesBase.includes(".evaluationLoadDialog,\n.evaluationLoadList,\n.evaluationLoadResult,\n.evaluationLoadActions {\n  overflow: visible;"),
-  "Evaluation Load dialog background must remain clipped to its rounded border while body-portaled action tooltips stay independent of dialog overflow.",
+  "Evaluation Load dialog must inherit the shared rounded surface while preserving its specialist clipping and body-portaled tooltip behavior.",
 );
 const desktopLoadResultRuleStart = stylesBase.indexOf(".evaluationLoadResult {");
 const desktopLoadResultRuleEnd = stylesBase.indexOf("\n}", desktopLoadResultRuleStart);

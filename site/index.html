@@ -1867,8 +1867,8 @@
     </div>
 
     <div id="searchModal" class="modalBackdrop" hidden>
-      <section class="searchDialog" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog searchDialog" role="dialog" aria-modal="true" aria-labelledby="searchTitle">
+        <header class="mflDialogHeader">
           <h2 id="searchTitle">Search</h2>
           <button id="closeSearchButton" class="iconButton popupCloseButton" type="button" aria-label="Close search"></button>
         </header>
@@ -1882,8 +1882,8 @@
       </section>
     </div>
     <div id="filtersModal" class="modalBackdrop" hidden>
-      <section class="filtersDialog" role="dialog" aria-modal="true" aria-labelledby="filtersTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog filtersDialog" role="dialog" aria-modal="true" aria-labelledby="filtersTitle">
+        <header class="mflDialogHeader">
           <h2 id="filtersTitle">Filters</h2>
           <button id="closeFiltersButton" class="iconButton popupCloseButton" type="button" aria-label="Close filters"></button>
         </header>
@@ -1899,7 +1899,7 @@
           <div id="filterRules" class="filterRules"></div>
         </section>
 
-        <footer class="filtersFooter">
+        <footer class="mflDialogFooter">
           <button id="clearFiltersButton" type="button">Clear</button>
           <button id="applyFiltersButton" type="button">Apply</button>
         </footer>
@@ -1907,8 +1907,8 @@
     </div>
 
     <div id="evaluationLoadModal" class="modalBackdrop" hidden>
-      <section class="evaluationLoadDialog" role="dialog" aria-modal="true" aria-labelledby="evaluationLoadTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog evaluationLoadDialog" role="dialog" aria-modal="true" aria-labelledby="evaluationLoadTitle">
+        <header class="mflDialogHeader">
           <h2 id="evaluationLoadTitle">Load saved evaluation</h2>
           <button id="closeEvaluationLoadButton" class="iconButton popupCloseButton" type="button" aria-label="Close saved evaluations"></button>
         </header>
@@ -1917,8 +1917,8 @@
     </div>
 
     <div id="watchlistChoiceModal" class="modalBackdrop" hidden>
-      <section class="watchlistChoiceDialog" role="dialog" aria-modal="true" aria-labelledby="watchlistChoiceTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog watchlistChoiceDialog" role="dialog" aria-modal="true" aria-labelledby="watchlistChoiceTitle">
+        <header class="mflDialogHeader">
           <h2 id="watchlistChoiceTitle">Add to watchlist</h2>
           <button id="closeWatchlistChoiceButton" class="iconButton popupCloseButton" type="button" aria-label="Close watchlist chooser"></button>
         </header>
@@ -1927,8 +1927,8 @@
     </div>
 
     <div id="addWatchlistModal" class="modalBackdrop" hidden>
-      <section class="addWatchlistDialog" role="dialog" aria-modal="true" aria-labelledby="addWatchlistTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog addWatchlistDialog" role="dialog" aria-modal="true" aria-labelledby="addWatchlistTitle">
+        <header class="mflDialogHeader">
           <h2 id="addWatchlistTitle">Add a watchlist</h2>
           <button id="closeAddWatchlistButton" class="iconButton popupCloseButton" type="button" aria-label="Close add watchlist"></button>
         </header>
@@ -1939,7 +1939,7 @@
           </label>
           <p id="addWatchlistError" class="addWatchlistError" hidden></p>
         </section>
-        <footer class="filtersFooter addWatchlistFooter">
+        <footer class="mflDialogFooter addWatchlistFooter">
           <button id="discardAddWatchlistButton" type="button">Discard</button>
           <button id="confirmAddWatchlistButton" type="button">Confirm</button>
         </footer>
@@ -1947,23 +1947,23 @@
     </div>
 
     <div id="deleteWatchlistModal" class="modalBackdrop" hidden>
-      <section class="deleteWatchlistDialog" role="dialog" aria-modal="true" aria-labelledby="deleteWatchlistTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog deleteWatchlistDialog" role="dialog" aria-modal="true" aria-labelledby="deleteWatchlistTitle">
+        <header class="mflDialogHeader">
           <h2 id="deleteWatchlistTitle">Delete watchlist</h2>
           <button id="closeDeleteWatchlistButton" class="iconButton popupCloseButton" type="button" aria-label="Close delete watchlist"></button>
         </header>
         <section class="deleteWatchlistBody">
           <p>Delete <strong id="deleteWatchlistName">this watchlist</strong>?</p>
         </section>
-        <footer class="filtersFooter deleteWatchlistFooter">
+        <footer class="mflDialogFooter deleteWatchlistFooter">
           <button id="cancelDeleteWatchlistButton" type="button">Cancel</button>
           <button id="confirmDeleteWatchlistButton" class="deleteWatchlistConfirmButton" type="button">Delete</button>
         </footer>
       </section>
     </div>
     <div id="advancedSettingsModal" class="modalBackdrop" hidden>
-      <section class="advancedSettingsDialog" role="dialog" aria-modal="true" aria-labelledby="advancedSettingsTitle">
-        <header class="filtersHeader">
+      <section class="mflDialog advancedSettingsDialog" role="dialog" aria-modal="true" aria-labelledby="advancedSettingsTitle">
+        <header class="mflDialogHeader">
           <h2 id="advancedSettingsTitle">Advanced Settings</h2>
           <button id="closeAdvancedSettingsButton" class="iconButton popupCloseButton" type="button" aria-label="Close advanced settings"></button>
         </header>
@@ -2023,7 +2023,7 @@
           </section>
         </section>
 
-        <footer class="filtersFooter advancedSettingsFooter">
+        <footer class="mflDialogFooter advancedSettingsFooter">
           <button id="resetAdvancedSettingsButton" type="button">Reset</button>
           <button id="discardAdvancedSettingsButton" type="button">Discard</button>
           <button id="applyAdvancedSettingsButton" type="button">Apply</button>

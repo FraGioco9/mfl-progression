@@ -169,8 +169,15 @@ Specialized tiny steppers, table action buttons, mobile-only touch geometry, and
 
 ## Dialogs and overlays
 
+- Canonical backdrop surface: `rgba(0, 0, 0, 0.45)` (`--mfl-modal-backdrop-background`)
+- Canonical ordinary dialog surface: `var(--surface)` (`--mfl-dialog-background`)
+- Canonical ordinary dialog border: `1px solid var(--border)` (`--mfl-dialog-border`)
+- Canonical dialog header/footer divider: `1px solid var(--border)` (`--mfl-dialog-divider`)
 - Canonical dialog radius: `8px` (`--mfl-radius-dialog`)
 - Canonical modal/dialog shadow: `0 20px 80px rgba(0, 0, 0, 0.28)` (`--mfl-shadow-modal`)
+- `.mflDialog` owns the shared ordinary shell; `.mflDialogHeader` and `.mflDialogFooter` own shared dialog chrome.
+- Search, Filters, saved Evaluation, Watchlist chooser/add/delete, Advanced Settings, and Bug Report consume those generic structural classes while retaining their domain-specific widths, bodies, controls, and responsive geometry.
+- The shared backdrop uses `--mfl-motion-standard` for its existing 180ms opacity/transform timing.
 - Tooltip shadow: `0 10px 26px rgba(0, 0, 0, 0.28)` (`--mfl-shadow-tooltip`)
 - Mobile navigation surface shadow: `0 10px 28px rgba(0, 0, 0, 0.18)` (`--mfl-shadow-mobile-navigation`)
 - Ordinary dialogs remain fixed application-layer elements rather than browser top-layer popovers

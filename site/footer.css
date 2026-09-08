@@ -256,16 +256,10 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 
 /* Report-a-bug popup is owned by the footer/support surface and reuses the global modal, field, and button language. */
 .bugReportDialog {
-  display: flex;
-  flex-direction: column;
   width: min(620px, calc(100vw - 24px));
   max-height: min(760px, calc(100dvh - 24px));
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--mfl-radius-dialog);
-  background: var(--surface);
   color: var(--text);
-  box-shadow: var(--mfl-shadow-modal);
   overflow: hidden;
 }
 

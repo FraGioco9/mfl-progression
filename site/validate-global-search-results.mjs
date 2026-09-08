@@ -255,9 +255,10 @@ invariant(
 );
 
 invariant(
-  styles.includes(".searchDialog {\n  display: flex;\n  flex-direction: column;\n  width: min(960px, calc(100vw - 32px));\n  height: auto;")
+  styles.includes(".mflDialog {\n  display: flex;\n  flex-direction: column;")
+    && styles.includes(".searchDialog {\n  width: min(960px, calc(100vw - 32px));\n  height: auto;")
     && styles.includes(".searchBody {\n  display: grid;\n  gap: 12px;\n  padding: 16px 18px 12px;"),
-  "Global Search popup must preserve the existing dialog geometry while both recent and typed results share one box layout.",
+  "Global Search popup must preserve the existing specialist geometry while consuming the shared dialog shell.",
 );
 
 invariant(

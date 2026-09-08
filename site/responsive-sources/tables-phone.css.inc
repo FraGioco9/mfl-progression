@@ -213,13 +213,13 @@
     max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     gap: 5px;
     padding: 5px 7px;
   }
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 15px;
   }
 
@@ -320,12 +320,12 @@
     gap: 3px;
   }
 
-  .filtersFooter {
+  .mflDialogFooter {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }

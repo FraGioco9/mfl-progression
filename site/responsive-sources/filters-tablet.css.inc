@@ -1,5 +1,5 @@
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 16px;
   }
 
@@ -230,7 +230,7 @@
     gap: 4px;
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }

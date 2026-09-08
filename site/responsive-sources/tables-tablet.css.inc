@@ -567,8 +567,8 @@
     height: auto;
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     flex: 0 0 auto;
     gap: 6px;
     padding: 6px 8px;

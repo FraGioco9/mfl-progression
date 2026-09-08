@@ -14,6 +14,7 @@ const validators = [
   "validate-global-escape-ownership.mjs",
   "validate-motion-ownership.mjs",
   "validate-modal-entrance-lifecycle.mjs",
+  "validate-dialog-foundations.mjs",
   "validate-z-index-ownership.mjs",
   "validate-nationality-flag-tooltips.mjs",
   "validate-checkbox-style.mjs",

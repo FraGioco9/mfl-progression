@@ -90,6 +90,10 @@ for (const token of [
   "--mfl-panel-border: 1px solid var(--border);",
   "--mfl-panel-border-strong: 1px solid var(--border-strong);",
   "--mfl-radius-panel: 8px;",
+  "--mfl-modal-backdrop-background: rgba(0, 0, 0, 0.45);",
+  "--mfl-dialog-background: var(--surface);",
+  "--mfl-dialog-border: 1px solid var(--border);",
+  "--mfl-dialog-divider: 1px solid var(--border);",
   "--mfl-radius-dialog: 8px;",
   "--mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);",
   "--mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);",
@@ -308,8 +312,9 @@ for (const token of [
   includes(dropdowns, token, `Dropdown destructive UI must derive from --danger: ${token}`);
 }
 
-includes(footer, "border-radius: var(--mfl-radius-dialog);", "Bug Report must consume the canonical 8px dialog radius.");
-includes(footer, "box-shadow: var(--mfl-shadow-modal);", "Bug Report must consume the canonical modal shadow.");
+includes(stylesBase, ".mflDialog {\n  display: flex;\n  flex-direction: column;\n  border: var(--mfl-dialog-border);\n  border-radius: var(--mfl-radius-dialog);\n  background: var(--mfl-dialog-background);\n  box-shadow: var(--mfl-shadow-modal);", "Ordinary dialogs must consume the shared dialog shell foundations.");
+excludes(footer, "border-radius: var(--mfl-radius-dialog);", "Bug Report must inherit dialog radius from the shared dialog shell rather than duplicate it.");
+excludes(footer, "box-shadow: var(--mfl-shadow-modal);", "Bug Report must inherit modal shadow from the shared dialog shell rather than duplicate it.");
 includes(footer, "border-radius: var(--mfl-radius-control);", "Bug Report fields must consume the shared control radius where the semantic role matches.");
 includes(footer, ".bugReportStatus {\n  min-height: 16px;\n  margin: 0;\n  color: var(--mfl-helper-text-color);\n  font-size: var(--mfl-helper-text-font-size);\n  font-weight: var(--mfl-helper-text-font-weight);\n  line-height: var(--mfl-helper-text-line-height);", "Bug Report ordinary status feedback must consume the shared helper-text foundation.");
 includes(footer, ".bugReportStatus.isError {\n  color: var(--mfl-helper-error-color);\n  font-weight: var(--mfl-helper-error-font-weight);", "Bug Report error feedback must consume the shared helper error foundation.");

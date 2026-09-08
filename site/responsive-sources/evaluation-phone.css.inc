@@ -45,14 +45,14 @@
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 42px;
     padding: 7px 9px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 15px;
   }
 
