@@ -64,8 +64,11 @@ invariant(
 invariant(
   walletPreferencesApi.includes('const hasDomain = (key) => Object.prototype.hasOwnProperty.call(incoming, key);')
     && walletPreferencesApi.includes('if (hasDomain("watchlists")) patch.watchlists = normalizeWatchlists(incoming.watchlists);')
-    && walletPreferencesApi.includes('method: "PATCH"'),
-  "The wallet-preferences API must continue patching only request-supplied domains.",
+    && walletPreferencesApi.includes('if (hasDomain("tableState")) patch.table_state = normalizeCloudTableState(incoming.tableState);')
+    && walletPreferencesApi.includes('supabaseRequest("rpc/patch_wallet_preferences_atomic"')
+    && !walletPreferencesApi.includes('method: "PATCH"')
+    && !walletPreferencesApi.includes('wallet_preferences?on_conflict=wallet_address'),
+  "The wallet-preferences API must atomically patch only request-supplied domains through the canonical RPC.",
 );
 
 for (const [name, workflow] of [
@@ -82,4 +85,4 @@ for (const [name, workflow] of [
   );
 }
 
-console.log("Wallet preference writes are domain-scoped and deployment/refresh workflows cannot reset Supabase Watchlists.");
+console.log("Wallet preference writes are domain-scoped, atomic in Supabase, and deployment/refresh workflows cannot reset Supabase Watchlists.");

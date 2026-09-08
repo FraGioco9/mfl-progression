@@ -57,6 +57,10 @@ For compatibility, `site/api/wallet-preferences.js` still accepts legacy player/
 
 `recentEvaluationPlayerIds` remains separate because it belongs to Evaluation history rather than global search.
 
+All authenticated preference PUT writes are normalized by `site/api/wallet-preferences.js` and sent as one supplied-domain patch to the atomic database RPC `public.patch_wallet_preferences_atomic`. The RPC creates the wallet row when needed, locks the row with `FOR UPDATE`, merges `recentSearchItems` and `recentEvaluationPlayerIds` inside the same database transaction while preserving incoming-first order, de-duplicating values and keeping the five-item cap, then replaces only the other preference domains explicitly present in that request. This removes the previous table-state read → Node merge → REST PATCH race, so overlapping server requests cannot both read the same stale recent-history snapshot and overwrite one another.
+
+The atomic database RPC is `SECURITY INVOKER`, pins an empty `search_path`, and is service-role-only: `PUBLIC`, `anon`, and `authenticated` have no execute privilege. Browser clients therefore cannot call it directly; the signed-wallet API remains the ownership/authentication boundary. Schema ownership is recorded in `supabase/migrations/20260908131924_atomic_wallet_preferences.sql` and mirrored in `supabase-schema.sql`.
+
 ### `evaluation_saves`
 
 Owner: `site/api/evaluation-save.js`.
