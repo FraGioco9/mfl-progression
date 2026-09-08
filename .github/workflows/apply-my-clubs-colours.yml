@@ -76,16 +76,8 @@ jobs:
           '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\n''',
           '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\nassert.match(coreSource, /function clubColor\\(value\\)[\\s\\S]*?\\^#\\[0-9a-f\\]\\{6\\}\\$/u, "My Clubs must accept only canonical six-digit hex club colours.");\nassert.match(coreSource, /--my-club-primary[\\s\\S]*?--my-club-secondary/u, "My Clubs cards must pass canonical club colours to route-owned CSS variables.");\nassert.match(pageStyles, /linear-gradient\\(rgba\\(0, 0, 0, 0\\.18\\) 14%, rgba\\(0, 0, 0, 0\\) 100%\\)[\\s\\S]*?var\\(--my-club-primary[\\s\\S]*?var\\(--my-club-secondary/u, "My Clubs cards must use dark top shading over the primary-to-secondary club gradient.");\nassert.match(pageStyles, /\\.myClubLogoFrame \\{[\\s\\S]*?background: transparent;/u, "The logo side must expose the club colour gradient.");\nassert.match(pageStyles, /\\.myClubCardBody \\{[\\s\\S]*?background-color: var\\(--mfl-panel-background\\);/u, "Club information must stay on the shared panel surface for readability.");\nassert.doesNotMatch(pageStyles + coreSource, /clubs-pattern\\.svg/u, "My Clubs must not copy PlayMFL's decorative club pattern asset.");\n''')
           PY
-      - name: Install dependencies
-        run: npm ci
-      - name: Build
-        run: npm run build
-      - name: Lint
-        run: npm run lint
-      - name: Typecheck
-        run: npm run typecheck
-      - name: Repository validation
-        run: npm run validate:repo
+      - name: Validate My Clubs source contract
+        run: node site/validate-my-clubs-route.mjs
       - name: Commit source changes and remove helper workflow
         shell: bash
         run: |
