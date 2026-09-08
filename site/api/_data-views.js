@@ -302,66 +302,6 @@ function summaryData() {
   };
 }
 
-function databaseStatsData() {
-  const excludedWalletNames = ["mfl", "mfl wallet", "mfl trade"];
-  const excludedWalletNamePlaceholders = placeholders(excludedWalletNames);
-  const excludedSql = `
-    lower(coalesce(wallet_address, '')) <> lower(?)
-    AND lower(coalesce(wallet_address, '')) NOT IN (
-      SELECT lower(wallet_address)
-      FROM wallets
-      WHERE coalesce(wallet_address, '') <> ''
-        AND normalize_wallet_name(name) IN (${excludedWalletNamePlaceholders})
-    )
-    AND normalize_wallet_name(wallet_name) NOT IN (${excludedWalletNamePlaceholders})
-  `;
-  const parameters = [
-    MFL_WALLET_ADDRESS,
-    ...excludedWalletNames,
-    ...excludedWalletNames,
-  ];
-  const overallSql = `CASE
-    WHEN upper(trim(CASE WHEN instr(positions, ',') > 0 THEN substr(positions, 1, instr(positions, ',') - 1) ELSE positions END)) = 'GK'
-      THEN CAST(goalkeeping AS INTEGER)
-    ELSE CAST(overall AS INTEGER)
-  END`;
-  const rows = queryRows(
-    `SELECT
-       ${overallSql} AS overall,
-       CAST(age AS INTEGER) AS age,
-       CAST(retirement_years AS INTEGER) AS retirement_years,
-       count(*) AS count
-     FROM players
-     WHERE ${excludedSql} AND ${overallSql} IS NOT NULL
-     GROUP BY overall, age, retirement_years
-     ORDER BY overall, age, retirement_years`,
-    parameters,
-  );
-  const totals = queryOne(
-    `SELECT
-       count(*) AS totalPlayers,
-       sum(CASE WHEN coalesce(CAST(retirement_years AS INTEGER), -1) <> 0 THEN 1 ELSE 0 END) AS totalActivePlayers
-     FROM players
-     WHERE ${excludedSql} AND ${overallSql} IS NOT NULL`,
-    parameters,
-  );
-
-  return {
-    generatedAt: getGeneratedAt(),
-    totalPlayers: Number(totals?.totalPlayers || 0),
-    totalActivePlayers: Number(totals?.totalActivePlayers || 0),
-    excludedWallets: ["MFL", "MFL Trade"],
-    columns: ["overall", "age", "retirement_years", "count"],
-    rows: rows.map((row) => [
-      row.overall,
-      row.age,
-      row.retirement_years,
-      Number(row.count),
-    ]),
-    source: "sqlite-runtime-live-stats",
-  };
-}
-
 function mflStatsData(request, complete = false) {
   const columns = complete
     ? PUBLIC_COLUMNS
@@ -443,6 +383,5 @@ module.exports = {
   bootstrapData,
   searchData,
   summaryData,
-  databaseStatsData,
   mflStatsData,
 };
