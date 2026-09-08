@@ -8,6 +8,7 @@ Run `python -m scripts.database.rebuild_database` to execute the complete API-pa
 import sqlite3
 import time
 from collections import defaultdict
+from collections.abc import Iterable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
@@ -99,6 +100,19 @@ def fetch_active_and_retired_player_sources(
     results["mfl"] = []
     results["mfl_trade"] = []
     return results
+
+
+def validated_club_contract_players(
+    players: dict[int, dict[str, Any]],
+) -> Iterable[dict[str, Any]]:
+    """Return merged player payloads and reject a silent total loss of club colours."""
+    contract_players = players.values()
+    if players and not clubs.contract_club_colours(contract_players):
+        raise RuntimeError(
+            "Merged PlayMFL players contained no club colours; refusing to publish a refresh "
+            "that would erase club branding."
+        )
+    return contract_players
 
 
 def install_flow_wallet_id_cache() -> None:
@@ -202,6 +216,7 @@ def rebuild_directly() -> int:
             source_results["mfl"],
             source_results["mfl_trade"],
         )
+        contract_players = validated_club_contract_players(players)
         run_flow_rebuild.timed(
             "Insert merged players",
             run_flow_rebuild.insert_players,
@@ -215,7 +230,7 @@ def rebuild_directly() -> int:
             None,
             run_flow_rebuild.request_json,
             limiter,
-            players,
+            contract_players,
             run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
         )
 
