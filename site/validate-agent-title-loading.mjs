@@ -55,6 +55,7 @@ includes(tableCore, "function runtimeAgentPageTitleName(address, hintedName = \"
 includes(tableCore, "async function tableEnsureAgentPageTitleNameOwner(address, hintedName = \"\") {", "The lazy Table core must own the exact Agent-name fallback request.");
 includes(tableCore, 'type: "recent",', "Unknown Agent names must use the exact local database lookup path.");
 includes(tableCore, "walletAddresses: normalizedAddress,", "Unknown Agent lookup must target only the current wallet address.");
+includes(tableCore, 'window.__mflDataClient.fetch("/api/data?" + parameters.toString()', "Unknown Agent lookup must use the canonical frontend data client.");
 includes(tableCore, "savedAgentNameForWallet(normalizedAddress),", "Cached Agent names must be a zero-request title source.");
 includes(tableCore, 'link.dataset.agentName = String(agentLabel || "");', "Table Agent links must carry their already-rendered name into navigation.");
 includes(playerCore, 'openAgentPage(agentWalletAddress, formatCellValue(row, "wallet_name"));', "Player pages must pass their already-loaded Agent name into navigation.");
@@ -73,7 +74,7 @@ excludes(tableCore, "leaderboards/users/global", "Normal Agent page loading must
 excludes(tableCore, "!important", "Agent title loading must not introduce CSS priority overrides.");
 
 const runtimeNameRead = tableCore.indexOf("const runtimeName = runtimeAgentPageTitleName(normalizedAddress, hintedName);");
-const exactLookup = tableCore.indexOf('fetch("/api/data?" + parameters.toString()', runtimeNameRead);
+const exactLookup = tableCore.indexOf('window.__mflDataClient.fetch("/api/data?" + parameters.toString()', runtimeNameRead);
 invariant(runtimeNameRead >= 0 && exactLookup > runtimeNameRead, "Already-known or cached Agent names must be checked before the exact fallback request.");
 
 const readinessStart = sharedCore.indexOf('const agentTitleReady = pageName === "agents"');
@@ -84,4 +85,4 @@ invariant(
   "Agent name readiness must settle before the page can finish its loading lifecycle.",
 );
 
-console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup, cache, and loading readiness validation passed.");
+console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup, cache, canonical transport, and loading readiness validation passed.");
