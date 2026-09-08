@@ -7361,74 +7361,7 @@ async function startApp() {
 
 
 
-(() => {
-  function routeViewFromPath() {
-    const match = window.location.pathname.match(/^\/watchlist\/[^/]+\/(attributes|next-overall|contracts|current-season|all-time)\/?$/i);
-    if (!match) return "";
-    return {
-      attributes: "attributes",
-      "next-overall": "next",
-      contracts: "contracts",
-      "current-season": "current",
-      "all-time": "all",
-    }[match[1].toLowerCase()] || "";
-  }
 
-  function enforceWatchlistRouteView(render = true) {
-    const routeView = routeViewFromPath();
-    if (!routeView || state.currentPage !== "watchlist") return false;
-
-    const normalizedView = typeof normalizeViewForPage === "function"
-      ? normalizeViewForPage(routeView, "watchlist")
-      : routeView;
-
-    if (state.view === normalizedView) return true;
-
-    state.view = normalizedView;
-    state.page = 1;
-
-    if (render) {
-      if (typeof updateViewButtons === "function") updateViewButtons();
-      if (typeof buildTableColGroup === "function") buildTableColGroup();
-      if (typeof buildHeader === "function") buildHeader();
-      if (typeof applyFilters === "function") applyFilters({ save: false });
-    }
-
-    return true;
-  }
-
-  if (typeof restoreSavedTableState === "function") {
-    const originalRestoreSavedTableState = restoreSavedTableState;
-    restoreSavedTableState = function restoreSavedTableStateWithRoute(pageName, options = {}) {
-      const routeView = pageName === "watchlist" && !options.view ? routeViewFromPath() : "";
-      const result = originalRestoreSavedTableState.call(
-        this,
-        pageName,
-        routeView ? { ...options, view: routeView } : options,
-      );
-      if (routeView) {
-        state.view = typeof normalizeViewForPage === "function"
-          ? normalizeViewForPage(routeView, "watchlist")
-          : routeView;
-      }
-      return result;
-    };
-  }
-
-  if (typeof setPage === "function") {
-    const originalSetPage = setPage;
-    setPage = async function setPageWithWatchlistRoute(pageName, updateHash = true, options = {}) {
-      const requestedView = pageName === "watchlist" ? String(options?.view || "") : "";
-      const routeView = pageName === "watchlist" && !requestedView ? routeViewFromPath() : "";
-      const nextOptions = routeView ? { ...options, view: routeView } : options;
-      const result = await originalSetPage.call(this, pageName, updateHash, nextOptions);
-      if (result === null || !pageNavigationIsCurrent(nextOptions)) return result;
-      if (pageName === "watchlist" && routeView) enforceWatchlistRouteView(true);
-      return result;
-    };
-  }
-
-})();
 
 /* Public progression table views */
 (() => {
