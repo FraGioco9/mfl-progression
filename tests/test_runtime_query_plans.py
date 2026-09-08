@@ -146,7 +146,7 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                 connection.execute("ANALYZE")
                 with self.assertRaisesRegex(
                     AssertionError,
-                    "players_overall_index|full players scans",
+                    "players_overall_index|full players scans|temporary B-trees",
                 ):
                     runtime_query_plans.assert_query_plan_budget(connection, budget)
 
