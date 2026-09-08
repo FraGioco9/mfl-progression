@@ -46,7 +46,7 @@ invariant(
   "Marketplace overlay must fetch its snapshot through the canonical data client.",
 );
 invariant(
-  !overlayRuntime.includes('fetch("/api/marketplace"'),
+  !/(^|[^.\w$])fetch\s*\(\s*["'`]\/api\/marketplace/m.test(overlayRuntime),
   "Marketplace overlay must not keep a native-fetch fallback for its API request.",
 );
 invariant(
