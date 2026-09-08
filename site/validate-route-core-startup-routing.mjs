@@ -47,9 +47,11 @@ includes(appConfig, 'core.push("table", "mflstats");', "MFL Stats must resolve T
 includes(appConfig, 'core.push("table", "club");', "Club startup must preserve ordered Table and Club route-core dependencies.");
 includes(appConfig, 'core.push("table", "watchlist");', "Watchlist startup must preserve ordered Table and Watchlist route-core dependencies.");
 includes(routeCoreLoader, "const dependencies = routeConfig.routeDependencyPlan(pageName, options).core;", "The route-core loader must consume canonical core dependencies.");
+includes(routeCoreLoader, "dependencies.forEach(preloadRouteCore);", "Every route-core dependency must begin network acquisition before ordered core execution starts.");
+includes(routeCoreLoader, "for (const dependency of dependencies) await ensureSingle(dependency);", "Route-core execution must preserve canonical dependency order after network preloading.");
 excludes(routeCoreLoader, "function routeCoreDependencies", "The route-core loader must not retain a second dependency owner.");
 includes(routeCoreLoader, "function preloadRouteCore(pageName) {", "Route-core startup must support network-only preloading without executing a lazy core.");
 includes(routeCoreLoader, 'preloadRouteCore("evaluation");', "Evaluation startup should retain early network priming through a preload.");
 excludes(routeCoreLoader, 'void ensure("evaluation")', "Evaluation core must not execute before the shared application core has initialized its facade bindings.");
 
-console.log("Initial route-core dependency ownership validation passed; MFL Stats now shares the normal Table-first loading path.");
+console.log("Initial route-core dependency ownership validation passed; route dependencies preload in parallel while execution stays ordered.");
