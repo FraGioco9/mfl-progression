@@ -1622,11 +1622,11 @@ button:disabled:not(.menuButton) {
   position: relative;
   z-index: 1;
   overflow: visible;
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  border: 1px solid var(--mfl-table-border-color);
+  border-radius: var(--mfl-table-radius);
   border-collapse: separate;
   border-spacing: 0;
-  background: var(--surface);
+  background: var(--mfl-table-surface);
   font-size: 12px;
   isolation: isolate;
 }
@@ -1636,7 +1636,7 @@ button:disabled:not(.menuButton) {
   height: 32px;
   vertical-align: middle;
   padding: 4px 5px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mfl-table-border-color);
   text-align: center;
   white-space: nowrap;
 }
@@ -1645,7 +1645,7 @@ button:disabled:not(.menuButton) {
   position: sticky;
   top: 0;
   z-index: 30;
-  background: var(--header-bg);
+  background: var(--mfl-table-header-background);
 }
 
 .advancedPlayerTable thead::after {
@@ -1655,18 +1655,18 @@ button:disabled:not(.menuButton) {
   right: 0;
   bottom: -1px;
   height: 2px;
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
+  background: var(--mfl-table-header-background);
+  border-bottom: 1px solid var(--mfl-table-border-color);
   pointer-events: none;
 }
 
 .advancedPlayerTable thead tr {
-  background: var(--header-bg);
+  background: var(--mfl-table-header-background);
 }
 
 .advancedPlayerTable th {
-  background: var(--header-bg);
-  color: var(--text);
+  background: var(--mfl-table-header-background);
+  color: var(--mfl-table-header-text-color);
   font-size: inherit;
   font-weight: 800;
   text-transform: uppercase;
@@ -1696,7 +1696,7 @@ button:disabled:not(.menuButton) {
 }
 
 .advancedPlayerTable tbody th {
-  border-bottom-color: var(--header-bg);
+  border-bottom-color: var(--mfl-table-header-background);
 }
 
 .advancedPlayerTable tbody tr:last-child th {
@@ -1715,7 +1715,7 @@ button:disabled:not(.menuButton) {
 }
 
 .advancedPlayerTable tbody tr:hover th {
-  background: var(--header-bg);
+  background: var(--mfl-table-header-background);
 }
 
 .advancedPlayerTable tbody tr:hover td:hover,
@@ -1787,9 +1787,9 @@ button:disabled:not(.menuButton) {
 
 .tableShell {
   position: relative;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
+  background: var(--mfl-table-surface);
+  border: 1px solid var(--mfl-table-border-color);
+  border-radius: var(--mfl-table-radius);
   overflow: hidden;
 }
 
@@ -1865,7 +1865,7 @@ td {
   cursor: default;
   user-select: none;
   height: 38px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: 1px solid var(--mfl-table-border-color);
   padding: 0 6px;
   text-align: left;
   white-space: nowrap;
@@ -1876,7 +1876,7 @@ td {
 }
 
 td {
-  font-size: 14px;
+  font-size: var(--mfl-table-row-font-size);
 }
 
 #tableBody a,
@@ -1933,9 +1933,9 @@ td.nameCell {
   height: 18px;
 }
 th {
-  background: var(--header-bg);
-  color: var(--text);
-  font-size: 12px;
+  background: var(--mfl-table-header-background);
+  color: var(--mfl-table-header-text-color);
+  font-size: var(--mfl-table-header-font-size);
   text-transform: uppercase;
   cursor: default;
 }
@@ -1945,7 +1945,7 @@ th.sortable {
 }
 
 th.sortable:hover {
-  background: var(--surface-muted);
+  background: var(--mfl-table-sort-hover-background);
 }
 
 .sortArrow {
@@ -1970,8 +1970,8 @@ th.sortable:hover {
 
 #tableBody tr.tableRowHovered > td,
 #tableBody tr.tableRowHovered > th {
-  background: var(--row-hover);
-  background-image: linear-gradient(var(--row-hover), var(--row-hover));
+  background: var(--mfl-table-row-hover-background);
+  background-image: linear-gradient(var(--mfl-table-row-hover-background), var(--mfl-table-row-hover-background));
 }
 
 .selectionCell {
@@ -7741,6 +7741,17 @@ html.mflSelectionStartupResetPending #selectionBar {
 :root {
   --mfl-pager-block-padding: 12px;
 
+  /* Shared Table-domain visual language. Responsive geometry remains specialist-owned. */
+  --mfl-table-surface: var(--surface);
+  --mfl-table-border-color: var(--border);
+  --mfl-table-radius: 8px;
+  --mfl-table-header-background: var(--header-bg);
+  --mfl-table-header-text-color: var(--text);
+  --mfl-table-sort-hover-background: var(--surface-muted);
+  --mfl-table-row-hover-background: var(--row-hover);
+  --mfl-table-header-font-size: 12px;
+  --mfl-table-row-font-size: 14px;
+
   /* Uniform Width. This is the only numeric column-width contract. */
   --mfl-table-header-height: 38px;
   --mfl-table-row-height: 34px;
@@ -7859,7 +7870,7 @@ table :is(th, td) > :is(button, img, input, select, svg) {
 
   #progressionPage .playerTableScroller th.col-name {
     z-index: 6;
-    background: var(--header-bg);
+    background: var(--mfl-table-header-background);
   }
 
   #progressionPage .playerTableScroller :is(
@@ -7870,8 +7881,8 @@ table :is(th, td) > :is(button, img, input, select, svg) {
     isolation: isolate;
     container-type: scroll-state;
     container-name: mfl-sticky-name;
-    background: var(--surface);
-    background-image: linear-gradient(var(--surface), var(--surface));
+    background: var(--mfl-table-surface);
+    background-image: linear-gradient(var(--mfl-table-surface), var(--mfl-table-surface));
     background-clip: border-box;
   }
 
@@ -7879,8 +7890,8 @@ table :is(th, td) > :is(button, img, input, select, svg) {
     td.col-name,
     td:has(> .playerNameCell)
   ) {
-    background: var(--row-hover);
-    background-image: linear-gradient(var(--row-hover), var(--row-hover));
+    background: var(--mfl-table-row-hover-background);
+    background-image: linear-gradient(var(--mfl-table-row-hover-background), var(--mfl-table-row-hover-background));
   }
 
   #progressionPage #tableBody > .mflTableLoadingRow > td:has(> .playerNameCell) {
