@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import sqlite3
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from scripts.database import clubs
@@ -87,6 +88,8 @@ class ClubChainDataTests(unittest.TestCase):
                 "name": "Canonical FC",
                 "city": "Bologna",
                 "country": "Italy",
+                "primary_color": None,
+                "secondary_color": None,
                 "status": "FOUNDED",
                 "division": 3,
                 "owner_wallet_address": "0xabcdef",
@@ -134,6 +137,62 @@ class ClubChainDataTests(unittest.TestCase):
         self.assertEqual(len(calls), 1)
         self.assertTrue(calls[0][0].endswith("/42"))
 
+    def test_contract_club_colours_extracts_and_deduplicates_current_values(self) -> None:
+        players = [
+            {
+                "id": 1,
+                "activeContract": {
+                    "club": {
+                        "id": 42,
+                        "mainColor": "#FF0000",
+                        "secondaryColor": "#FFD700",
+                    }
+                },
+            },
+            {
+                "id": 2,
+                "activeContract": {
+                    "club": {
+                        "id": 42,
+                        "mainColor": "#ff0000",
+                        "secondaryColor": "#ffd700",
+                    }
+                },
+            },
+            {
+                "id": 3,
+                "activeContract": {
+                    "club": {
+                        "id": 42,
+                        "mainColor": "#000000",
+                        "secondaryColor": "#ffffff",
+                    }
+                },
+            },
+            {"id": 4},
+        ]
+        self.assertEqual(
+            clubs.contract_club_colours(players),
+            {"42": ("#ff0000", "#ffd700")},
+        )
+
+    def test_resolved_club_colours_prefers_current_and_preserves_missing_fields(self) -> None:
+        current = {"42": ("#abcdef", None), "43": ("#123456", "#654321")}
+        previous = {"42": ("#111111", "#222222"), "44": ("#333333", "#444444")}
+        self.assertEqual(
+            clubs.resolved_club_colours("42", current, previous),
+            ("#abcdef", "#222222"),
+        )
+        self.assertEqual(
+            clubs.resolved_club_colours("43", current, previous),
+            ("#123456", "#654321"),
+        )
+        self.assertEqual(
+            clubs.resolved_club_colours("44", current, previous),
+            ("#333333", "#444444"),
+        )
+        self.assertEqual(clubs.resolved_club_colours("45", current, previous), (None, None))
+
     def test_refresh_clubs_persists_canonical_record(self) -> None:
         connection = sqlite3.connect(":memory:")
         try:
@@ -170,22 +229,43 @@ class ClubChainDataTests(unittest.TestCase):
                 patch.object(clubs, "fetch_club_owners", return_value={"42": "0xabc"}),
                 patch.object(clubs, "fetch_club_snapshots", return_value=snapshots),
             ):
-                count = clubs.refresh_clubs(connection)
+                with patch.object(
+                    clubs,
+                    "load_previous_club_colours",
+                    return_value={"42": ("#111111", "#222222")},
+                ):
+                    count = clubs.refresh_clubs(
+                        connection,
+                        contract_players=[
+                            {
+                                "activeContract": {
+                                    "club": {
+                                        "id": 42,
+                                        "mainColor": "#ABCDEF",
+                                    }
+                                }
+                            }
+                        ],
+                        previous_database_path=Path("previous.db"),
+                    )
 
             row = connection.execute(
                 """
-                SELECT club_id, name, city, country, status, division, owner_wallet_address,
-                       owner_name, signed_player_ids, competition_ids
+                SELECT club_id, name, city, country, primary_color, secondary_color, status,
+                       division, owner_wallet_address, owner_name, signed_player_ids, competition_ids
                 FROM clubs
                 """
             ).fetchone()
             self.assertEqual(count, 1)
             self.assertEqual(
-                row[:8],
-                ("42", "Chain Club", "Bologna", "Italy", "FOUNDED", 2, "0xabc", "Owner Name"),
+                row[:10],
+                (
+                    "42", "Chain Club", "Bologna", "Italy", "#abcdef", "#222222",
+                    "FOUNDED", 2, "0xabc", "Owner Name",
+                ),
             )
-            self.assertEqual(json.loads(row[8]), [3, 9])
-            self.assertEqual(json.loads(row[9]), [1, 11])
+            self.assertEqual(json.loads(row[10]), [3, 9])
+            self.assertEqual(json.loads(row[11]), [1, 11])
         finally:
             connection.close()
 
@@ -275,6 +355,8 @@ class ClubChainDataTests(unittest.TestCase):
                     name TEXT NOT NULL,
                     city TEXT NOT NULL,
                     country TEXT NOT NULL,
+                    primary_color TEXT,
+                    secondary_color TEXT,
                     status TEXT NOT NULL,
                     division INTEGER,
                     owner_wallet_address TEXT NOT NULL,
@@ -285,26 +367,27 @@ class ClubChainDataTests(unittest.TestCase):
                 """
             )
             connection.execute(
-                "INSERT INTO clubs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO clubs VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
-                    "42", "Canonical Club", "Bologna", "Italy", "FOUNDED", 2,
-                    "0xabc", "Owner", "[3,9]", "[1,11]",
+                    "42", "Canonical Club", "Bologna", "Italy", "#123456", "#abcdef",
+                    "FOUNDED", 2, "0xabc", "Owner", "[3,9]", "[1,11]",
                 ),
             )
 
             runtime_db.prepare_runtime_clubs(connection)
             row = connection.execute(
                 """
-                SELECT name, city, country, status, division, owner_wallet_address,
-                       signed_player_ids, competition_ids, logo_version, leaderboard_rank, mfl_points
+                SELECT name, city, country, primary_color, secondary_color, status, division,
+                       owner_wallet_address, signed_player_ids, competition_ids, logo_version,
+                       leaderboard_rank, mfl_points
                 FROM runtime_clubs WHERE club_id = '42'
                 """
             ).fetchone()
             self.assertEqual(
                 row,
                 (
-                    "Canonical Club", "Bologna", "Italy", "FOUNDED", 2, "0xabc",
-                    "[3,9]", "[1,11]", "2", None, None,
+                    "Canonical Club", "Bologna", "Italy", "#123456", "#abcdef",
+                    "FOUNDED", 2, "0xabc", "[3,9]", "[1,11]", "2", None, None,
                 ),
             )
         finally:
@@ -347,12 +430,15 @@ class ClubChainDataTests(unittest.TestCase):
             runtime_db.prepare_runtime_clubs(connection)
             row = connection.execute(
                 """
-                SELECT city, country, status, signed_player_ids, competition_ids,
-                       logo_version, leaderboard_rank, mfl_points
+                SELECT city, country, primary_color, secondary_color, status, signed_player_ids,
+                       competition_ids, logo_version, leaderboard_rank, mfl_points
                 FROM runtime_clubs WHERE club_id = '42'
                 """
             ).fetchone()
-            self.assertEqual(row, ("", "", "", "[]", "[]", "4", 1, 100.0))
+            self.assertEqual(
+                row,
+                ("", "", None, None, "", "[]", "[]", "4", 1, 100.0),
+            )
         finally:
             connection.close()
 

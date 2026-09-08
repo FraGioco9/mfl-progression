@@ -215,6 +215,8 @@ def rebuild_directly() -> int:
             None,
             run_flow_rebuild.request_json,
             limiter,
+            players,
+            run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
         )
 
         flow_started = time.perf_counter()
