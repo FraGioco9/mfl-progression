@@ -9,6 +9,17 @@ const MIGRATED_RUNTIMES = Object.freeze([
   "marketplace-overlay-runtime.js",
   "nationality-filter-options-runtime.js",
 ]);
+const CORE_SOURCE_NAMES = Object.freeze([
+  "shared.js",
+  "evaluation.js",
+  "mfl-stats.js",
+  "club.js",
+  "settings.js",
+  "player.js",
+  "table.js",
+  "wallet.js",
+  "watchlist.js",
+]);
 const MIGRATED_CORE_SOURCES = Object.freeze([
   "club.js",
   "evaluation.js",
@@ -25,7 +36,7 @@ const runtimeSources = new Map(await Promise.all(runtimeNames.map(async (name) =
   name,
   String(await readFile(new URL(name, siteRoot), "utf8")).replace(/\r\n?/g, "\n"),
 ])));
-const coreSources = new Map(await Promise.all(MIGRATED_CORE_SOURCES.map(async (name) => [
+const coreSources = new Map(await Promise.all(CORE_SOURCE_NAMES.map(async (name) => [
   name,
   String(await readFile(new URL(`modules/core-sources/${name}`, siteRoot), "utf8")).replace(/\r\n?/g, "\n"),
 ])));
@@ -51,12 +62,23 @@ for (const name of MIGRATED_RUNTIMES) {
 }
 
 for (const [name, source] of coreSources) {
+  if (/(^|[^.\w$])fetch\s*\(\s*["'`]\/api\//m.test(source)) {
+    throw new Error(`${name} must not use bare same-origin API fetch; canonical core traffic belongs to the data client.`);
+  }
+}
+
+for (const name of MIGRATED_CORE_SOURCES) {
+  const source = coreSources.get(name) || "";
   if (!source.includes("window.__mflDataClient.fetch")) {
     throw new Error(`${name} must route its same-origin API calls through the canonical data client.`);
   }
-  if (/(^|[^.\w$])fetch\s*\(\s*["'`]\/api\//m.test(source)) {
-    throw new Error(`${name} must not depend on the global fetch compatibility bridge for same-origin API calls.`);
-  }
+}
+
+const appEntry = String(await readFile(new URL("modules/app-entry.js", siteRoot), "utf8")).replace(/\r\n?/g, "\n");
+if (appEntry.includes("installDataClientCompatibilityBridge")
+    || appEntry.includes("window.fetch =")
+    || appEntry.includes("__mflApiFetchPolicyInstalled")) {
+  throw new Error("The retired global fetch compatibility bridge must not return.");
 }
 
 const walletCore = coreSources.get("wallet.js") || "";
@@ -87,4 +109,4 @@ if (!marketplace.includes('dataClient.fetch("/api/marketplace"')) {
   throw new Error("Marketplace overlay must use the canonical client directly.");
 }
 
-console.log("Data-client migration guard passed for all standalone runtimes plus migrated Club/Evaluation/Shared/Table/Wallet core API traffic.");
+console.log("Data-client ownership guard passed for all standalone runtimes and canonical core sources; the global fetch compatibility bridge is retired.");

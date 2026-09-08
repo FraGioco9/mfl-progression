@@ -129,15 +129,6 @@ function createDataClient({ timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   });
 }
 
-/** @param {ReturnType<typeof createDataClient>} dataClient */
-function installDataClientCompatibilityBridge(dataClient) {
-  if (window.__mflApiFetchPolicyInstalled) return;
-  window.__mflApiFetchPolicyInstalled = true;
-  window.fetch = (input, init = {}) => isSameOriginApiRequest(input)
-    ? dataClient.fetch(input, init)
-    : nativeFetch(input, init);
-}
-
 function runtimeResources() {
   const resources = Reflect.get(window, "__mflRuntimeResources");
   if (!resources
@@ -474,7 +465,6 @@ async function start() {
   window.__mflRelease = release;
   window.__mflAssetUrl = (path) => new URL(String(path || "").replace(/^\/+/, ""), `${window.location.origin}/`).href;
 
-  installDataClientCompatibilityBridge(dataClient);
   await loadScriptGroup(initialPreCoreRuntimeScripts);
 
   await loadApplicationCore();

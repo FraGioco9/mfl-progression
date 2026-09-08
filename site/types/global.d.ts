@@ -9,7 +9,6 @@ interface MflDataClient {
 }
 
 interface Window {
-  __mflApiFetchPolicyInstalled?: boolean;
   __mflReleaseVersion?: string;
   __mflRelease?: Readonly<{ version: string; description: string }>;
   __mflAssetUrl?: (path: string) => string;
