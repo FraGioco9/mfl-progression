@@ -21,6 +21,8 @@ jobs:
           node-version: '22'
       - name: Rebase onto current main
         run: |
+          git config user.name "FraGioco9"
+          git config user.email "giocolifrancesco@gmail.com"
           git fetch origin main
           git rebase origin/main
       - name: Apply club colours
