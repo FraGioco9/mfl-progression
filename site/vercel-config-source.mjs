@@ -30,6 +30,10 @@ const developmentJsHeaders = Object.freeze([
   }),
 ]);
 
+const immutableJsCacheHeaders = Object.freeze([
+  Object.freeze({ key: "Cache-Control", value: "public, max-age=31536000, immutable" }),
+]);
+
 const productionJsHeaders = Object.freeze([
   Object.freeze({
     source: "/(.*\\.js)",
@@ -39,7 +43,12 @@ const productionJsHeaders = Object.freeze([
   Object.freeze({
     source: "/(.*\\.js)",
     has: [Object.freeze({ type: "query", key: "mfl_core" })],
-    headers: [Object.freeze({ key: "Cache-Control", value: "public, max-age=31536000, immutable" })],
+    headers: immutableJsCacheHeaders,
+  }),
+  Object.freeze({
+    source: "/modules/app-core-runtime.js",
+    has: [Object.freeze({ type: "query", key: "mfl_core" })],
+    headers: immutableJsCacheHeaders,
   }),
 ]);
 
