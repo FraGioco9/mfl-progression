@@ -42,15 +42,24 @@ async function signedWalletFromRequest(request) {
   });
 }
 
-function sendJson(response, status, data, startedAt) {
+function serverTimingHeader(startedAt, timings = {}) {
+  const metrics = [];
+  Object.entries(timings || {}).forEach(([name, duration]) => {
+    const normalizedName = String(name || "").replace(/[^a-zA-Z0-9_-]/g, "");
+    const numericDuration = Number(duration);
+    if (!normalizedName || !Number.isFinite(numericDuration) || numericDuration < 0) return;
+    metrics.push(`${normalizedName};dur=${numericDuration.toFixed(1)}`);
+  });
+  metrics.push(`total;dur=${Math.max(0, performance.now() - startedAt).toFixed(1)}`);
+  return metrics.join(", ");
+}
+
+function sendJson(response, status, data, startedAt, timings = {}) {
   response.setHeader("Content-Type", "application/json; charset=utf-8");
   response.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate, max-age=0");
   response.setHeader("CDN-Cache-Control", "no-store, max-age=0");
   response.setHeader("Vercel-CDN-Cache-Control", "no-store, max-age=0");
-  response.setHeader(
-    "Server-Timing",
-    `total;dur=${Math.max(0, performance.now() - startedAt).toFixed(1)}`,
-  );
+  response.setHeader("Server-Timing", serverTimingHeader(startedAt, timings));
   response.status(status).json(data);
 }
 
@@ -58,5 +67,6 @@ module.exports = {
   normalizeWalletAddress,
   walletAllowed,
   signedWalletFromRequest,
+  serverTimingHeader,
   sendJson,
 };

@@ -17,9 +17,10 @@ const { mflStatsSummaryData } = require("./_mfl-stats-summary");
 
 module.exports = async function handler(request, response) {
   const startedAt = performance.now();
+  const timings = {};
   if (request.method && request.method !== "GET") {
     response.setHeader("Allow", "GET");
-    sendJson(response, 405, { error: "Method not allowed." }, startedAt);
+    sendJson(response, 405, { error: "Method not allowed." }, startedAt, timings);
     return;
   }
 
@@ -34,17 +35,31 @@ module.exports = async function handler(request, response) {
       || (["agent", "club"].includes(scope) && ["current", "all"].includes(view));
     const publicWatchlistProgression = scope === "watchlist"
       && ["current", "all"].includes(view);
+
+    const authStartedAt = performance.now();
     const signedWallet = await signedWalletFromRequest(request);
+    timings.auth = performance.now() - authStartedAt;
+
+    async function measuredWalletAllowed(wallet) {
+      const permissionStartedAt = performance.now();
+      try {
+        return await walletAllowed(wallet);
+      } finally {
+        timings.permission = performance.now() - permissionStartedAt;
+      }
+    }
+
     const fullAccess = publicEntityProgression || publicWatchlistProgression || (
       accessMode === "full-progression"
       && Boolean(signedWallet)
-      && await walletAllowed(signedWallet)
+      && await measuredWalletAllowed(signedWallet)
     );
     const ownedProgression = accessMode === "owned-progression" && Boolean(signedWallet);
     const pageRequest = mode === "page" && playerEntityProgression
       ? { ...request, query: { ...query, includeProgression: "1" } }
       : request;
 
+    const queryStartedAt = performance.now();
     let data;
     if (mode === "bootstrap") data = bootstrapData();
     else if (mode === "page") data = await pagedData(pageRequest, signedWallet, fullAccess, ownedProgression);
@@ -56,11 +71,13 @@ module.exports = async function handler(request, response) {
     else if (mode === "mfl-stats") data = mflStatsData(request, false);
     else if (mode === "mfl-stats-all") data = mflStatsData(request, true);
     else {
-      sendJson(response, 400, { error: "Invalid database request." }, startedAt);
+      timings.query = performance.now() - queryStartedAt;
+      sendJson(response, 400, { error: "Invalid database request." }, startedAt, timings);
       return;
     }
+    timings.query = performance.now() - queryStartedAt;
 
-    sendJson(response, 200, data, startedAt);
+    sendJson(response, 200, data, startedAt, timings);
   } catch (error) {
     console.error("Could not query MFL database.", error);
     sendJson(
@@ -68,6 +85,7 @@ module.exports = async function handler(request, response) {
       500,
       { error: `Could not query database: ${error?.message || "Unknown database error."}` },
       startedAt,
+      timings,
     );
   }
 };
