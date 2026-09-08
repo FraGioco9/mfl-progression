@@ -32,9 +32,9 @@ assert.match(bootstrap, /initialPage === "my-clubs" \|\| initialPage === "myclub
 
 assert.match(pageStyles, /\.myClubCard \{[\s\S]*?border-radius: var\(--mfl-radius-panel\);/u, "Club cards must consume the shared ordinary-panel radius.");
 assert.match(pageStyles, /\.myClubCard:focus-visible \{[\s\S]*?outline: var\(--mfl-focus-ring-width\) solid var\(--mfl-focus-ring-color\);[\s\S]*?outline-offset: var\(--mfl-focus-ring-offset\);/u, "Club cards must consume the shared keyboard-focus contract.");
-assert.match(pageStyles, /\.myClubName \{[\s\S]*?font-size: var\(--mfl-section-title-font-size\);[\s\S]*?font-weight: var\(--mfl-section-title-font-weight\);[\s\S]*?line-height: var\(--mfl-section-title-line-height\);/u, "Club names must consume shared section-title typography.");
-assert.match(pageStyles, /\.myClubMeta \{[\s\S]*?font-size: var\(--mfl-metadata-font-size\);[\s\S]*?font-weight: var\(--mfl-metadata-font-weight\);[\s\S]*?line-height: var\(--mfl-metadata-line-height\);/u, "Club metadata must consume shared metadata typography.");
-assert.match(pageStyles, /\.myClubId \{[\s\S]*?font-size: var\(--mfl-metadata-compact-font-size\);/u, "Club IDs beside names must consume compact shared metadata sizing.");
+assert.match(pageStyles, /\.myClubName \{[\s\S]*?font-size: 20px;[\s\S]*?font-weight: var\(--mfl-section-title-font-weight\);[\s\S]*?line-height: 1\.2;/u, "Club names must use enlarged route-owned sizing while retaining shared section-title weight.");
+assert.match(pageStyles, /\.myClubMeta \{[\s\S]*?font-size: 14px;[\s\S]*?font-weight: var\(--mfl-metadata-font-weight\);[\s\S]*?line-height: 1\.3;/u, "Club metadata must use enlarged route-owned sizing while retaining shared metadata weight.");
+assert.match(pageStyles, /\.myClubId \{[\s\S]*?font-size: 13px;/u, "Club IDs above names must use the enlarged compact card sizing.");
 assert.doesNotMatch(pageStyles, /max-width:\s*1180px|border-radius:\s*14px|outline:\s*2px solid currentColor|!important/u, "My Clubs must not retain its pre-foundation page width, radius, focus, or override layer.");
 const pageRule = pageStyles.match(/\.myClubsPage \{[^}]*\}/u)?.[0] || "";
 assert.ok(pageRule, "My Clubs must retain one domain page rule for width/min-width geometry.");
@@ -75,6 +75,13 @@ assert.match(coreSource, /myClubId/u, "My Clubs must place the club ID beside th
 assert.doesNotMatch(clubsApi, /mfl_points|nbMflPoints/u, "My Clubs API must not fetch or expose MFL points.");
 assert.match(clubsApi, /country AS nation/u, "My Clubs API must expose country using the Nation terminology.");
 assert.match(coreSource, /function firstLetterCaps\(value\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");
+assert.match(coreSource, /MY_CLUBS_COUNT_STORAGE_KEY = "mfl-my-clubs-count-v1"/u, "My Clubs must persist a wallet-scoped club count for first-paint card shells.");
+assert.match(coreSource, /function renderLoadingCards\(count = storedClubCount\(\)\)/u, "My Clubs must render the known number of card shells before club data hydration.");
+assert.match(coreSource, /saveClubCount\(wallet, cacheClubs\.length\)/u, "My Clubs must refresh its persisted shell count from authoritative loaded club data.");
+assert.match(coreSource, /titleBlock\.append\(id, title\)/u, "My Clubs must render the club ID above the club name.");
+assert.match(pageStyles, /\.myClubName \{[\s\S]*?font-size: 20px;/u, "Desktop club names must use the enlarged card typography.");
+assert.match(pageStyles, /\.myClubMeta \{[\s\S]*?font-size: 14px;/u, "Desktop club metadata must use the enlarged card typography.");
+assert.match(pageStyles, /\.myClubCardLoading \{/u, "My Clubs must style first-paint card shells with the same card geometry.");
 assert.match(coreSource, /function clubColor\(value\)[\s\S]*?\^#\[0-9a-f\]\{6\}\$/u, "My Clubs must accept only canonical six-digit hex club colours.");
 assert.match(coreSource, /--my-club-primary[\s\S]*?--my-club-secondary/u, "My Clubs cards must pass canonical club colours to route-owned CSS variables.");
 assert.match(pageStyles, /linear-gradient\(rgba\(0, 0, 0, 0\.18\) 14%, rgba\(0, 0, 0, 0\) 100%\)[\s\S]*?var\(--my-club-primary[\s\S]*?var\(--my-club-secondary/u, "My Clubs cards must use dark top shading over the primary-to-secondary club gradient.");

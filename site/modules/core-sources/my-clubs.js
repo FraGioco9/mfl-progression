@@ -6,6 +6,7 @@
   const PAGE = "my-clubs";
   const PATH = "/my-clubs";
   const CLUB_DISPLAY_DATA_STORAGE_KEY = "mfl-club-display-data-v1";
+  const MY_CLUBS_COUNT_STORAGE_KEY = "mfl-my-clubs-count-v1";
   const originalSetPage = setPage;
   const originalOptOutWallet = typeof optOutWallet === "function" ? optOutWallet : null;
   const page = document.getElementById("myClubsPage");
@@ -35,6 +36,65 @@
   function clubColor(value) {
     const color = String(value || "").trim();
     return /^#[0-9a-f]{6}$/iu.test(color) ? color.toLowerCase() : "";
+  }
+
+  function storedClubCount(wallet = walletAddress()) {
+    const normalizedWallet = normalizeWalletAddress(wallet || "").toLowerCase();
+    if (!normalizedWallet) return 0;
+    try {
+      const stored = JSON.parse(localStorage.getItem(MY_CLUBS_COUNT_STORAGE_KEY) || "{}");
+      const value = Number(stored?.[normalizedWallet]);
+      return Number.isInteger(value) && value >= 0 ? value : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  function saveClubCount(wallet, count) {
+    const normalizedWallet = normalizeWalletAddress(wallet || "").toLowerCase();
+    const normalizedCount = Number(count);
+    if (!normalizedWallet || !Number.isInteger(normalizedCount) || normalizedCount < 0) return;
+    try {
+      const stored = JSON.parse(localStorage.getItem(MY_CLUBS_COUNT_STORAGE_KEY) || "{}");
+      const next = stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+      next[normalizedWallet] = normalizedCount;
+      localStorage.setItem(MY_CLUBS_COUNT_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // First-paint shells are an enhancement; data loading remains authoritative.
+    }
+  }
+
+  function loadingCard() {
+    const card = document.createElement("div");
+    card.className = "myClubCard myClubCardLoading";
+    card.setAttribute("aria-hidden", "true");
+
+    const logoFrame = document.createElement("div");
+    logoFrame.className = "myClubLogoFrame myClubLogoFrameLoading";
+    const logo = document.createElement("div");
+    logo.className = "myClubLoadingLogo";
+    logoFrame.appendChild(logo);
+
+    const body = document.createElement("div");
+    body.className = "myClubCardBody";
+    const idLine = document.createElement("span");
+    idLine.className = "myClubLoadingLine myClubLoadingId";
+    const nameLine = document.createElement("span");
+    nameLine.className = "myClubLoadingLine myClubLoadingName";
+    const metaLine = document.createElement("span");
+    metaLine.className = "myClubLoadingLine myClubLoadingMeta";
+    body.append(idLine, nameLine, metaLine);
+    card.append(logoFrame, body);
+    return card;
+  }
+
+  function renderLoadingCards(count = storedClubCount()) {
+    if (!grid || grid.childElementCount || count <= 0) return false;
+    const fragment = document.createDocumentFragment();
+    for (let index = 0; index < count; index += 1) fragment.appendChild(loadingCard());
+    grid.appendChild(fragment);
+    setStatus("");
+    return true;
   }
 
   function primeClubDestinationTitle(clubId, name, divisionInfo) {
@@ -134,8 +194,8 @@
     const body = document.createElement("div");
     body.className = "myClubCardBody";
 
-    const titleRow = document.createElement("div");
-    titleRow.className = "myClubTitleRow";
+    const titleBlock = document.createElement("div");
+    titleBlock.className = "myClubTitleBlock";
 
     const title = document.createElement("h3");
     title.className = "myClubName";
@@ -144,7 +204,7 @@
     const id = document.createElement("span");
     id.className = "myClubId";
     id.textContent = clubId ? `#${clubId}` : "";
-    titleRow.append(title, id);
+    titleBlock.append(id, title);
 
     const meta = document.createElement("div");
     meta.className = "myClubMeta";
@@ -162,7 +222,7 @@
       meta.appendChild(locationItem);
     }
 
-    body.append(titleRow, meta);
+    body.append(titleBlock, meta);
     link.append(logoFrame, body);
 
     link.addEventListener("click", (event) => {
@@ -213,7 +273,8 @@
 
     cacheWallet = wallet;
     const sequence = ++requestSequence;
-    setStatus("Loading...");
+    const hasLoadingCards = renderLoadingCards(storedClubCount(wallet));
+    setStatus(hasLoadingCards ? "" : "Loading...");
     if (retryButton) retryButton.hidden = true;
 
     const promise = (async () => {
@@ -229,6 +290,7 @@
         if (!response.ok) throw new Error(payload?.error || "Could not load clubs.");
         if (sequence !== requestSequence || walletAddress() !== wallet || !routeIsCurrent(options)) return [];
         cacheClubs = Array.isArray(payload?.clubs) ? payload.clubs : [];
+        saveClubCount(wallet, cacheClubs.length);
         renderCards(cacheClubs);
         return cacheClubs;
       } catch (error) {

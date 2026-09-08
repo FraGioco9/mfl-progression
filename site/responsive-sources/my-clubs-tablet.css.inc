@@ -22,6 +22,23 @@
     padding: 11px 12px;
   }
 
+  .myClubName {
+    font-size: 18px;
+  }
+
+  .myClubId {
+    font-size: 12px;
+  }
+
+  .myClubMeta {
+    font-size: 13px;
+  }
+
+  .myClubLoadingLogo {
+    width: 66px;
+    height: 66px;
+  }
+
   .myClubFacts {
     gap: 8px;
     margin-top: 10px;

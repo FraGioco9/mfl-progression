@@ -23,11 +23,20 @@
   }
 
   .myClubName {
-    font-size: var(--mfl-section-title-compact-font-size);
+    font-size: 19px;
+  }
+
+  .myClubId {
+    font-size: 12px;
   }
 
   .myClubMeta {
-    font-size: var(--mfl-metadata-compact-font-size);
+    font-size: 14px;
+  }
+
+  .myClubLoadingLogo {
+    width: 72px;
+    height: 72px;
   }
 
 }
