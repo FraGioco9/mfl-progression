@@ -263,8 +263,8 @@ for (const required of [
   "position: fixed;",
   "inset: 0;",
   "z-index: var(--mfl-z-modal);",
-  "background: rgba(0, 0, 0, 0.45);",
-]) invariant(modalRule.includes(required), `Original modal backdrop rendering must retain ${required}`);
+  "background: var(--mfl-modal-backdrop-background);",
+]) invariant(modalRule.includes(required), `Modal backdrop rendering must retain its canonical stacking/surface contract: ${required}`);
 
 for (const source of [stacking, canonicalCore, generatedCore]) {
   invariant(

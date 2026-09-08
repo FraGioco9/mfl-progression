@@ -131,14 +131,14 @@
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 40px;
     padding: 6px 8px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 14px;
   }
 
@@ -240,14 +240,14 @@
     font-size: 11px;
   }
 
-  .filtersFooter,
+  .mflDialogFooter,
   .advancedSettingsFooter,
   .addWatchlistFooter,
   .deleteWatchlistFooter {
     gap: 8px;
   }
 
-  .filtersFooter button,
+  .mflDialogFooter button,
   .advancedSettingsFooter button,
   .addWatchlistFooter button,
   .deleteWatchlistFooter button {

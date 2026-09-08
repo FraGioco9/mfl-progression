@@ -24,8 +24,8 @@
   }
 
   function modalMarkup() {
-    return `<section class="bugReportDialog" role="dialog" aria-modal="true" aria-labelledby="bugReportTitle">
-      <header class="filtersHeader">
+    return `<section class="mflDialog bugReportDialog" role="dialog" aria-modal="true" aria-labelledby="bugReportTitle">
+      <header class="mflDialogHeader">
         <h2 id="bugReportTitle">Report a bug</h2>
         <button id="closeBugReportButton" class="iconButton popupCloseButton" type="button" aria-label="Close bug report"></button>
       </header>
@@ -45,7 +45,7 @@
           </div>
           <p id="bugReportStatus" class="bugReportStatus" role="status" aria-live="polite" hidden></p>
         </div>
-        <footer class="filtersFooter bugReportFooter">
+        <footer class="mflDialogFooter bugReportFooter">
           <button id="cancelBugReportButton" type="button">Cancel</button>
           <button id="submitBugReportButton" type="submit">Submit</button>
         </footer>

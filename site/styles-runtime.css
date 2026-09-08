@@ -80,6 +80,12 @@
   --mfl-panel-border: 1px solid var(--border);
   --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
+
+  /* Shared ordinary modal/dialog language. */
+  --mfl-modal-backdrop-background: rgba(0, 0, 0, 0.45);
+  --mfl-dialog-background: var(--surface);
+  --mfl-dialog-border: 1px solid var(--border);
+  --mfl-dialog-divider: 1px solid var(--border);
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
   --mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);
@@ -1071,14 +1077,8 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 }
 
 .deleteWatchlistDialog {
-  display: flex;
-  flex-direction: column;
   width: min(420px, 100%);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
   color: var(--text);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
 }
 
 .deleteWatchlistBody {
@@ -1115,13 +1115,7 @@ body:not(.pinnedSidebarVisible) .siteFooter {
 }
 
 .addWatchlistDialog {
-  display: flex;
-  flex-direction: column;
   width: min(420px, 100%);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
 }
 
 .addWatchlistBody {
@@ -1275,16 +1269,16 @@ button:disabled:not(.menuButton) {
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--mfl-modal-backdrop-background);
   opacity: 0;
   pointer-events: none;
-  transition: opacity 180ms ease;
+  transition: opacity var(--mfl-motion-standard) ease;
 }
 
 .modalBackdrop > section {
   opacity: 0;
   transform: translateY(8px) scale(0.98);
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity var(--mfl-motion-standard) ease, transform var(--mfl-motion-standard) ease;
 }
 
 .modalBackdrop.modalOpen {
@@ -1311,39 +1305,42 @@ button:disabled:not(.menuButton) {
   display: none;
 }
 
-.filtersDialog {
+.mflDialog {
   display: flex;
   flex-direction: column;
-  width: min(980px, 100%);
-  max-height: min(820px, 92vh);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
+  border: var(--mfl-dialog-border);
+  border-radius: var(--mfl-radius-dialog);
+  background: var(--mfl-dialog-background);
+  box-shadow: var(--mfl-shadow-modal);
 }
 
-.filtersHeader,
-.filtersFooter {
+.filtersDialog {
+  width: min(980px, 100%);
+  max-height: min(820px, 92vh);
+}
+
+.mflDialogHeader,
+.mflDialogFooter {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
   padding: 10px 14px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: var(--mfl-dialog-divider);
 }
 
-.filtersFooter {
+.mflDialogFooter {
   justify-content: flex-end;
-  border-top: 1px solid var(--border);
+  border-top: var(--mfl-dialog-divider);
   border-bottom: 0;
 }
 
-.filtersFooter button {
+.mflDialogFooter button {
   min-width: 92px;
   width: 92px;
 }
 
-.filtersHeader h2 {
+.mflDialogHeader h2 {
   margin: 0;
   font-size: 20px;
 }
@@ -1363,14 +1360,8 @@ button:disabled:not(.menuButton) {
 }
 
 .advancedSettingsDialog {
-  display: flex;
-  flex-direction: column;
   width: min(1120px, 100%);
   max-height: min(860px, 92vh);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
 }
 
 .advancedSettingsBody {
@@ -2314,15 +2305,9 @@ td a {
 }
 
 .searchDialog {
-  display: flex;
-  flex-direction: column;
   width: min(960px, calc(100vw - 32px));
   height: auto;
   max-height: calc(100vh - 64px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
 }
 
 .searchBody {
@@ -3920,16 +3905,10 @@ button.playerIdText:active {
 
 .evaluationLoadDialog {
   position: relative;
-  display: flex;
-  flex-direction: column;
   width: min(960px, calc(100vw - 32px));
   height: auto;
   max-height: calc(100vh - 64px);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
   background-clip: padding-box;
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
   overflow: hidden;
 }
 
@@ -4161,14 +4140,8 @@ button.playerIdText:active {
 }
 
 .watchlistChoiceDialog {
-  display: flex;
-  flex-direction: column;
   width: min(420px, 100%);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: var(--surface);
   color: var(--text);
-  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.28);
 }
 
 .watchlistChoiceList {
@@ -6808,13 +6781,13 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   border-bottom: 1px solid var(--border);
 }
 
-.filtersDialog .filtersFooter button {
+.filtersDialog .mflDialogFooter button {
   height: var(--mfl-filter-control-height);
   min-height: var(--mfl-filter-control-height);
 }
 
 /* Filters header close keeps a stable touch target while the glyph scales by viewport. */
-.filtersDialog .filtersHeader .popupCloseButton {
+.filtersDialog .mflDialogHeader .popupCloseButton {
   flex: 0 0 var(--mfl-popup-close-size);
   width: var(--mfl-popup-close-size);
   min-width: var(--mfl-popup-close-size);
@@ -6825,8 +6798,8 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   padding: 0;
 }
 
-.filtersDialog .filtersHeader .popupCloseButton::before,
-.filtersDialog .filtersHeader .popupCloseButton::after {
+.filtersDialog .mflDialogHeader .popupCloseButton::before,
+.filtersDialog .mflDialogHeader .popupCloseButton::after {
   width: var(--mfl-popup-close-glyph-size);
   height: 2px;
 }
@@ -7084,7 +7057,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   display: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton {
+.modalBackdrop .mflDialogHeader > .popupCloseButton {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -7110,7 +7083,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   box-shadow: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton::before {
+.modalBackdrop .mflDialogHeader > .popupCloseButton::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -7132,13 +7105,13 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   pointer-events: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton::after {
+.modalBackdrop .mflDialogHeader > .popupCloseButton::after {
   content: none;
   display: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton:hover:not(:disabled),
-.modalBackdrop .filtersHeader > .popupCloseButton:focus-visible:not(:disabled) {
+.modalBackdrop .mflDialogHeader > .popupCloseButton:hover:not(:disabled),
+.modalBackdrop .mflDialogHeader > .popupCloseButton:focus-visible:not(:disabled) {
   outline: 0;
   border-color: var(--primary-hover);
   background: var(--row-hover);
@@ -7535,16 +7508,10 @@ body[data-page="privacy"] .siteFooterDetails a[data-page="privacy"] {
 
 /* Report-a-bug popup is owned by the footer/support surface and reuses the global modal, field, and button language. */
 .bugReportDialog {
-  display: flex;
-  flex-direction: column;
   width: min(620px, calc(100vw - 24px));
   max-height: min(760px, calc(100dvh - 24px));
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: var(--mfl-radius-dialog);
-  background: var(--surface);
   color: var(--text);
-  box-shadow: var(--mfl-shadow-modal);
   overflow: hidden;
 }
 
@@ -9485,14 +9452,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     flex: 0 0 auto;
     gap: 6px;
     padding: 6px 8px;
   }
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 16px;
   }
 
@@ -9723,7 +9690,7 @@ html:not(.mflInitialRouteResolved):is(
     gap: 4px;
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }
@@ -10960,13 +10927,13 @@ html:not(.mflInitialRouteResolved):is(
     max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     gap: 5px;
     padding: 5px 7px;
   }
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 15px;
   }
 
@@ -11067,12 +11034,12 @@ html:not(.mflInitialRouteResolved):is(
     gap: 3px;
   }
 
-  .filtersFooter {
+  .mflDialogFooter {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }
@@ -11211,14 +11178,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 42px;
     padding: 7px 9px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 15px;
   }
 
@@ -11874,14 +11841,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 40px;
     padding: 6px 8px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 14px;
   }
 
@@ -11983,14 +11950,14 @@ html:not(.mflInitialRouteResolved):is(
     font-size: 11px;
   }
 
-  .filtersFooter,
+  .mflDialogFooter,
   .advancedSettingsFooter,
   .addWatchlistFooter,
   .deleteWatchlistFooter {
     gap: 8px;
   }
 
-  .filtersFooter button,
+  .mflDialogFooter button,
   .advancedSettingsFooter button,
   .addWatchlistFooter button,
   .deleteWatchlistFooter button {

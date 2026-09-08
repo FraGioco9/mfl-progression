@@ -75,6 +75,12 @@
   --mfl-panel-border: 1px solid var(--border);
   --mfl-panel-border-strong: 1px solid var(--border-strong);
   --mfl-radius-panel: 8px;
+
+  /* Shared ordinary modal/dialog language. */
+  --mfl-modal-backdrop-background: rgba(0, 0, 0, 0.45);
+  --mfl-dialog-background: var(--surface);
+  --mfl-dialog-border: 1px solid var(--border);
+  --mfl-dialog-divider: 1px solid var(--border);
   --mfl-radius-dialog: 8px;
   --mfl-shadow-tooltip: 0 10px 26px rgba(0, 0, 0, 0.28);
   --mfl-shadow-modal: 0 20px 80px rgba(0, 0, 0, 0.28);

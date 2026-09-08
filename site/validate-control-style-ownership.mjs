@@ -57,7 +57,7 @@ for (const required of [
   "#pageSizeSelect",
   ".evaluationSearchClearButton",
   ".playerSearchClearButton",
-  ".modalBackdrop .filtersHeader > .popupCloseButton",
+  ".modalBackdrop .mflDialogHeader > .popupCloseButton",
   "html.mflDataLoading #pageSizeSelect",
 ]) {
   invariant(controls.includes(required), `controls.css is missing canonical shared rule: ${required}`);
@@ -113,7 +113,7 @@ invariant(!footer.includes("!important"), "footer.css must not introduce !import
 for (const duplicate of [
   "--mfl-popup-close-size:",
   "#sidebar .navButton.active",
-  ".modalBackdrop .filtersHeader > .popupCloseButton",
+  ".modalBackdrop .mflDialogHeader > .popupCloseButton",
   ".trainingStatControls .popupAddButton::before",
   "html.mflDataLoading #pageSizeSelect",
 ]) {

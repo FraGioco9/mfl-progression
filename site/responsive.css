@@ -982,14 +982,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     flex: 0 0 auto;
     gap: 6px;
     padding: 6px 8px;
   }
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 16px;
   }
 
@@ -1220,7 +1220,7 @@ html:not(.mflInitialRouteResolved):is(
     gap: 4px;
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }
@@ -2457,13 +2457,13 @@ html:not(.mflInitialRouteResolved):is(
     max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
   }
 
-  .filtersHeader,
-  .filtersFooter {
+  .mflDialogHeader,
+  .mflDialogFooter {
     gap: 5px;
     padding: 5px 7px;
   }
 
-  .filtersHeader h2 {
+  .mflDialogHeader h2 {
     font-size: 15px;
   }
 
@@ -2564,12 +2564,12 @@ html:not(.mflInitialRouteResolved):is(
     gap: 3px;
   }
 
-  .filtersFooter {
+  .mflDialogFooter {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .filtersFooter button {
+  .mflDialogFooter button {
     height: 36px;
     min-height: 36px;
   }
@@ -2708,14 +2708,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 42px;
     padding: 7px 9px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 15px;
   }
 
@@ -3371,14 +3371,14 @@ html:not(.mflInitialRouteResolved):is(
     height: auto;
   }
 
-  #advancedSettingsModal .filtersHeader,
-  #evaluationLoadModal .filtersHeader {
+  #advancedSettingsModal .mflDialogHeader,
+  #evaluationLoadModal .mflDialogHeader {
     min-height: 40px;
     padding: 6px 8px;
   }
 
-  #advancedSettingsModal .filtersHeader h2,
-  #evaluationLoadModal .filtersHeader h2 {
+  #advancedSettingsModal .mflDialogHeader h2,
+  #evaluationLoadModal .mflDialogHeader h2 {
     font-size: 14px;
   }
 
@@ -3480,14 +3480,14 @@ html:not(.mflInitialRouteResolved):is(
     font-size: 11px;
   }
 
-  .filtersFooter,
+  .mflDialogFooter,
   .advancedSettingsFooter,
   .addWatchlistFooter,
   .deleteWatchlistFooter {
     gap: 8px;
   }
 
-  .filtersFooter button,
+  .mflDialogFooter button,
   .advancedSettingsFooter button,
   .addWatchlistFooter button,
   .deleteWatchlistFooter button {

@@ -357,13 +357,13 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   border-bottom: 1px solid var(--border);
 }
 
-.filtersDialog .filtersFooter button {
+.filtersDialog .mflDialogFooter button {
   height: var(--mfl-filter-control-height);
   min-height: var(--mfl-filter-control-height);
 }
 
 /* Filters header close keeps a stable touch target while the glyph scales by viewport. */
-.filtersDialog .filtersHeader .popupCloseButton {
+.filtersDialog .mflDialogHeader .popupCloseButton {
   flex: 0 0 var(--mfl-popup-close-size);
   width: var(--mfl-popup-close-size);
   min-width: var(--mfl-popup-close-size);
@@ -374,8 +374,8 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   padding: 0;
 }
 
-.filtersDialog .filtersHeader .popupCloseButton::before,
-.filtersDialog .filtersHeader .popupCloseButton::after {
+.filtersDialog .mflDialogHeader .popupCloseButton::before,
+.filtersDialog .mflDialogHeader .popupCloseButton::after {
   width: var(--mfl-popup-close-glyph-size);
   height: 2px;
 }
@@ -633,7 +633,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   display: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton {
+.modalBackdrop .mflDialogHeader > .popupCloseButton {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -659,7 +659,7 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   box-shadow: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton::before {
+.modalBackdrop .mflDialogHeader > .popupCloseButton::before {
   content: "";
   position: absolute;
   top: 50%;
@@ -681,13 +681,13 @@ body[data-page="club"] #progressionPage .viewControlsSeparator {
   pointer-events: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton::after {
+.modalBackdrop .mflDialogHeader > .popupCloseButton::after {
   content: none;
   display: none;
 }
 
-.modalBackdrop .filtersHeader > .popupCloseButton:hover:not(:disabled),
-.modalBackdrop .filtersHeader > .popupCloseButton:focus-visible:not(:disabled) {
+.modalBackdrop .mflDialogHeader > .popupCloseButton:hover:not(:disabled),
+.modalBackdrop .mflDialogHeader > .popupCloseButton:focus-visible:not(:disabled) {
   outline: 0;
   border-color: var(--primary-hover);
   background: var(--row-hover);
