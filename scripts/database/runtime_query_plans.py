@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Representative SQLite query-plan budgets for hot MFL Front Office table reads.
 
-These checks intentionally focus on planner shape rather than wall-clock timing,
-which is too noisy for CI. They protect the indexes and temporary-sort budget of
-representative API request shapes used by Database, Agent, Club, Watchlist, and
-MFL table routes.
+These checks intentionally focus on planner shape and deterministic virtual-machine
+work rather than wall-clock timing, which is too noisy for CI. They protect the
+indexes, temporary-sort budget, and representative work shape of API request
+patterns used by Database, Agent, Club, Watchlist, and MFL table routes.
 """
 
 from dataclasses import dataclass
@@ -41,6 +41,7 @@ POSITION_RANK_SQL = (
     )
     + f" ELSE {len(POSITION_ORDER)} END"
 )
+DEFAULT_OVERALL_ORDER_SQL = "overall IS NULL, overall DESC, player_id DESC"
 
 
 @dataclass(frozen=True)
@@ -60,24 +61,32 @@ class QueryPlanMetrics:
     temp_btrees: int
 
 
+@dataclass(frozen=True)
+class QueryWorkMetrics:
+    vm_steps: int
+    rows: tuple[tuple[Any, ...], ...]
+
+
 REPRESENTATIVE_TABLE_QUERY_BUDGETS = (
     QueryPlanBudget(
         name="database_attributes_first_page",
         sql=(
             "SELECT player_id, overall FROM players "
-            "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?"
+            f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 0),
-        required_index="players_overall_index",
+        max_full_player_scans=1,
+        max_temp_btrees=1,
     ),
     QueryPlanBudget(
         name="database_attributes_deep_page",
         sql=(
             "SELECT player_id, overall FROM players "
-            "ORDER BY overall DESC, player_id DESC LIMIT ? OFFSET ?"
+            f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 4000),
-        required_index="players_overall_index",
+        max_full_player_scans=1,
+        max_temp_btrees=1,
     ),
     QueryPlanBudget(
         name="agent_attributes",
@@ -152,6 +161,27 @@ def query_plan_metrics(details: Iterable[str]) -> QueryPlanMetrics:
         full_player_scans=full_player_scans,
         temp_btrees=temp_btrees,
     )
+
+
+def measure_query_work(
+    connection: sqlite3.Connection,
+    sql: str,
+    parameters: Iterable[Any] = (),
+) -> QueryWorkMetrics:
+    """Count SQLite VM instructions while materializing one representative query."""
+    vm_steps = 0
+
+    def count_step() -> int:
+        nonlocal vm_steps
+        vm_steps += 1
+        return 0
+
+    connection.set_progress_handler(count_step, 1)
+    try:
+        rows = tuple(tuple(row) for row in connection.execute(sql, tuple(parameters)).fetchall())
+    finally:
+        connection.set_progress_handler(None, 0)
+    return QueryWorkMetrics(vm_steps=vm_steps, rows=rows)
 
 
 def assert_query_plan_budget(
