@@ -56,6 +56,7 @@
 
   async function ensure(pageName, options = {}) {
     const dependencies = routeConfig.routeDependencyPlan(pageName, options).core;
+    dependencies.forEach(preloadRouteCore);
     for (const dependency of dependencies) await ensureSingle(dependency);
   }
 
