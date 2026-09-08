@@ -72,7 +72,7 @@ replace_once(phone, '    max-width: 64px;\n    max-height: 70px;\n', '    max-wi
 
 validator = ROOT / "validate-my-clubs-route.mjs"
 source = validator.read_text(encoding="utf-8")
-needle = 'assert.match(coreSource, /country AS nation/u, "My Clubs API must expose country using the Nation terminology.");\n'
+needle = 'assert.match(clubsApi, /country AS nation/u, "My Clubs API must expose country using the Nation terminology.");\n'
 addition = '''assert.match(coreSource, /function firstLetterCaps\\(value\\)/u, "My Clubs must normalize Nation to first-letter capitalization only.");\nassert.match(coreSource, /primeClubDestinationTitle\\(clubId, name, divisionInfo\\)/u, "My Clubs must prime the known club identity before route navigation.");\nassert.match(coreSource, /localStorage\\.setItem\\(CLUB_DISPLAY_DATA_STORAGE_KEY/u, "My Clubs must share its known club identity with the Club route title cache.");\nassert.match(titleRuntime, /cachedClubTitleLabel\\(request\\?\\.options\\?\\.clubId\\)/u, "Document titles must consume the primed Club identity even while the destination route is busy.");\nassert.match(pageStyles, /\\.myClubLogo \\{[\\s\\S]*?max-width: 100px;[\\s\\S]*?max-height: 108px;/u, "Desktop My Clubs logos must use the enlarged canonical geometry.");\n'''
 if needle not in source:
     raise RuntimeError("Expected My Clubs validator tail not found")
