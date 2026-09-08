@@ -46,7 +46,7 @@ async function signedWalletFromRequest(request, options = {}) {
   const warning = options.warning === false
     ? ""
     : String(options.warning || "Could not verify Dapper wallet proof.");
-  let signatures = [];
+  let signatures;
 
   try {
     signatures = JSON.parse(String(headers["x-wallet-signatures"] || "[]"));

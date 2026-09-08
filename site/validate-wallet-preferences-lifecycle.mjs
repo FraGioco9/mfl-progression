@@ -28,8 +28,8 @@ invariant(
 invariant(
   !settingsCore.includes('fetch("/api/wallet-preferences"')
     && appCore.includes("async function settingsRefreshCommittedFromSupabase(options = {})")
-    && appCore.includes('const response = await fetch("/api/wallet-preferences", {'),
-  "Settings route UI must delegate fresh committed-state reads to the shared canonical wallet-preferences owner instead of issuing a route-local GET.",
+    && appCore.includes('const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {'),
+  "Settings route UI must delegate fresh committed-state reads to the shared canonical wallet-preferences owner through the data client instead of issuing a route-local GET.",
 );
 invariant(
   !appCore.includes("await loadWalletPreferences({ force: true });\n    return evaluationRecentStateHydrated;")
@@ -46,11 +46,13 @@ invariant(
 invariant(
   walletPreferencesApi.includes('const hasDomain = (key) => Object.prototype.hasOwnProperty.call(incoming, key);')
     && walletPreferencesApi.includes('if (hasDomain("settings")) patch.settings = normalizeSettings(incoming.settings);')
-    && walletPreferencesApi.includes('if (hasDomain("tableState")) {')
-    && walletPreferencesApi.includes("patch.table_state = mergeTableState(incoming.tableState, currentTableState) || {};")
-    && walletPreferencesApi.includes('method: "PATCH"')
-    && !walletPreferencesApi.includes("const currentPreferences = await readPreferences(wallet);\n\n  const watchlists"),
-  "Server persistence must patch only supplied preference domains instead of rewriting a stale full-row snapshot.",
+    && walletPreferencesApi.includes('if (hasDomain("tableState")) patch.table_state = normalizeCloudTableState(incoming.tableState);')
+    && walletPreferencesApi.includes('supabaseRequest("rpc/patch_wallet_preferences_atomic"')
+    && walletPreferencesApi.includes('p_wallet_address: wallet,')
+    && walletPreferencesApi.includes('p_patch: patch,')
+    && !walletPreferencesApi.includes('method: "PATCH"')
+    && !walletPreferencesApi.includes("select=table_state&wallet_address"),
+  "Server persistence must atomically patch only supplied preference domains without a read-merge-write race.",
 );
 invariant(
   appCore.includes("restoreSavedTableState(tablePageKey());\n        syncRestoredTableControls(tablePageKey());")
@@ -85,4 +87,4 @@ invariant(
   "Save responses and failure cleanup must remain domain-scoped so unrelated saves cannot clear or overwrite pending local state.",
 );
 
-console.log("Wallet preference hydration, ordered persistence, domain isolation, canonical Settings convergence, and table-control synchronization validation passed.");
+console.log("Wallet preference hydration, ordered persistence, atomic domain isolation, canonical data-client transport, Settings convergence, and table-control synchronization validation passed.");

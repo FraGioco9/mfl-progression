@@ -264,6 +264,14 @@ invariant(
   "Generated shared core must keep Evaluation Supabase hydration inside the canonical lexical owner, reusing startup state normally and supporting an explicit forced refresh on default Evaluation entry.",
 );
 invariant(
+  sharedCore.includes("function saveTableStateLocally(savedState) {")
+    && sharedCore.includes("delete localState.recentEvaluationPlayerIds;")
+    && sharedCore.includes("JSON.stringify(stripPersistentSortState(localState))")
+    && !sharedCore.includes("saveTableStateWithoutEvaluationRecents")
+    && !sharedCore.includes("originalSaveTableStateLocally"),
+  "Evaluation recents must stay out of browser table-state storage through the canonical local save owner, without post-start reassignment.",
+);
+invariant(
   !sharedCore.includes("function installTableLoadingOwners(")
     && !sharedCore.includes("    installTableLoadingOwners,"),
   "Generated shared core must not retain the late Table header wrapper owner or contract entry.",

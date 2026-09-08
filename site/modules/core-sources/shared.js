@@ -20,6 +20,7 @@ const state = {
   watchlistPlayerIdsAdded: new Set(),
   watchlistPlayerIdsRemoved: new Set(),
   watchlists: [],
+  watchlistViews: /** @type {Record<string, string>} */ ({}),
   currentWatchlistId: "",
   currentAgentWalletAddress: "",
   pendingWatchlistRouteId: "",
@@ -129,11 +130,12 @@ const joinedAgencyColumn = "owned_since";
 const linkColumn = "player_link";
 const mflWalletAddress = "0xff8d2bbed8164db0";
 
-const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers"]);
+const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers", "club"]);
 const pageViewOptions = {
   database: ["attributes", "contracts", "stats"],
   mfl: ["attributes", "stats"],
   agents: ["attributes", "contracts", "next", "current", "all"],
+  club: ["attributes", "contracts", "current", "all"],
   progression: ["current", "all"],
   watchlist: ["attributes", "next", "contracts", "current", "all"],
   myplayers: ["attributes", "next", "contracts", "current", "all"],
@@ -142,6 +144,7 @@ const defaultPageViews = {
   database: "attributes",
   mfl: "attributes",
   agents: "attributes",
+  club: "attributes",
   progression: "current",
   watchlist: "current",
   myplayers: "attributes",
@@ -374,17 +377,17 @@ const closeFiltersButton = document.querySelector("#closeFiltersButton");
 const applyFiltersButton = document.querySelector("#applyFiltersButton");
 const clearFiltersButton = document.querySelector("#clearFiltersButton");
 const showAddFilterButton = document.querySelector("#showAddFilterButton");
-const addFilterSelect = document.querySelector("#addFilterSelect");
+const addFilterSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#addFilterSelect"));
 const filterRules = document.querySelector("#filterRules");
-const hideRetiredInput = document.querySelector("#hideRetiredInput");
-const hideRetiringInput = document.querySelector("#hideRetiringInput");
+const hideRetiredInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiredInput"));
+const hideRetiringInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiringInput"));
 const hideMflPlayersFilter = document.querySelector("#hideMflPlayersFilter");
 const packablePlayersFilter = document.querySelector("#packablePlayersFilter");
-const hideMflPlayersInput = document.querySelector("#hideMflPlayersInput");
-const packablePlayersInput = document.querySelector("#packablePlayersInput");
-const newMintsInput = document.querySelector("#newMintsInput");
+const hideMflPlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideMflPlayersInput"));
+const packablePlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#packablePlayersInput"));
+const newMintsInput = /** @type {HTMLInputElement} */ (document.querySelector("#newMintsInput"));
 const newMintsLabel = document.querySelector("#newMintsLabel");
-const pageSizeSelect = document.querySelector("#pageSizeSelect");
+const pageSizeSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#pageSizeSelect"));
 const tableColGroup = document.querySelector("#tableColGroup");
 const tableHead = document.querySelector("#tableHead");
 const tableBody = document.querySelector("#tableBody");
@@ -423,9 +426,9 @@ const evaluationButtons = document.querySelector("#evaluationButtons");
 const evaluationResetButton = document.querySelector("#evaluationResetButton");
 const evaluationLoadButton = document.querySelector("#evaluationLoadButton");
 const evaluationPlayerPageButton = document.querySelector("#evaluationPlayerPageButton");
-const evaluationSaveButton = document.querySelector("#evaluationSaveButton");
-const evaluationShareButton = document.querySelector("#evaluationShareButton");
-const evaluationDeleteButton = document.querySelector("#evaluationDeleteButton");
+const evaluationSaveButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationSaveButton"));
+const evaluationShareButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationShareButton"));
+const evaluationDeleteButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationDeleteButton"));
 const evaluationOptionFilters = document.querySelector("#evaluationOptionFilters");
 const ignoreDiscountRateInput = document.querySelector("#ignoreDiscountRateInput");
 const ignoreFirstSeasonInput = document.querySelector("#ignoreFirstSeasonInput");
@@ -468,7 +471,7 @@ const advancedPlayerTableHead = document.querySelector("#advancedPlayerTableHead
 const advancedPlayerTableBody = document.querySelector("#advancedPlayerTableBody");
 const evaluationSummaryBody = document.querySelector("#evaluationSummaryBody");
 const evaluationTableBody = document.querySelector("#evaluationTableBody");
-const evaluationLoadModal = document.querySelector("#evaluationLoadModal");
+const evaluationLoadModal = /** @type {HTMLElement} */ (document.querySelector("#evaluationLoadModal"));
 const closeEvaluationLoadButton = document.querySelector("#closeEvaluationLoadButton");
 const evaluationLoadList = document.querySelector("#evaluationLoadList");
 const selectionBar = document.querySelector("#selectionBar");
@@ -694,7 +697,7 @@ function clearWalletPermissionCache(address = state.linkedWalletAddress) {
 }
 
 async function loadWalletPermissionVersion() {
-  const response = await fetch("/api/wallet-permissions-version", { cache: "no-store" });
+  const response = await window.__mflDataClient.fetch("/api/wallet-permissions-version", { cache: "no-store" });
   if (!response.ok) {
     return null;
   }
@@ -770,7 +773,7 @@ async function loadWalletPermissions(options = {}) {
   }
 
   try {
-    const response = await fetch("/api/wallet-access", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-access", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
@@ -1896,13 +1899,6 @@ let __mflTableMoveSelectedToWatchlistOwner = null;
 let __mflTableOpenSelectedPlayerLinksOwner = null;
 let __mflTableSetViewOwner = null;
 
-// Compatibility markers for the legacy table-delegation validator. Executable
-// row identity assignment is owned by the generated Table core chunk:
-// selectionInput.dataset.playerId = String(playerId);
-// nameLink.dataset.playerId = String(playerId);
-// link.dataset.walletAddress = String(walletAddress || "");
-// clubLink.dataset.clubId = clubId;
-
 const tableTitleForPage = function (pageName) {
   if (typeof __mflTableTitleForPageOwner === "function") {
     return __mflTableTitleForPageOwner.apply(this, arguments);
@@ -2355,7 +2351,7 @@ async function loadSummary() {
 
   summaryLoadPromise = (async () => {
     try {
-      const response = await fetch("/api/data?mode=bootstrap", { cache: "no-store", headers: { Accept: "application/json" } });
+      const response = await window.__mflDataClient.fetch("/api/data?mode=bootstrap", { cache: "no-store", headers: { Accept: "application/json" } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not load the database summary.");
       state.manifest = data.manifest || null;
@@ -2652,6 +2648,7 @@ function showToast(message, options = {}) {
     toast.textContent = message;
   }
   toast.classList.add("visible");
+  syncLayoutCenter();
   if (options.sticky) {
     window.clearTimeout(state.toastTimer);
   } else {
@@ -3368,6 +3365,9 @@ async function ensureWatchlistRoute(options = {}) {
 }
 
 function switchWatchlist(watchlistId) {
+  if (state.currentWatchlistId && state.view) {
+    state.watchlistViews[state.currentWatchlistId] = state.view;
+  }
   syncActiveWatchlistFromSet();
   const nextWatchlist = state.watchlists.find((watchlist) => watchlist.id === watchlistId);
   if (!nextWatchlist) {
@@ -3375,6 +3375,11 @@ function switchWatchlist(watchlistId) {
     return;
   }
 
+  const savedView = String(state.watchlistViews[nextWatchlist.id] || "").trim();
+  const viewChanged = pageViewOptions.watchlist.includes(savedView) && savedView !== state.view;
+  if (viewChanged) {
+    state.view = savedView;
+  }
   state.currentWatchlistId = nextWatchlist.id;
   state.watchlistPlayerIdsAdded.clear();
   state.watchlistPlayerIdsRemoved.clear();
@@ -3383,6 +3388,10 @@ function switchWatchlist(watchlistId) {
   setActiveWatchlistIds(nextWatchlist.playerIds);
   state.page = 1;
   renderWatchlistSwitcher();
+  if (viewChanged) {
+    updateViewButtons();
+    buildHeader();
+  }
   updateWatchlistUrl();
   saveTableState();
   applyFilters();
@@ -3803,7 +3812,9 @@ function normalizeSearchText(value) {
   return String(value || "")
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function loadRecentIdsFromStorage(storageKey) {
@@ -3939,7 +3950,7 @@ async function loadWalletPreferences(options = {}) {
     }
     state.playerNotes = {};
     applyWalletPlayerNotes(loadLocalWalletNotes());
-    const response = await fetch("/api/wallet-preferences", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
@@ -4061,7 +4072,7 @@ async function performWalletPreferencesSave(options = {}) {
       ...(shouldSaveSettings ? { settings: settingsPayload } : {}),
     };
 
-    const response = await fetch("/api/wallet-preferences", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -4191,8 +4202,13 @@ function currentTableState() {
     state.tablePageStates[pageKey] = currentTablePageState();
   }
 
+  if (state.currentPage === "watchlist" && state.currentWatchlistId && state.view) {
+    state.watchlistViews[state.currentWatchlistId] = state.view;
+  }
+
   return {
     pages: state.tablePageStates,
+    watchlistViews: { ...state.watchlistViews },
     menuOpen: state.menuOpen,
     recentSearchItems: state.recentSearchItems,
     recentSearchPlayerIds: state.recentSearchPlayerIds,
@@ -4238,7 +4254,13 @@ function stripPersistentSortState(savedState) {
 
 function saveTableStateLocally(savedState) {
   try {
-    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(stripPersistentSortState(savedState)));
+    const localState = savedState && typeof savedState === "object" && !Array.isArray(savedState)
+      ? { ...savedState }
+      : savedState;
+    if (localState && typeof localState === "object" && !Array.isArray(localState)) {
+      delete localState.recentEvaluationPlayerIds;
+    }
+    localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(stripPersistentSortState(localState)));
   } catch {
     // Filtering still works for this page even if the browser blocks storage.
   }
@@ -4275,8 +4297,18 @@ function applyWalletTableState(savedState) {
   }
 
   const mergedState = mergeCloudTableStateWithLocalPages(savedState);
+const incomingWatchlistViews = mergedState.watchlistViews;
+if (incomingWatchlistViews && typeof incomingWatchlistViews === "object" && !Array.isArray(incomingWatchlistViews)) {
+  Object.entries(incomingWatchlistViews).forEach(([watchlistId, view]) => {
+    const normalizedWatchlistId = String(watchlistId || "").trim();
+    const normalizedView = String(view || "").trim();
+    if (normalizedWatchlistId && pageViewOptions.watchlist.includes(normalizedView)) {
+      state.watchlistViews[normalizedWatchlistId] = normalizedView;
+    }
+  });
+}
 
-  restoreTablePageStates(mergedState);
+restoreTablePageStates(mergedState);
   restoreMenuState(mergedState);
   restoreRecentSearchState(mergedState);
   restoreRecentEvaluationState(mergedState);
@@ -5150,7 +5182,7 @@ async function requestDatabaseSearch(rawQuery = "", type = "all", options = {}) 
   }
 
   try {
-    const response = await fetch(`/api/data?${parameters}`, {
+    const response = await window.__mflDataClient.fetch(`/api/data?${parameters}`, {
       cache: "no-store",
       headers: { Accept: "application/json" },
       signal: controller.signal,
@@ -6794,7 +6826,7 @@ async function requestIncrementalRoute(route, page = 1, options = {}) {
         controller.abort();
       }, ROUTE_REQUEST_TIMEOUT_MS);
       try {
-        const response = await fetch("/api/data?" + requestKey, {
+        const response = await window.__mflDataClient.fetch("/api/data?" + requestKey, {
           cache: "no-store",
           headers: walletProofHeaders(true),
           signal: controller.signal,
@@ -7026,71 +7058,6 @@ watchlistButton?.addEventListener("click", (event) => {
   toggleWatchlistDropdown();
 });
 
-pageSizeSelect.addEventListener("change", () => {
-  state.pageSize = Number(pageSizeSelect.value);
-  state.page = 1;
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(1);
-    return;
-  }
-  renderTable();
-});
-
-hideRetiredInput.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-
-hideRetiringInput.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-
-
-hideMflPlayersInput?.addEventListener("change", () => {
-  state.page = 1;
-  applyFilters();
-});
-packablePlayersInput?.addEventListener("change", () => {
-  if (state.currentPage === "mfl" && packablePlayersInput.checked) {
-    newMintsInput.checked = false;
-  }
-  state.page = 1;
-  applyFilters();
-});
-
-newMintsInput.addEventListener("change", () => {
-  if (state.currentPage === "mfl" && newMintsInput.checked && packablePlayersInput) {
-    packablePlayersInput.checked = false;
-  }
-  state.page = 1;
-  applyFilters();
-});
-
-openFiltersButton.addEventListener("click", openFilters);
-quickClearFiltersButton.addEventListener("click", clearAdvancedFilters);
-closeFiltersButton.addEventListener("click", closeFilters);
-
-showAddFilterButton.addEventListener("click", () => {
-  addFilterSelect.hidden = !addFilterSelect.hidden;
-
-  if (!addFilterSelect.hidden) {
-    addFilterSelect.focus();
-  }
-});
-
-addFilterSelect.addEventListener("change", () => {
-  if (!addFilterSelect.value) {
-    return;
-  }
-
-  addFilterRule(addFilterSelect.value);
-  addFilterSelect.value = "";
-  addFilterSelect.hidden = true;
-});
-
-setupBackdropClickClose(filtersModal, () => closeFilters());
-
 document.addEventListener("keydown", (event) => {
   if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
     event.preventDefault();
@@ -7163,17 +7130,7 @@ setupBackdropClickClose(watchlistChoiceModal, closeWatchlistChoiceModal);
 setupBackdropClickClose(addWatchlistModal, closeAddWatchlistModal);
 setupBackdropClickClose(deleteWatchlistModal, closeDeleteWatchlistModal);
 
-applyFiltersButton.addEventListener("click", applyAdvancedFilters);
 
-clearFiltersButton.addEventListener("click", () => {
-  clearAdvancedFilters(false);
-  applyAdvancedFilters();
-});
-
-clearSelectionButton.addEventListener("click", clearSelection);
-addToWatchlistButton.addEventListener("click", addSelectedToWatchlist);
-moveToWatchlistButton?.addEventListener("click", moveSelectedToWatchlist);
-openSelectedLinksButton.addEventListener("click", openSelectedPlayerLinks);
 discardAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 closeAddWatchlistButton?.addEventListener("click", closeAddWatchlistModal);
 confirmAddWatchlistButton?.addEventListener("click", confirmAddWatchlist);
@@ -7193,24 +7150,6 @@ addWatchlistNameInput?.addEventListener("input", () => {
   }
 });
 
-
-prevButton.addEventListener("click", () => {
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });
-    return;
-  }
-  state.page -= 1;
-  renderTable();
-});
-
-nextButton.addEventListener("click", () => {
-  if (state.incrementalMode) {
-    void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });
-    return;
-  }
-  state.page += 1;
-  renderTable();
-});
 
 themeButton.addEventListener("click", () => {
   const currentTheme = document.documentElement.dataset.theme || "light";
@@ -7237,150 +7176,6 @@ closeSearchButton.addEventListener("click", closeSearch);
 playerSearchClearButton.addEventListener("click", clearPlayerSearch);
 window.addEventListener("storage", syncRecentSearchStateFromStorage);
 playerSearchInput.addEventListener("input", renderSearchResults);
-if (evaluationDeleteButton) {
-  evaluationDeleteButton.addEventListener("click", async () => {
-    const savedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
-    const playerId = String(state.evaluationPlayerId || evaluationPlayerIdFromUrl() || "").trim();
-
-    if (!savedId) {
-      showToast("No saved evaluation to delete.");
-      return;
-    }
-
-    evaluationDeleteButton.disabled = true;
-
-    try {
-      await deleteSavedEvaluation(savedId);
-      resetEvaluationToDefaultForPlayer(playerId);
-      showToast("Saved evaluation deleted.");
-    } catch (error) {
-      showToast(error?.message || "Could not delete saved evaluation.");
-    } finally {
-      evaluationDeleteButton.disabled = false;
-    }
-  });
-}
-if (evaluationSaveButton) {
-  evaluationSaveButton.addEventListener("click", async () => {
-    evaluationSaveButton.disabled = true;
-    try {
-      const saveResult = await createSavedEvaluation();
-      if (saveResult?.url) {
-        window.history.replaceState({}, "", saveResult.url);
-        updateEvaluationFooterActions();
-        showToast(saveResult.overwritten ? "Evaluation overwritten and saved." : "Evaluation saved.");
-      }
-    } catch (error) {
-      showToast(error?.message || "Could not save evaluation.");
-    } finally {
-      evaluationSaveButton.disabled = false;
-    }
-  });
-}
-if (evaluationLoadButton) {
-  evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);
-}
-if (closeEvaluationLoadButton) {
-  closeEvaluationLoadButton.addEventListener("click", () => {
-    hideModal(evaluationLoadModal);
-  });
-}
-document.addEventListener("keydown", (event) => {
-  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;
-  event.preventDefault();
-  hideEvaluationLoadActionTooltip();
-  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {
-    document.activeElement.blur();
-  }
-});
-setupBackdropClickClose(evaluationLoadModal, () => hideModal(evaluationLoadModal));
-if (evaluationLoadList) {
-  evaluationLoadList.addEventListener("scroll", hideEvaluationLoadActionTooltip, { passive: true });
-}
-if (evaluationShareButton) {
-  evaluationShareButton.addEventListener("click", async () => {
-    evaluationShareButton.disabled = true;
-    try {
-      const shareUrl = await createSharedEvaluation();
-      if (shareUrl) {
-        const parsedShareUrl = new URL(shareUrl, window.location.origin);
-        state.evaluationShareId = parsedShareUrl.searchParams.get("share") || "";
-        state.evaluationSavedId = "";
-        window.history.replaceState({}, "", shareUrl);
-        updateEvaluationFooterActions();
-      }
-      try {
-        await navigator.clipboard.writeText(shareUrl);
-        showToast("Evaluation share link copied.");
-      } catch {
-        showToast("Share link: " + shareUrl);
-      }
-    } catch (error) {
-      showToast(error?.message || "Could not create evaluation share link.");
-    } finally {
-      evaluationShareButton.disabled = false;
-    }
-  });
-}
-
-evaluationResetButton.addEventListener("click", () => {
-  const row = rowByPlayerId(state.evaluationPlayerId);
-
-  if (!row) {
-    return;
-  }
-
-  resetEvaluationToDefaultForPlayer(getValue(row, "player_id") || state.evaluationPlayerId);
-});
-
-const openEvaluationPlayerPage = (event) => {
-  if (event.type === "mouseup" && event.button !== 1) {
-    return;
-  }
-
-  const row = rowByPlayerId(state.evaluationPlayerId);
-
-  if (!row) {
-    return;
-  }
-
-  const playerId = String(getValue(row, "player_id"));
-  rememberSearchResult(playerId);
-
-  if (event.type === "mouseup" && event.button === 1) {
-    event.preventDefault();
-    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
-    window.focus();
-    if (playerWindow) {
-      playerWindow.blur();
-    }
-    return;
-  }
-
-  if (event.ctrlKey || event.metaKey) {
-    event.preventDefault();
-    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
-    window.focus();
-    if (playerWindow) {
-      playerWindow.blur();
-    }
-    return;
-  }
-
-  openPlayerPage(playerId);
-};
-
-const preventEvaluationPlayerPageAutoscroll = (event) => {
-  if (event.button === 1) {
-    event.preventDefault();
-  }
-};
-
-evaluationPlayerPageButton.addEventListener("mousedown", preventEvaluationPlayerPageAutoscroll);
-evaluationPlayerPageButton.addEventListener("auxclick", preventEvaluationPlayerPageAutoscroll);
-evaluationPlayerPageButton.addEventListener("click", openEvaluationPlayerPage);
-evaluationPlayerPageButton.addEventListener("mouseup", openEvaluationPlayerPage);
-
 const setPageWithoutRouteLoading = setPage;
 
 navButtons.forEach((button) => {
@@ -7405,91 +7200,6 @@ navButtons.forEach((button) => {
 });
 
 
-function copyDelegatedPlayerId(button, event) {
-  const playerId = String(button.dataset.playerId || "").trim();
-  if (!playerId) return;
-  event.preventDefault();
-  event.stopPropagation();
-  state.tooltipSuppressedUntil = Date.now() + 350;
-  button.blur();
-  copyPlayerId(playerId);
-}
-
-tableBody?.addEventListener("pointerdown", (event) => {
-  if (event.isPrimary === false || event.button !== 0 || !(event.target instanceof Element)) return;
-  const button = event.target.closest(".copyPlayerIdButton[data-player-id]");
-  if (!(button instanceof HTMLButtonElement) || !tableBody.contains(button)) return;
-  copyDelegatedPlayerId(button, event);
-});
-
-tableBody?.addEventListener("click", (event) => {
-  if (!(event.target instanceof Element)) return;
-
-  const copyButton = event.target.closest(".copyPlayerIdButton[data-player-id]");
-  if (copyButton instanceof HTMLButtonElement && tableBody.contains(copyButton)) {
-    if (Date.now() < state.tooltipSuppressedUntil) {
-      event.preventDefault();
-      event.stopPropagation();
-      return;
-    }
-    copyDelegatedPlayerId(copyButton, event);
-    return;
-  }
-
-  const selectionInput = event.target.closest('.selectionCell input[type="checkbox"][data-player-id]');
-  if (selectionInput instanceof HTMLInputElement && tableBody.contains(selectionInput)) {
-    setPlayerSelected(selectionInput.dataset.playerId || "", selectionInput.checked, event.shiftKey);
-    return;
-  }
-
-  const playerLink = event.target.closest(".playerNameLink[data-player-id]");
-  if (playerLink instanceof HTMLAnchorElement && tableBody.contains(playerLink)) {
-    event.preventDefault();
-    openPlayerPage(playerLink.dataset.playerId || "");
-    return;
-  }
-
-  const agentLink = event.target.closest(".agentTableLink[data-wallet-address]");
-  if (agentLink instanceof HTMLAnchorElement && tableBody.contains(agentLink)) {
-    event.preventDefault();
-    openAgentPage(agentLink.dataset.walletAddress || "", agentLink.dataset.agentName || agentLink.textContent || "");
-    return;
-  }
-
-  const clubLink = event.target.closest(".agentTableLink[data-club-id]");
-  if (clubLink instanceof HTMLAnchorElement && tableBody.contains(clubLink) && typeof window.mflOpenClubPage === "function") {
-    event.preventDefault();
-    window.mflOpenClubPage(clubLink.dataset.clubId || "", "attributes");
-  }
-});
-
-tableBody?.addEventListener("pointermove", (event) => {
-  const row = event.target?.closest?.("#tableBody tr");
-  const nextId = String(row?.dataset?.playerId || "").trim();
-  const interactive = event.target?.closest?.("[data-table-interactive-key]");
-  const interactiveKey = String(interactive?.dataset?.tableInteractiveKey || "");
-
-  if (row && nextId && state.hoveredTablePlayerId !== nextId) {
-    state.hoveredTablePlayerId = nextId;
-    tableBody.querySelectorAll("tr.tableRowHovered").forEach((tableRow) => tableRow.classList.remove("tableRowHovered"));
-    row.classList.add("tableRowHovered");
-  }
-
-  if (state.hoveredTableInteractiveKey !== interactiveKey) {
-    state.hoveredTableInteractiveKey = interactiveKey;
-    tableBody.querySelectorAll(".tableInteractiveHovered").forEach((element) => element.classList.remove("tableInteractiveHovered"));
-    if (interactive) {
-      interactive.classList.add("tableInteractiveHovered");
-    }
-  }
-});
-
-tableBody?.addEventListener("pointerleave", () => {
-  state.hoveredTablePlayerId = "";
-  state.hoveredTableInteractiveKey = "";
-  tableBody.querySelectorAll("tr.tableRowHovered").forEach((tableRow) => tableRow.classList.remove("tableRowHovered"));
-  tableBody.querySelectorAll(".tableInteractiveHovered").forEach((element) => element.classList.remove("tableInteractiveHovered"));
-});
 window.addEventListener("scroll", () => hidePlayerNoteTooltip({ immediate: true }), true);
 window.addEventListener("resize", () => hidePlayerNoteTooltip({ immediate: true }));
 
@@ -7658,279 +7368,13 @@ async function startApp() {
   });
 }
 
-(() => {
-  const maxNoteLength = 100;
-  const watchlistViewsKey = "watchlistViews";
-  const watchlistViews = {};
-
-  if (typeof sanitizePlayerNote === "function") {
-    sanitizePlayerNote = function sanitizePlayerNote100(note) {
-      return String(note || "").replace(/\r\n/g, "\n").slice(0, maxNoteLength).trim();
-    };
-  }
-
-  if (typeof updatePlayerNoteCount === "function") {
-    updatePlayerNoteCount = function updatePlayerNoteCount100(input) {
-      if (input && input.value.length > maxNoteLength) input.value = input.value.slice(0, maxNoteLength);
-      const counter = playerDetail?.querySelector("#playerNotesCount");
-      if (counter) counter.textContent = `${input?.value?.length || 0}/${maxNoteLength}`;
-    };
-  }
-
-  if (typeof renderPlayerPage === "function") {
-    const originalRenderPlayerPage = renderPlayerPage;
-    renderPlayerPage = function renderPlayerPageWithNoteLimit(playerId) {
-      const result = originalRenderPlayerPage.apply(this, arguments);
-      const input = playerDetail?.querySelector("#playerNotesInput");
-      if (input) {
-        input.maxLength = maxNoteLength;
-        input.value = input.value.slice(0, maxNoteLength);
-        updatePlayerNoteCount(input);
-      }
-      return result;
-    };
-  }
-
-  function rememberCurrentWatchlistView() {
-    if (state.currentPage === "watchlist" && state.currentWatchlistId && state.view) {
-      watchlistViews[state.currentWatchlistId] = state.view;
-    }
-  }
-
-  if (typeof currentTableState === "function") {
-    const originalCurrentTableState = currentTableState;
-    currentTableState = function currentTableStateWithWatchlistViews(...args) {
-      rememberCurrentWatchlistView();
-      return { ...originalCurrentTableState.apply(this, args), [watchlistViewsKey]: { ...watchlistViews } };
-    };
-  }
-
-  if (typeof stripPersistentSortState === "function") {
-    const originalStripPersistentSortState = stripPersistentSortState;
-    stripPersistentSortState = function stripPersistentSortStateWithWatchlistViews(tableState) {
-      return {
-        ...originalStripPersistentSortState.call(this, tableState),
-        [watchlistViewsKey]: { ...(tableState?.[watchlistViewsKey] || watchlistViews) },
-      };
-    };
-  }
-
-  if (typeof applyWalletTableState === "function") {
-    const originalApplyWalletTableState = applyWalletTableState;
-    applyWalletTableState = function applyWalletTableStateWithWatchlistViews(tableState) {
-      const incoming = tableState?.[watchlistViewsKey];
-      if (incoming && typeof incoming === "object" && !Array.isArray(incoming)) {
-        Object.entries(incoming).forEach(([watchlistId, view]) => {
-          if (watchlistId && typeof view === "string") watchlistViews[watchlistId] = view;
-        });
-      }
-      return originalApplyWalletTableState.call(this, tableState);
-    };
-  }
-
-  if (typeof setView === "function") {
-    const originalSetView = setView;
-    setView = function setViewWithWatchlistSync(viewName) {
-      const result = originalSetView.apply(this, arguments);
-      rememberCurrentWatchlistView();
-      if (state.currentPage === "watchlist" && typeof saveTableState === "function") saveTableState();
-      return result;
-    };
-  }
-
-  if (typeof switchWatchlist === "function") {
-    const originalSwitchWatchlist = switchWatchlist;
-    switchWatchlist = function switchWatchlistWithSavedView(watchlistId) {
-      rememberCurrentWatchlistView();
-      const result = originalSwitchWatchlist.apply(this, arguments);
-      const savedView = watchlistViews[String(watchlistId || "")];
-      if (savedView && typeof normalizeViewForPage === "function") {
-        state.view = normalizeViewForPage(savedView, "watchlist");
-        state.page = 1;
-        if (typeof updateViewButtons === "function") updateViewButtons();
-        if (typeof buildHeader === "function") buildHeader();
-        if (typeof applyFilters === "function") applyFilters();
-        if (typeof saveTableState === "function") saveTableState();
-      }
-      return result;
-    };
-  }
-})();
-
-/* Keep MFL Wallet search navigation anchored to Attributes. */
-
-(() => {
-  const mflWalletAddress = "0xff8d2bbed8164db0";
-
-  function elementContext(element) {
-    if (!element) return "";
-
-    const text = String(element.textContent || "").trim().toLowerCase();
-    const attributes = Array.from(element.attributes || [])
-      .map((attribute) => `${attribute.name}=${attribute.value}`)
-      .join(" ")
-      .toLowerCase();
-
-    return `${text} ${attributes}`;
-  }
-
-  function clickedMflWallet(event) {
-    const target = event?.target;
-    if (!target?.closest) return false;
-
-    // Inspect only the element that performs the navigation. Do not inspect the
-    // whole composed path, because a page ancestor may contain "MFL Wallet"
-    // even when an unrelated navigation control was clicked.
-    const interactiveElement = target.closest(
-      "a,button,[role='button'],[data-wallet-address],[data-agent-wallet],[data-wallet]",
-    );
-
-    if (interactiveElement) {
-      const context = elementContext(interactiveElement);
-      if (context.includes("mfl wallet") || context.includes(mflWalletAddress)) return true;
-    }
-
-    // Search results may use a non-interactive row as their click target.
-    const searchContainer = target.closest(
-      "#searchModal,.searchResults,#playerSearchResults,[class*='searchResult']",
-    );
-    if (!searchContainer) return false;
-
-    const searchResult = target.closest(
-      "li,[role='option'],[data-wallet-address],[data-agent-wallet],[data-wallet],.searchResult,[class*='searchResultItem']",
-    );
-    if (!searchResult || !searchContainer.contains(searchResult)) return false;
-
-    const context = elementContext(searchResult);
-    return context.includes("mfl wallet") || context.includes(mflWalletAddress);
-  }
-
-  document.addEventListener("click", (event) => {
-    if (!clickedMflWallet(event)) return;
-
-    event.preventDefault();
-    event.stopImmediatePropagation();
-
-    if (typeof closeSearch === "function") closeSearch();
-
-    // Always open the MFL Wallet profile on Attributes. This intentionally
-    // ignores the last saved MFL view, which may have been Stats.
-    window.location.assign("/mfl/attributes");
-  }, true);
-})();
 
 
-(() => {
-  function routeViewFromPath() {
-    const match = window.location.pathname.match(/^\/watchlist\/[^/]+\/(attributes|next-overall|contracts|current-season|all-time)\/?$/i);
-    if (!match) return "";
-    return {
-      attributes: "attributes",
-      "next-overall": "next",
-      contracts: "contracts",
-      "current-season": "current",
-      "all-time": "all",
-    }[match[1].toLowerCase()] || "";
-  }
 
-  function enforceWatchlistRouteView(render = true) {
-    const routeView = routeViewFromPath();
-    if (!routeView || state.currentPage !== "watchlist") return false;
 
-    const normalizedView = typeof normalizeViewForPage === "function"
-      ? normalizeViewForPage(routeView, "watchlist")
-      : routeView;
 
-    if (state.view === normalizedView) return true;
 
-    state.view = normalizedView;
-    state.page = 1;
 
-    if (render) {
-      if (typeof updateViewButtons === "function") updateViewButtons();
-      if (typeof buildTableColGroup === "function") buildTableColGroup();
-      if (typeof buildHeader === "function") buildHeader();
-      if (typeof applyFilters === "function") applyFilters({ save: false });
-    }
-
-    return true;
-  }
-
-  if (typeof restoreSavedTableState === "function") {
-    const originalRestoreSavedTableState = restoreSavedTableState;
-    restoreSavedTableState = function restoreSavedTableStateWithRoute(pageName, options = {}) {
-      const routeView = pageName === "watchlist" && !options.view ? routeViewFromPath() : "";
-      const result = originalRestoreSavedTableState.call(
-        this,
-        pageName,
-        routeView ? { ...options, view: routeView } : options,
-      );
-      if (routeView) {
-        state.view = typeof normalizeViewForPage === "function"
-          ? normalizeViewForPage(routeView, "watchlist")
-          : routeView;
-      }
-      return result;
-    };
-  }
-
-  if (typeof setPage === "function") {
-    const originalSetPage = setPage;
-    setPage = async function setPageWithWatchlistRoute(pageName, updateHash = true, options = {}) {
-      const requestedView = pageName === "watchlist" ? String(options?.view || "") : "";
-      const routeView = pageName === "watchlist" && !requestedView ? routeViewFromPath() : "";
-      const nextOptions = routeView ? { ...options, view: routeView } : options;
-      const result = await originalSetPage.call(this, pageName, updateHash, nextOptions);
-      if (result === null || !pageNavigationIsCurrent(nextOptions)) return result;
-      if (pageName === "watchlist" && routeView) enforceWatchlistRouteView(true);
-      return result;
-    };
-  }
-
-})();
-
-/* Public progression table views */
-(() => {
-  const PUBLIC_PROGRESSION_VIEWS = ["current", "all"];
-  const PUBLIC_TABLE_PAGES = new Set(["watchlist", "club"]);
-
-  tablePages.add("club");
-  pageViewOptions.watchlist = Array.from(new Set([
-    ...(pageViewOptions.watchlist || []),
-    ...PUBLIC_PROGRESSION_VIEWS,
-  ]));
-  pageViewOptions.club = ["attributes", "contracts", ...PUBLIC_PROGRESSION_VIEWS];
-  defaultPageViews.club = "attributes";
-
-  if (typeof allowedViewsForPage === "function") {
-    const originalAllowedViewsForPage = allowedViewsForPage;
-    allowedViewsForPage = function allowedViewsForPublicTables(pageName = state.currentPage) {
-      const allowed = originalAllowedViewsForPage.apply(this, arguments) || [];
-      if (!PUBLIC_TABLE_PAGES.has(pageName)) return allowed;
-      return Array.from(new Set([...allowed, ...PUBLIC_PROGRESSION_VIEWS]));
-    };
-  }
-
-  if (typeof normalizeViewForPage === "function") {
-    const originalNormalizeViewForPage = normalizeViewForPage;
-    normalizeViewForPage = function normalizePublicProgressionView(viewName, pageName = state.currentPage) {
-      if (PUBLIC_TABLE_PAGES.has(pageName) && PUBLIC_PROGRESSION_VIEWS.includes(String(viewName || ""))) {
-        return String(viewName);
-      }
-      return originalNormalizeViewForPage.apply(this, arguments);
-    };
-  }
-
-  if (typeof currentDataAccess === "function") {
-    const originalCurrentDataAccess = currentDataAccess;
-    currentDataAccess = function currentPublicProgressionDataAccess(pageName = state.currentPage) {
-      if (PUBLIC_TABLE_PAGES.has(pageName) && PUBLIC_PROGRESSION_VIEWS.includes(state.view)) {
-        return "public";
-      }
-      return originalCurrentDataAccess.apply(this, arguments);
-    };
-  }
-})();
 
 ;(() => {
   // Compatibility marker for legacy validation; route ownership lives in the Club chunk:
@@ -8308,27 +7752,18 @@ async function startApp() {
   else initialize();
 })();
 
+function syncLayoutCenter() {
+  const selection = document.querySelector("#selectionBar");
+  const pageLayout = document.querySelector("main");
+  if (!pageLayout) return;
+  const bounds = pageLayout.getBoundingClientRect();
+  const center = `${bounds.left + (bounds.width / 2)}px`;
+  window.__mflToastPosition?.sync?.();
+  selection?.style.setProperty("--selection-center-x", center);
+}
+
 /* Layout-centered feedback and transition-free shared views */
 (() => {
-  function syncLayoutCenter() {
-    const selection = document.querySelector("#selectionBar");
-    const pageLayout = document.querySelector("main");
-    if (!pageLayout) return;
-    const bounds = pageLayout.getBoundingClientRect();
-    const center = `${bounds.left + (bounds.width / 2)}px`;
-    window.__mflToastPosition?.sync?.();
-    selection?.style.setProperty("--selection-center-x", center);
-  }
-
-  if (typeof showToast === "function") {
-    const originalShowToast = showToast;
-    showToast = function showLayoutCenteredToast() {
-      const result = originalShowToast.apply(this, arguments);
-      syncLayoutCenter();
-      return result;
-    };
-  }
-
   window.addEventListener("resize", syncLayoutCenter, { passive: true });
   new MutationObserver(syncLayoutCenter).observe(document.body, {
     attributes: true,
@@ -9000,15 +8435,6 @@ async function startApp() {
   function installSearchMatching() {
     if (typeof normalizeSearchText !== "function") return false;
 
-    if (!normalizeSearchText.__mflWhitespaceAware) {
-      const originalNormalizeSearchText = normalizeSearchText;
-      const whitespaceAwareNormalizeSearchText = function(value) {
-        return originalNormalizeSearchText(value).replace(/\s+/g, " ").trim();
-      };
-      Object.defineProperty(whitespaceAwareNormalizeSearchText, "__mflWhitespaceAware", { value: true });
-      normalizeSearchText = whitespaceAwareNormalizeSearchText;
-    }
-
     if (typeof searchMatchScore === "function" && !searchMatchScore.__mflSurnameFirst) {
       const surnameFirstSearchMatchScore = function(query, primaryText, secondaryText = "") {
         const normalizedQuery = normalizeSearchText(query);
@@ -9190,8 +8616,7 @@ async function startApp() {
 
   function installEvaluationRecentStateOwnership() {
     if (typeof restoreRecentEvaluationState !== "function"
-      || typeof persistRecentSearchStates !== "function"
-      || typeof saveTableStateLocally !== "function") return false;
+      || typeof persistRecentSearchStates !== "function") return false;
     if (restoreRecentEvaluationState.__mflRecentStateOnly) return true;
 
     state.recentEvaluationPlayerIds = [];
@@ -9214,16 +8639,6 @@ async function startApp() {
       saveRecentIdsToStorage(RECENT_SEARCH_STORAGE_KEY, state.recentSearchPlayerIds);
       saveRecentIdsToStorage(RECENT_AGENT_SEARCH_STORAGE_KEY, state.recentSearchAgentWallets);
       saveRecentIdsToStorage(RECENT_MIXED_SEARCH_STORAGE_KEY, state.recentSearchItems);
-    };
-
-    const originalSaveTableStateLocally = saveTableStateLocally;
-    saveTableStateLocally = function saveTableStateWithoutEvaluationRecents(tableState) {
-      if (!tableState || typeof tableState !== "object" || Array.isArray(tableState)) {
-        return originalSaveTableStateLocally(tableState);
-      }
-      const localState = { ...tableState };
-      delete localState.recentEvaluationPlayerIds;
-      return originalSaveTableStateLocally(localState);
     };
 
     return true;

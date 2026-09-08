@@ -21,7 +21,8 @@ invariant(
 );
 
 invariant(
-  pageSource.includes('const order = orderSql(\n    scope,\n    view,\n    String(query.sortKey || (scope === "club" ? "positions" : "overall"))'),
+  pageSource.includes('const sortKey = String(query.sortKey || (scope === "club" ? "positions" : "overall"));')
+    && pageSource.includes('const order = orderSql(\n    scope,\n    view,\n    sortKey,'),
   "Progression must retain overall as its default sort key.",
 );
 

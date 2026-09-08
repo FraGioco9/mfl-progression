@@ -16,6 +16,9 @@ const validators = [
   "validate-domain-stats.mjs",
   "validate-domain-club.mjs",
   "validate-domain-table.mjs",
+  "validate-marketplace-overlay.mjs",
+  "validate-table-payload-projection.mjs",
+  "validate-data-client-runtime-ownership.mjs",
   "validate-site-date-picker.mjs",
 ];
 

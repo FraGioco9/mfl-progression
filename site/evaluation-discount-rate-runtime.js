@@ -20,6 +20,14 @@
   const cleanPath = () => String(location.pathname || "/").replace(/\/+$/, "") || "/";
   const isEvaluation = () => cleanPath() === "/evaluation" || document.body?.dataset.page === "evaluation";
 
+  function dataClientFetch(input, init = {}, options = {}) {
+    const dataClient = Reflect.get(window, "__mflDataClient");
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      return Promise.reject(new Error("Canonical data client is unavailable."));
+    }
+    return dataClient.fetch(input, init, options);
+  }
+
   function currentMflPerUsd() {
     try {
       if (typeof state === "object" && state) {
@@ -204,7 +212,7 @@
     queueEvaluationRender();
 
     const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    discountPromise = fetch(`/api/mfl-season-ratios-v2?fresh=${encodeURIComponent(nonce)}&v=${encodeURIComponent(VERSION)}`, {
+    discountPromise = dataClientFetch(`/api/mfl-season-ratios-v2?fresh=${encodeURIComponent(nonce)}&v=${encodeURIComponent(VERSION)}`, {
       cache: "no-store",
       credentials: "same-origin",
       headers: { Accept: "application/json", "Cache-Control": "no-cache, no-store, max-age=0", Pragma: "no-cache" },

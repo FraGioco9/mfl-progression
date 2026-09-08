@@ -666,7 +666,7 @@ async function loadSharedEvaluation(shareId) {
       requestUrl.searchParams.set("id", id);
       if (playerId) requestUrl.searchParams.set("player", playerId);
 
-      const response = await fetch(requestUrl.toString(), { cache: "no-store" });
+      const response = await window.__mflDataClient.fetch(requestUrl.toString(), { cache: "no-store" });
       if (!evaluationSnapshotLoadIsCurrent(load)) return false;
       if (!response.ok) throw new Error("Share not found.");
 
@@ -716,7 +716,7 @@ async function createSharedEvaluationFromPayload(payload, fallbackPlayerId = "")
     throw new Error("Select a player to share.");
   }
 
-  const response = await fetch("/api/evaluation-share", {
+  const response = await window.__mflDataClient.fetch("/api/evaluation-share", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -859,7 +859,7 @@ async function createSavedEvaluation() {
   const currentSavedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
   const payload = currentEvaluationSharePayload();
 
-  const response = await fetch("/api/evaluation-save", {
+  const response = await window.__mflDataClient.fetch("/api/evaluation-save", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -909,7 +909,7 @@ async function loadSavedEvaluation(savedId, playerId = "") {
         requestUrl.searchParams.set("id", id);
         if (selectedPlayerId) requestUrl.searchParams.set("player", selectedPlayerId);
 
-        const response = await fetch(requestUrl.toString(), {
+        const response = await window.__mflDataClient.fetch(requestUrl.toString(), {
           cache: "no-store",
           headers: walletProofHeaders(true),
         });
@@ -1000,7 +1000,7 @@ async function deleteSavedEvaluation(savedId) {
   const requestUrl = new URL("/api/evaluation-save", window.location.origin);
   requestUrl.searchParams.set("id", id);
 
-  const response = await fetch(requestUrl.toString(), {
+  const response = await window.__mflDataClient.fetch(requestUrl.toString(), {
     method: "DELETE",
     cache: "no-store",
     headers: walletProofHeaders(true),
@@ -1204,7 +1204,7 @@ async function loadSavedEvaluationListData() {
   if (savedEvaluationListPreloadPromise) return savedEvaluationListPreloadPromise;
 
   savedEvaluationListPreloadPromise = (async () => {
-    const response = await fetch("/api/evaluation-save", {
+    const response = await window.__mflDataClient.fetch("/api/evaluation-save", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
@@ -1715,3 +1715,147 @@ setupBackdropClickClose(advancedSettingsModal, closeAdvancedSettings);
 
 renderEvaluationMflPerUsdControl(false);
 evaluationDiscountRate.textContent = formatEvaluationRate(evaluationDiscountRateValue());
+
+if (evaluationDeleteButton) {
+  evaluationDeleteButton.addEventListener("click", async () => {
+    const savedId = String(state.evaluationSavedId || evaluationSavedIdFromUrl() || "").trim();
+    const playerId = String(state.evaluationPlayerId || evaluationPlayerIdFromUrl() || "").trim();
+
+    if (!savedId) {
+      showToast("No saved evaluation to delete.");
+      return;
+    }
+
+    evaluationDeleteButton.disabled = true;
+
+    try {
+      await deleteSavedEvaluation(savedId);
+      resetEvaluationToDefaultForPlayer(playerId);
+      showToast("Saved evaluation deleted.");
+    } catch (error) {
+      showToast(error?.message || "Could not delete saved evaluation.");
+    } finally {
+      evaluationDeleteButton.disabled = false;
+    }
+  });
+}
+if (evaluationSaveButton) {
+  evaluationSaveButton.addEventListener("click", async () => {
+    evaluationSaveButton.disabled = true;
+    try {
+      const saveResult = await createSavedEvaluation();
+      if (saveResult) {
+        window.history.replaceState({}, "", saveResult.url);
+        updateEvaluationFooterActions();
+        showToast(saveResult.overwritten ? "Evaluation overwritten and saved." : "Evaluation saved.");
+      }
+    } catch (error) {
+      showToast(error?.message || "Could not save evaluation.");
+    } finally {
+      evaluationSaveButton.disabled = false;
+    }
+  });
+}
+if (evaluationLoadButton) {
+  evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);
+}
+if (closeEvaluationLoadButton) {
+  closeEvaluationLoadButton.addEventListener("click", () => {
+    hideModal(evaluationLoadModal);
+  });
+}
+document.addEventListener("keydown", (event) => {
+  if (event.key !== "Escape" || !evaluationLoadModal || evaluationLoadModal.hidden) return;
+  event.preventDefault();
+  hideEvaluationLoadActionTooltip();
+  if (document.activeElement instanceof HTMLElement && evaluationLoadModal.contains(document.activeElement)) {
+    document.activeElement.blur();
+  }
+});
+setupBackdropClickClose(evaluationLoadModal, () => hideModal(evaluationLoadModal));
+if (evaluationLoadList) {
+  evaluationLoadList.addEventListener("scroll", hideEvaluationLoadActionTooltip, { passive: true });
+}
+if (evaluationShareButton) {
+  evaluationShareButton.addEventListener("click", async () => {
+    evaluationShareButton.disabled = true;
+    try {
+      const shareUrl = await createSharedEvaluation();
+      if (shareUrl) {
+        const parsedShareUrl = new URL(shareUrl, window.location.origin);
+        state.evaluationShareId = parsedShareUrl.searchParams.get("share") || "";
+        state.evaluationSavedId = "";
+        window.history.replaceState({}, "", shareUrl);
+        updateEvaluationFooterActions();
+      }
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        showToast("Evaluation share link copied.");
+      } catch {
+        showToast("Share link: " + shareUrl);
+      }
+    } catch (error) {
+      showToast(error?.message || "Could not create evaluation share link.");
+    } finally {
+      evaluationShareButton.disabled = false;
+    }
+  });
+}
+
+evaluationResetButton.addEventListener("click", () => {
+  const row = rowByPlayerId(state.evaluationPlayerId);
+
+  if (!row) {
+    return;
+  }
+
+  resetEvaluationToDefaultForPlayer(getValue(row, "player_id") || state.evaluationPlayerId);
+});
+
+const openEvaluationPlayerPage = (event) => {
+  if (event.type === "mouseup" && event.button !== 1) {
+    return;
+  }
+
+  const row = rowByPlayerId(state.evaluationPlayerId);
+
+  if (!row) {
+    return;
+  }
+
+  const playerId = String(getValue(row, "player_id"));
+  rememberSearchResult(playerId);
+
+  if (event.type === "mouseup" && event.button === 1) {
+    event.preventDefault();
+    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
+    window.focus();
+    if (playerWindow) {
+      playerWindow.blur();
+    }
+    return;
+  }
+
+  if (event.ctrlKey || event.metaKey) {
+    event.preventDefault();
+    const playerWindow = window.open(pagePath("player", { playerId }), "_blank", "noopener");
+    window.focus();
+    if (playerWindow) {
+      playerWindow.blur();
+    }
+    return;
+  }
+
+  openPlayerPage(playerId);
+};
+
+const preventEvaluationPlayerPageAutoscroll = (event) => {
+  if (event.button === 1) {
+    event.preventDefault();
+  }
+};
+
+evaluationPlayerPageButton.addEventListener("mousedown", preventEvaluationPlayerPageAutoscroll);
+evaluationPlayerPageButton.addEventListener("auxclick", preventEvaluationPlayerPageAutoscroll);
+evaluationPlayerPageButton.addEventListener("click", openEvaluationPlayerPage);
+evaluationPlayerPageButton.addEventListener("mouseup", openEvaluationPlayerPage);

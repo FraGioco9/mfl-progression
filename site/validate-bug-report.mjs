@@ -69,7 +69,9 @@ for (const token of [
   'title: fieldValue("bugReportTitleInput")',
   'route: fieldValue("bugReportRoute")',
   'description: fieldValue("bugReportDescription")',
-  'fetch("/api/bug-reports", {',
+  'function dataClientFetch(input, init = {}, options = {})',
+  'Reflect.get(window, "__mflDataClient")',
+  'dataClientFetch("/api/bug-reports", {',
   'Reflect.get(window, "walletProofHeaders")',
   'function reportControlFromTarget(target)',
   'function prepareReportControl(control)',
@@ -99,6 +101,7 @@ for (const token of [
 ]) {
   includes(runtime, token, `Bug report runtime contract is missing: ${token}`);
 }
+excludes(runtime, 'fetch("/api/bug-reports", {', "Bug report submission must not rely on the global fetch compatibility bridge.");
 
 for (const forbidden of [
   '<label class="field">',
@@ -244,4 +247,4 @@ for (const forbidden of [
 }
 if (footer.includes("!important")) throw new Error("Bug report styling must not introduce !important overrides.");
 
-console.log("Bug report popup validation passed with footer-owned direct-action support alignment/color, reset-on-close behavior, drag-safe backdrop closing, canonical box highlighting/backgrounds, compact Description typography/padding, click-only field focus, and no external fallback path.");
+console.log("Bug report popup validation passed with canonical data-client submission, footer-owned direct-action support alignment/color, reset-on-close behavior, drag-safe backdrop closing, canonical box highlighting/backgrounds, compact Description typography/padding, click-only field focus, and no external fallback path.");

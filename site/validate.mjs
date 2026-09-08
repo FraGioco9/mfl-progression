@@ -92,6 +92,7 @@ invariant(
 invariant(String(sharedCoreManifest?.banner || "").includes("Do not edit directly"), "Generated core artifacts must carry manifest-owned ownership banners.");
 
 const canonicalSharedCore = (await readSite("modules/core-sources/shared.js")).replace(/\s*$/, "");
+const canonicalTableCore = (await readSite("modules/core-sources/table.js")).replace(/\s*$/, "");
 const coreSource = [
   canonicalSharedCore,
   await readSite("modules/core-sources/evaluation.js"),
@@ -99,7 +100,7 @@ const coreSource = [
   await readSite("modules/core-sources/club.js"),
   await readSite("modules/core-sources/settings.js"),
   await readSite("modules/core-sources/player.js"),
-  await readSite("modules/core-sources/table.js"),
+  canonicalTableCore,
   await readSite("modules/core-sources/wallet.js"),
   await readSite("modules/core-sources/watchlist.js"),
 ].join("\n");
@@ -108,13 +109,22 @@ includes(canonicalSharedCore, "const shellFirstTablePages = new Set();", "The sh
 includes(canonicalSharedCore, 'window.__mflAppConfig?.routes?.clubPath?.(clubTarget.clubId, viewName)', "The shared core must delegate Club view URLs to canonical route configuration.");
 excludes(canonicalSharedCore, 'viewName === "attributes" ? "squad" : viewSlug(viewName)', "The shared core must not duplicate the Club view-to-slug mapping.");
 excludes(canonicalSharedCore, "      renderIncrementalLoadingState(pageName, route);", "The shared core must not render a destination loading phase before canonical data.");
-includes(canonicalSharedCore, "function copyDelegatedPlayerId(button, event)", "The shared core must own player-ID copying through table delegation.");
-includes(canonicalSharedCore, 'tableBody?.addEventListener("click", (event) => {', "The shared core must have one delegated player-table click owner.");
-includes(canonicalSharedCore, 'tableBody?.addEventListener("pointermove", (event) => {', "The shared core must delegate table hover state.");
-includes(canonicalSharedCore, 'selectionInput.dataset.playerId = String(playerId);', "Rendered selection controls must carry player identity instead of row closures.");
-includes(canonicalSharedCore, 'nameLink.dataset.playerId = String(playerId);', "Rendered player links must carry player identity instead of row closures.");
-includes(canonicalSharedCore, 'link.dataset.walletAddress = String(walletAddress || "");', "Rendered agent links must carry wallet identity instead of row closures.");
-includes(canonicalSharedCore, "clubLink.dataset.clubId = clubId;", "Rendered Club links must carry Club identity instead of row closures.");
+excludes(canonicalSharedCore, "function copyDelegatedPlayerId(button, event)", "Delegated player-ID copying must not remain in universal Shared ownership.");
+includes(canonicalTableCore, "function copyDelegatedPlayerId(button, event)", "The lazy Table core must own player-ID copying through table delegation.");
+excludes(canonicalSharedCore, 'tableBody?.addEventListener("click", (event) => {', "The delegated player-table click owner must not remain in universal Shared ownership.");
+includes(canonicalTableCore, 'tableBody?.addEventListener("click", (event) => {', "The lazy Table core must have one delegated player-table click owner.");
+includes(canonicalTableCore, 'tableBody?.addEventListener("pointerdown", (event) => {', "The lazy Table core must own delegated player-ID pointerdown handling.");
+excludes(canonicalSharedCore, 'tableBody?.addEventListener("pointermove", (event) => {', "Managed table hover delegation must not remain in universal Shared ownership.");
+includes(canonicalTableCore, 'tableBody?.addEventListener("pointermove", (event) => {', "The lazy Table core must delegate table hover state.");
+includes(canonicalTableCore, 'tableBody?.addEventListener("pointerleave", () => {', "The lazy Table core must own delegated table hover cleanup.");
+excludes(canonicalSharedCore, 'selectionInput.dataset.playerId = String(playerId);', "Selection identity assignment must not be represented by Shared compatibility markers.");
+includes(canonicalTableCore, 'selectionInput.dataset.playerId = String(playerId);', "Rendered selection controls must carry player identity instead of row closures.");
+excludes(canonicalSharedCore, 'nameLink.dataset.playerId = String(playerId);', "Player-link identity assignment must not be represented by Shared compatibility markers.");
+includes(canonicalTableCore, 'nameLink.dataset.playerId = String(playerId);', "Rendered player links must carry player identity instead of row closures.");
+excludes(canonicalSharedCore, 'link.dataset.walletAddress = String(walletAddress || "");', "Agent-link identity assignment must not be represented by Shared compatibility markers.");
+includes(canonicalTableCore, 'link.dataset.walletAddress = String(walletAddress || "");', "Rendered agent links must carry wallet identity instead of row closures.");
+excludes(canonicalSharedCore, "clubLink.dataset.clubId = clubId;", "Club-link identity assignment must not be represented by Shared compatibility markers.");
+includes(canonicalTableCore, "clubLink.dataset.clubId = clubId;", "Rendered Club links must carry Club identity instead of row closures.");
 excludes(canonicalSharedCore, 'selectionInput.addEventListener("click", (event) => setPlayerSelected', "Rows must not allocate selection click closures.");
 excludes(canonicalSharedCore, 'nameLink.addEventListener("click", (event) => {', "Rows must not allocate player navigation closures.");
 excludes(canonicalSharedCore, 'noteIcon.addEventListener("mouseenter"', "Rows must not allocate note tooltip closures.");

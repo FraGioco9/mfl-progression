@@ -165,12 +165,16 @@ invariant(
     && generatedReloadStart >= 0 && generatedReloadEnd > generatedReloadStart && generatedReloadSource.indexOf("state.page = page;") < generatedReloadSource.indexOf("if (incrementalRouteIsCached(route, page))") && generatedReloadSource.split("state.page = page;").length === 2,
   "Pager target page must be committed before cached and uncached incremental reload paths diverge.",
 );
+const previousPageHandler = 'void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });';
+const nextPageHandler = 'void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });';
 invariant(
-  appCore.includes('void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });')
-    && appCore.includes('void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });')
-    && generatedCore.includes('void reloadIncrementalPage(Math.max(1, state.page - 1), { loadingMode: "blank" });')
-    && generatedCore.includes('void reloadIncrementalPage(state.page + 1, { loadingMode: "blank" });'),
-  "Previous and next pager buttons must use the same canonical five-row blank loading path as direct page entry.",
+  appCore.includes(previousPageHandler)
+    && appCore.includes(nextPageHandler)
+    && !generatedCore.includes(previousPageHandler)
+    && !generatedCore.includes(nextPageHandler)
+    && tableRuntime.includes(previousPageHandler)
+    && tableRuntime.includes(nextPageHandler),
+  "Previous and next pager buttons must use the same canonical five-row blank loading path as direct page entry from the lazy Table runtime.",
 );
 
-console.log("Editable pager validation passed with a scalable five-digit input, a hard five-digit entry cap, native text selection, Escape cancellation, and cached/uncached page navigation coverage.");
+console.log("Editable pager validation passed with a scalable five-digit input, a hard five-digit entry cap, native text selection, Escape cancellation, lazy previous/next ownership, and cached/uncached page navigation coverage.");

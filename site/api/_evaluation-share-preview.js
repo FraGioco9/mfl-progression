@@ -142,7 +142,7 @@ function evaluationSharePreviewFromContext(row, publicPlayer = {}, ratioRows = [
     : Array.isArray(payload.overall_values)
       ? payload.overall_values
       : [];
-  const seasonOffset = Boolean(payload.ignoreFirstSeason ?? payload.ignore_first_season) ? 1 : 0;
+  const seasonOffset = (payload.ignoreFirstSeason ?? payload.ignore_first_season) ? 1 : 0;
   const explicitOverall = roundedMetric(payload.summaryOverall ?? payload.summary_overall);
   const derivedOverall = roundedMetric(values[seasonOffset] ?? values[0]);
   const overall = explicitOverall ?? derivedOverall;

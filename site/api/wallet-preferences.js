@@ -299,42 +299,22 @@ async function writePreferences(wallet, preferences) {
   const patch = {};
   if (hasDomain("watchlists")) patch.watchlists = normalizeWatchlists(incoming.watchlists);
   if (hasDomain("playerNotes")) patch.player_notes = normalizePlayerNotes(incoming.playerNotes);
+  if (hasDomain("tableState")) patch.table_state = normalizeCloudTableState(incoming.tableState);
   if (hasDomain("evaluationSettings")) patch.evaluation_settings = normalizeEvaluationSettings(incoming.evaluationSettings) || {};
   if (hasDomain("settings")) patch.settings = normalizeSettings(incoming.settings);
-
-  if (hasDomain("tableState")) {
-    const rows = await supabaseRequest(
-      `wallet_preferences?select=table_state&wallet_address=eq.${encodeURIComponent(wallet)}&limit=1`,
-    );
-    const row = Array.isArray(rows) ? rows[0] : null;
-    const currentTableState = row?.table_state && typeof row.table_state === "object" && !Array.isArray(row.table_state)
-      ? tableStateForClient(row.table_state)
-      : null;
-    patch.table_state = mergeTableState(incoming.tableState, currentTableState) || {};
-  }
 
   if (!Object.keys(patch).length) {
     return readPreferences(wallet);
   }
 
-  const updateRows = await supabaseRequest(
-    `wallet_preferences?wallet_address=eq.${encodeURIComponent(wallet)}`,
-    {
-      method: "PATCH",
-      headers: { Prefer: "return=representation" },
-      body: JSON.stringify(patch),
-    },
-  );
-  if (Array.isArray(updateRows) && updateRows.length) {
-    return preferencesFromRow(updateRows[0]);
-  }
-
-  const insertRows = await supabaseRequest("wallet_preferences?on_conflict=wallet_address", {
+  const rows = await supabaseRequest("rpc/patch_wallet_preferences_atomic", {
     method: "POST",
-    headers: { Prefer: "resolution=merge-duplicates,return=representation" },
-    body: JSON.stringify([{ wallet_address: wallet, ...patch }]),
+    body: JSON.stringify({
+      p_wallet_address: wallet,
+      p_patch: patch,
+    }),
   });
-  return preferencesFromRow(Array.isArray(insertRows) ? insertRows[0] : null);
+  return preferencesFromRow(Array.isArray(rows) ? rows[0] : null);
 }
 
 module.exports = async function handler(request, response) {

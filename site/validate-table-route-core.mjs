@@ -54,7 +54,7 @@ for (const [facade, ownerSlot, chunkOwner] of [
   includes(tableCore, `${ownerSlot} = ${chunkOwner};`, `Canonical Table source must activate ${facade}.`);
 }
 
-const universalTableHandlers = [
+const lazyTableHandlers = [
   ["openFilters", "__mflTableOpenFiltersOwner", "tableOpenFiltersOwner", 'openFiltersButton.addEventListener("click", openFilters);'],
   ["clearAdvancedFilters", "__mflTableClearAdvancedFiltersOwner", "tableClearAdvancedFiltersOwner", 'quickClearFiltersButton.addEventListener("click", clearAdvancedFilters);'],
   ["closeFilters", "__mflTableCloseFiltersOwner", "tableCloseFiltersOwner", 'closeFiltersButton.addEventListener("click", closeFilters);'],
@@ -64,12 +64,59 @@ const universalTableHandlers = [
   ["moveSelectedToWatchlist", "__mflTableMoveSelectedToWatchlistOwner", "tableMoveSelectedToWatchlistOwner", 'moveToWatchlistButton?.addEventListener("click", moveSelectedToWatchlist);'],
   ["openSelectedPlayerLinks", "__mflTableOpenSelectedPlayerLinksOwner", "tableOpenSelectedPlayerLinksOwner", 'openSelectedLinksButton.addEventListener("click", openSelectedPlayerLinks);'],
 ];
-for (const [handler, ownerSlot, chunkOwner, binding] of universalTableHandlers) {
+for (const [handler, ownerSlot, chunkOwner, binding] of lazyTableHandlers) {
   includes(sharedCore, `let ${ownerSlot} = null;`, `Shared core must keep a stable owner slot for ${handler}.`);
-  includes(sharedCore, `function ${handler}() {`, `Shared core must retain the ${handler} facade.`);
-  includes(sharedCore, binding, `Universal binding must continue calling ${handler} through its facade.`);
+  includes(sharedCore, `function ${handler}() {`, `Shared core must retain the ${handler} facade for cross-route/global dispatch.`);
+  excludes(sharedCore, binding, `Table-only DOM binding must not remain in universal Shared ownership: ${handler}.`);
   includes(tableCore, `function ${chunkOwner}(`, `Canonical Table source must own ${handler}.`);
   includes(tableCore, `${ownerSlot} = ${chunkOwner};`, `Canonical Table source must activate ${handler}.`);
+  includes(tableCore, binding, `Canonical Table source must install the ${handler} DOM binding when its lazy runtime loads.`);
+}
+
+const tableControlBindings = [
+  'pageSizeSelect.addEventListener("change", () => {',
+  'hideRetiredInput.addEventListener("change", () => {',
+  'hideRetiringInput.addEventListener("change", () => {',
+  'hideMflPlayersInput?.addEventListener("change", () => {',
+  'packablePlayersInput?.addEventListener("change", () => {',
+  'newMintsInput.addEventListener("change", () => {',
+  'showAddFilterButton.addEventListener("click", () => {',
+  'addFilterSelect.addEventListener("change", () => {',
+  'setupBackdropClickClose(filtersModal, () => closeFilters());',
+  'clearFiltersButton.addEventListener("click", () => {',
+  'prevButton.addEventListener("click", () => {',
+  'nextButton.addEventListener("click", () => {',
+];
+for (const binding of tableControlBindings) {
+  excludes(sharedCore, binding, `Table page/filter/pager binding must not remain in universal Shared ownership: ${binding}`);
+  includes(tableCore, binding, `Canonical Table source must own page/filter/pager binding: ${binding}`);
+}
+
+const delegatedTableBodyInteractions = [
+  "function copyDelegatedPlayerId(button, event) {",
+  'tableBody?.addEventListener("pointerdown", (event) => {',
+  'tableBody?.addEventListener("click", (event) => {',
+  'tableBody?.addEventListener("pointermove", (event) => {',
+  'tableBody?.addEventListener("pointerleave", () => {',
+];
+for (const owner of delegatedTableBodyInteractions) {
+  excludes(sharedCore, owner, `Delegated Table-body interaction must not remain in universal Shared ownership: ${owner}`);
+  includes(tableCore, owner, `Canonical Table source must own delegated Table-body interaction: ${owner}`);
+}
+excludes(sharedCore, "Compatibility markers for the legacy table-delegation validator", "Legacy comment-only Table delegation ownership must stay removed from Shared.");
+includes(sharedCore, 'window.addEventListener("scroll", () => hidePlayerNoteTooltip({ immediate: true }), true);', "Cross-route tooltip scroll cleanup must remain shared.");
+includes(sharedCore, 'window.addEventListener("resize", () => hidePlayerNoteTooltip({ immediate: true }));', "Cross-route tooltip resize cleanup must remain shared.");
+
+for (const typedControl of [
+  'const addFilterSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#addFilterSelect"));',
+  'const hideRetiredInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiredInput"));',
+  'const hideRetiringInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideRetiringInput"));',
+  'const hideMflPlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#hideMflPlayersInput"));',
+  'const packablePlayersInput = /** @type {HTMLInputElement} */ (document.querySelector("#packablePlayersInput"));',
+  'const newMintsInput = /** @type {HTMLInputElement} */ (document.querySelector("#newMintsInput"));',
+  'const pageSizeSelect = /** @type {HTMLSelectElement} */ (document.querySelector("#pageSizeSelect"));',
+]) {
+  includes(sharedCore, typedControl, `Shared DOM registry must preserve concrete Table control typing: ${typedControl}`);
 }
 
 excludes(sharedCore, "function tableNextOverallPreciseValue(row) {", "Table sorting calculations must stay lazy in Table source.");
@@ -121,4 +168,4 @@ invariant(
   "Generated Table runtime must exactly match canonical table.js.",
 );
 
-console.log("Source-owned Table facades, editable pager, lazy route behavior, canonical dependency loading, and generated-runtime equivalence validation passed.");
+console.log("Source-owned Table facades, lazy Table-only handlers, page/filter/pager controls, delegated Table-body interactions, typed control references, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");

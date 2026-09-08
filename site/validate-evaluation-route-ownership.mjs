@@ -36,6 +36,32 @@ invariant(!shared.includes('window.addEventListener("resize", updateAdvancedPlay
 invariant(evaluation.includes('window.addEventListener("resize", updateAdvancedPlayerTableClip);'), "Evaluation route core must own advanced-settings control bindings.");
 invariant(!shared.includes('evaluationSearchInput.addEventListener("input", handleEvaluationSearchInput);'), "Evaluation search/settings bindings must not remain in shared core.");
 invariant(evaluation.includes('evaluationSearchInput.addEventListener("input", handleEvaluationSearchInput);'), "Evaluation route core must own search/settings bindings.");
+const evaluationActionBindings = [
+  'evaluationDeleteButton.addEventListener("click", async () => {',
+  'evaluationSaveButton.addEventListener("click", async () => {',
+  'evaluationLoadButton.addEventListener("click", openSavedEvaluationsModal);',
+  'closeEvaluationLoadButton.addEventListener("click", () => {',
+  'setupBackdropClickClose(evaluationLoadModal, () => hideModal(evaluationLoadModal));',
+  'evaluationLoadList.addEventListener("scroll", hideEvaluationLoadActionTooltip, { passive: true });',
+  'evaluationShareButton.addEventListener("click", async () => {',
+  'evaluationResetButton.addEventListener("click", () => {',
+  'const openEvaluationPlayerPage = (event) => {',
+  'evaluationPlayerPageButton.addEventListener("click", openEvaluationPlayerPage);',
+];
+for (const binding of evaluationActionBindings) {
+  invariant(!shared.includes(binding), `Evaluation-only action ownership must not remain in universal Shared: ${binding}`);
+  invariant(evaluation.includes(binding), `Evaluation route core must own action binding: ${binding}`);
+}
+for (const typedControl of [
+  'const evaluationSaveButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationSaveButton"));',
+  'const evaluationShareButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationShareButton"));',
+  'const evaluationDeleteButton = /** @type {HTMLButtonElement} */ (document.querySelector("#evaluationDeleteButton"));',
+  'const evaluationLoadModal = /** @type {HTMLElement} */ (document.querySelector("#evaluationLoadModal"));',
+]) {
+  invariant(shared.includes(typedControl), `Shared DOM registry must preserve concrete Evaluation action typing: ${typedControl}`);
+}
+invariant(evaluation.includes("if (saveResult) {"), "Evaluation Save must narrow the empty-string result before reading saved-result properties.");
+invariant(!evaluation.includes("if (saveResult?.url) {"), "Evaluation Save must not reintroduce optional property access on the empty-string result union.");
 invariant(!evaluation.includes('evaluationSearchInput.addEventListener("blur", () => {'), "Evaluation route core must not hide typed search results on blur.");
 invariant(!shared.includes('setupBackdropClickClose(advancedSettingsModal, closeAdvancedSettings);'), "Evaluation advanced-settings backdrop binding must not remain in shared core.");
 invariant(evaluation.includes('setupBackdropClickClose(advancedSettingsModal, closeAdvancedSettings);'), "Evaluation route core must own its advanced-settings backdrop binding.");
@@ -100,4 +126,4 @@ invariant(
 
 new Function(shared);
 new Function(evaluation);
-console.log("Evaluation refresh URLs, startup UI, persistent typed-search results, search/settings bindings, advanced settings, and dependency-closed helpers are source-owned while shared persistence and Player focus ownership remain eager.");
+console.log("Evaluation refresh URLs, startup UI, persistent typed-search results, route-only action bindings, typed action controls, search/settings bindings, advanced settings, and dependency-closed helpers are source-owned while shared persistence and Player focus ownership remain eager.");

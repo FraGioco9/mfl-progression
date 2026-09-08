@@ -34,7 +34,8 @@ includes(sharedCore, "function ensureAgentPageTitleName(address) {", "Shared set
 includes(sharedCore, 'function openAgentPage(walletAddress, agentName = "") {', "Agent navigation must accept an already-known name.");
 includes(sharedCore, "agentName: knownName", "Agent navigation must carry the known name into page loading.");
 includes(sharedCore, "navigateFromSearch(() => openAgentPage(result.walletAddress, result.name));", "Global search must reuse the Agent name it already rendered.");
-includes(sharedCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Table navigation must reuse the Agent label already rendered in the row.");
+excludes(sharedCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Delegated Agent-row navigation must not remain in universal Shared ownership.");
+includes(tableCore, 'agentLink.dataset.agentName || agentLink.textContent || ""', "Table navigation must reuse the Agent label already rendered in the row.");
 includes(sharedCore, "const agentTitleReady = pageName === \"agents\"", "Agent page loading must start title resolution with the route.");
 includes(sharedCore, "await agentTitleReady;", "Agent page loading must not finish before title resolution settles.");
 includes(sharedCore, "renderAgentPageTitle(state.currentAgentWalletAddress || agentWalletAddressFromUrl());", "Agent title must be rendered after its name readiness gate.");
@@ -55,6 +56,7 @@ includes(tableCore, "function runtimeAgentPageTitleName(address, hintedName = \"
 includes(tableCore, "async function tableEnsureAgentPageTitleNameOwner(address, hintedName = \"\") {", "The lazy Table core must own the exact Agent-name fallback request.");
 includes(tableCore, 'type: "recent",', "Unknown Agent names must use the exact local database lookup path.");
 includes(tableCore, "walletAddresses: normalizedAddress,", "Unknown Agent lookup must target only the current wallet address.");
+includes(tableCore, 'window.__mflDataClient.fetch("/api/data?" + parameters.toString()', "Unknown Agent lookup must use the canonical frontend data client.");
 includes(tableCore, "savedAgentNameForWallet(normalizedAddress),", "Cached Agent names must be a zero-request title source.");
 includes(tableCore, 'link.dataset.agentName = String(agentLabel || "");', "Table Agent links must carry their already-rendered name into navigation.");
 includes(playerCore, 'openAgentPage(agentWalletAddress, formatCellValue(row, "wallet_name"));', "Player pages must pass their already-loaded Agent name into navigation.");
@@ -73,7 +75,7 @@ excludes(tableCore, "leaderboards/users/global", "Normal Agent page loading must
 excludes(tableCore, "!important", "Agent title loading must not introduce CSS priority overrides.");
 
 const runtimeNameRead = tableCore.indexOf("const runtimeName = runtimeAgentPageTitleName(normalizedAddress, hintedName);");
-const exactLookup = tableCore.indexOf('fetch("/api/data?" + parameters.toString()', runtimeNameRead);
+const exactLookup = tableCore.indexOf('window.__mflDataClient.fetch("/api/data?" + parameters.toString()', runtimeNameRead);
 invariant(runtimeNameRead >= 0 && exactLookup > runtimeNameRead, "Already-known or cached Agent names must be checked before the exact fallback request.");
 
 const readinessStart = sharedCore.indexOf('const agentTitleReady = pageName === "agents"');
@@ -84,4 +86,4 @@ invariant(
   "Agent name readiness must settle before the page can finish its loading lifecycle.",
 );
 
-console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup, cache, and loading readiness validation passed.");
+console.log("Agent title name reuse, stable separator spacing, lazy exact fallback lookup and row navigation, cache, canonical transport, and loading readiness validation passed.");

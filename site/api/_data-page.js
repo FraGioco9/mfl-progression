@@ -26,6 +26,38 @@ const {
 
 const LISTING_COLUMN = "listing_price";
 const LISTING_PRICE_SQL = "marketplace_price(player_id)";
+const TABLE_PAYLOAD_SCOPES = new Set([...TABLE_SCOPES, "club"]);
+const TABLE_COMMON_RESPONSE_COLUMNS = Object.freeze([
+  "player_id",
+  "wallet_address",
+  "wallet_name",
+  "name",
+  "positions",
+  "age",
+  "nationality",
+  "retirement_years",
+  "owned_since",
+  "player_seasons",
+  "overall",
+  "goalkeeping",
+]);
+const TABLE_CONTRACT_RESPONSE_COLUMNS = Object.freeze([
+  "active_contract_revenue_share",
+  "active_contract_club_id",
+  "active_contract_club_name",
+  "active_contract_club_division",
+]);
+const TABLE_NEXT_RESPONSE_COLUMNS = Object.freeze([
+  "next_overall",
+  "next_overall_gap",
+  "pace_to_next_overall",
+  "shooting_to_next_overall",
+  "passing_to_next_overall",
+  "dribbling_to_next_overall",
+  "defense_to_next_overall",
+  "physical_to_next_overall",
+  "goalkeeping_to_next_overall",
+]);
 
 function columnsWithListing(columns) {
   const next = [...columns];
@@ -50,6 +82,50 @@ function safeRules(value) {
   } catch {
     return [];
   }
+}
+
+function marketplaceRequiredForPage(scope, sortKey, rules) {
+  if (["player", "evaluation"].includes(String(scope || "").toLowerCase())) return true;
+  if (String(sortKey || "").toLowerCase() === LISTING_COLUMN) return true;
+  return rules.some((rule) => String(rule?.column || "").toLowerCase() === LISTING_COLUMN);
+}
+
+function addRuleResponseColumns(selectedColumns, rules) {
+  rules.forEach((rule) => {
+    const column = String(rule?.column || "");
+    if (column === "contract_status") {
+      selectedColumns.add("active_contract_club_id");
+      selectedColumns.add("active_contract_club_name");
+      return;
+    }
+    if (VALID_PLAYER_COLUMNS.has(column)) selectedColumns.add(column);
+  });
+}
+
+function projectedDatabaseColumns(scope, view, includeProgression, rules = []) {
+  const availableColumns = includeProgression ? PLAYER_COLUMNS : PUBLIC_COLUMNS;
+  if (!TABLE_PAYLOAD_SCOPES.has(String(scope || "").toLowerCase())) return availableColumns;
+
+  const selectedColumns = new Set(TABLE_COMMON_RESPONSE_COLUMNS);
+  const normalizedView = String(view || "attributes").toLowerCase();
+
+  if (normalizedView === "contracts") {
+    TABLE_CONTRACT_RESPONSE_COLUMNS.forEach((column) => selectedColumns.add(column));
+  } else {
+    STAT_COLUMNS.forEach((column) => selectedColumns.add(column));
+  }
+
+  if (normalizedView === "next") {
+    TABLE_NEXT_RESPONSE_COLUMNS.forEach((column) => selectedColumns.add(column));
+  }
+
+  if (includeProgression && ["current", "all"].includes(normalizedView)) {
+    const suffix = normalizedView === "current" ? "prog_current_season" : "prog_all";
+    STAT_COLUMNS.forEach((column) => selectedColumns.add(`${column}_${suffix}`));
+  }
+
+  addRuleResponseColumns(selectedColumns, rules);
+  return availableColumns.filter((column) => selectedColumns.has(column));
 }
 
 function ruleSql(rule, parameters) {
@@ -95,47 +171,46 @@ function ruleSql(rule, parameters) {
     return `${quotedColumn} = ?`;
   }
 
+  if (column === "owned_since") {
+    const fallbackStart = Date.parse(`${String(value || "")}T00:00:00Z`) / 1000;
+    if (!Number.isFinite(fallbackStart)) return "0";
 
-if (column === "owned_since") {
-  const fallbackStart = Date.parse(`${String(value || "")}T00:00:00Z`) / 1000;
-  if (!Number.isFinite(fallbackStart)) return "0";
+    const suppliedStart = rule?.valueDayStartEpochSeconds;
+    const suppliedNext = rule?.valueNextDayStartEpochSeconds;
+    const fromStart = suppliedStart !== null
+      && suppliedStart !== undefined
+      && Number.isFinite(Number(suppliedStart))
+      ? Number(suppliedStart)
+      : fallbackStart;
+    const fromNext = suppliedNext !== null
+      && suppliedNext !== undefined
+      && Number.isFinite(Number(suppliedNext))
+      ? Number(suppliedNext)
+      : fallbackStart + 86400;
 
-  const suppliedStart = rule?.valueDayStartEpochSeconds;
-  const suppliedNext = rule?.valueNextDayStartEpochSeconds;
-  const fromStart = suppliedStart !== null
-    && suppliedStart !== undefined
-    && Number.isFinite(Number(suppliedStart))
-    ? Number(suppliedStart)
-    : fallbackStart;
-  const fromNext = suppliedNext !== null
-    && suppliedNext !== undefined
-    && Number.isFinite(Number(suppliedNext))
-    ? Number(suppliedNext)
-    : fallbackStart + 86400;
+    if (operator === "during") {
+      const fallbackToStart = Date.parse(`${String(rule?.valueTo || "")}T00:00:00Z`) / 1000;
+      if (!Number.isFinite(fallbackToStart)) return "0";
+      const suppliedToStart = rule?.valueToDayStartEpochSeconds;
+      const suppliedToNext = rule?.valueToNextDayStartEpochSeconds;
+      const toStart = suppliedToStart !== null
+        && suppliedToStart !== undefined
+        && Number.isFinite(Number(suppliedToStart))
+        ? Number(suppliedToStart)
+        : fallbackToStart;
+      const toNext = suppliedToNext !== null
+        && suppliedToNext !== undefined
+        && Number.isFinite(Number(suppliedToNext))
+        ? Number(suppliedToNext)
+        : fallbackToStart + 86400;
+      parameters.push(Math.min(fromStart, toStart), Math.max(fromNext, toNext));
+      return `${normalizedEpochSeconds(quotedColumn)} >= ? AND ${normalizedEpochSeconds(quotedColumn)} < ?`;
+    }
 
-  if (operator === "during") {
-    const fallbackToStart = Date.parse(`${String(rule?.valueTo || "")}T00:00:00Z`) / 1000;
-    if (!Number.isFinite(fallbackToStart)) return "0";
-    const suppliedToStart = rule?.valueToDayStartEpochSeconds;
-    const suppliedToNext = rule?.valueToNextDayStartEpochSeconds;
-    const toStart = suppliedToStart !== null
-      && suppliedToStart !== undefined
-      && Number.isFinite(Number(suppliedToStart))
-      ? Number(suppliedToStart)
-      : fallbackToStart;
-    const toNext = suppliedToNext !== null
-      && suppliedToNext !== undefined
-      && Number.isFinite(Number(suppliedToNext))
-      ? Number(suppliedToNext)
-      : fallbackToStart + 86400;
-    parameters.push(Math.min(fromStart, toStart), Math.max(fromNext, toNext));
-    return `${normalizedEpochSeconds(quotedColumn)} >= ? AND ${normalizedEpochSeconds(quotedColumn)} < ?`;
+    if (!["before", "after"].includes(operator)) return "0";
+    parameters.push(fromStart);
+    return `${normalizedEpochSeconds(quotedColumn)} ${operator === "before" ? "<" : ">="} ?`;
   }
-
-  if (!["before", "after"].includes(operator)) return "0";
-  parameters.push(fromStart);
-  return `${normalizedEpochSeconds(quotedColumn)} ${operator === "before" ? "<" : ">="} ?`;
-}
 
   const numeric = NUMBER_COLUMNS.has(column)
     || column.includes("_prog_")
@@ -250,17 +325,32 @@ function progressionActivityCondition(view) {
     .join(" OR ")})`;
 }
 
+function countRows(where, parameters) {
+  return Number(queryOne(
+    `SELECT count(*) AS count FROM players${where}`,
+    parameters,
+  )?.count || 0);
+}
+
+function parametersEqual(left, right) {
+  return left.length === right.length
+    && left.every((value, index) => Object.is(value, right[index]));
+}
+
 async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const query = request.query || {};
   const scope = String(query.scope || "database").toLowerCase();
   const view = String(query.view || "attributes").toLowerCase();
+  const sortKey = String(query.sortKey || (scope === "club" ? "positions" : "overall"));
+  const rules = safeRules(query.filters);
   const progressionRequested = String(query.includeProgression || "") === "1"
     || ["current", "all"].includes(view);
   const includeProgression = progressionRequested && (fullAccess || ownedProgression);
-  const databaseColumns = includeProgression ? PLAYER_COLUMNS : PUBLIC_COLUMNS;
+  const databaseColumns = projectedDatabaseColumns(scope, view, includeProgression, rules);
   const columns = columnsWithListing(databaseColumns);
-  const marketplace = await marketplaceState();
-  setMarketplacePrices(marketplace.prices);
+  const marketplaceEmbedded = marketplaceRequiredForPage(scope, sortKey, rules);
+  const marketplace = marketplaceEmbedded ? await marketplaceState() : null;
+  setMarketplacePrices(marketplace?.prices || {});
   const baseConditions = [];
   const baseParameters = [];
   const playerIds = integerIds(query.playerIds);
@@ -337,11 +427,6 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const sourceWhere = baseConditions.length
     ? ` WHERE ${baseConditions.join(" AND ")}`
     : "";
-  const sourceRows = Number(queryOne(
-    `SELECT count(*) AS count FROM players${sourceWhere}`,
-    baseParameters,
-  )?.count || 0);
-
   const conditions = [...baseConditions];
   const parameters = [...baseParameters];
 
@@ -360,13 +445,12 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   if (String(query.newMintsOnly || "") === "1") {
     conditions.push(scope === "mfl" ? "player_seasons >= 2" : "player_seasons = 1");
   }
-  appendAdvancedRules(conditions, parameters, safeRules(query.filters));
+  appendAdvancedRules(conditions, parameters, rules);
 
   const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
-  const totalRows = Number(queryOne(
-    `SELECT count(*) AS count FROM players${where}`,
-    parameters,
-  )?.count || 0);
+  const sameResultSet = where === sourceWhere && parametersEqual(parameters, baseParameters);
+  const totalRows = countRows(where, parameters);
+  const sourceRows = sameResultSet ? totalRows : countRows(sourceWhere, baseParameters);
 
   const allRows = ["player", "players", "evaluation", "club", "mflstats"].includes(scope);
   const maximumPageSize = allRows ? 5000 : 250;
@@ -393,7 +477,7 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const order = orderSql(
     scope,
     view,
-    String(query.sortKey || (scope === "club" ? "positions" : "overall")),
+    sortKey,
     String(query.sortDirection || (scope === "club" ? "asc" : "desc")),
   );
   const rows = queryRows(
@@ -410,16 +494,18 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
     sourceRows,
     totalPages,
     generatedAt: getGeneratedAt(),
-    marketplaceGeneratedAt: marketplace.generatedAt,
-    marketplaceFlowBlockHeight: marketplace.flowBlockHeight,
-    source: "sqlite-runtime+flow-marketplace",
+    marketplaceEmbedded,
+    marketplaceGeneratedAt: marketplace?.generatedAt || "",
+    marketplaceFlowBlockHeight: marketplace?.flowBlockHeight || 0,
+    source: marketplaceEmbedded ? "sqlite-runtime+flow-marketplace" : "sqlite-runtime",
   };
 }
-
 
 module.exports = {
   LISTING_COLUMN,
   columnsWithListing,
+  marketplaceRequiredForPage,
+  projectedDatabaseColumns,
   ruleSql,
   orderSql,
   integerIds,

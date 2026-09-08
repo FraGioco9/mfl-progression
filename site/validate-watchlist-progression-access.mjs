@@ -64,4 +64,28 @@ invariant(
   "The main Progression page must retain its full-access permission gate.",
 );
 
+
+invariant(
+  coreSource.includes('const tablePages = new Set(["database", "mfl", "agents", "progression", "watchlist", "myplayers", "club"]);'),
+  "Club must be a canonical table page without post-start mutation.",
+);
+invariant(
+  coreSource.includes('club: ["attributes", "contracts", "current", "all"],'),
+  "Club public progression views must live in the canonical page-view table.",
+);
+invariant(
+  coreSource.includes('club: "attributes",'),
+  "Club must retain its canonical Attributes default view.",
+);
+for (const retired of [
+  "PUBLIC_PROGRESSION_VIEWS",
+  "PUBLIC_TABLE_PAGES",
+  "allowedViewsForPublicTables",
+  "normalizePublicProgressionView",
+  "currentPublicProgressionDataAccess",
+  'tablePages.add("club")',
+]) {
+  invariant(!coreSource.includes(retired), `Legacy public-progression compatibility owner must stay removed: ${retired}`);
+}
+
 console.log("Public entity progression access validation passed.");
