@@ -26,6 +26,38 @@ const {
 
 const LISTING_COLUMN = "listing_price";
 const LISTING_PRICE_SQL = "marketplace_price(player_id)";
+const TABLE_PAYLOAD_SCOPES = new Set([...TABLE_SCOPES, "club"]);
+const TABLE_COMMON_RESPONSE_COLUMNS = Object.freeze([
+  "player_id",
+  "wallet_address",
+  "wallet_name",
+  "name",
+  "positions",
+  "age",
+  "nationality",
+  "retirement_years",
+  "owned_since",
+  "player_seasons",
+  "overall",
+  "goalkeeping",
+]);
+const TABLE_CONTRACT_RESPONSE_COLUMNS = Object.freeze([
+  "active_contract_revenue_share",
+  "active_contract_club_id",
+  "active_contract_club_name",
+  "active_contract_club_division",
+]);
+const TABLE_NEXT_RESPONSE_COLUMNS = Object.freeze([
+  "next_overall",
+  "next_overall_gap",
+  "pace_to_next_overall",
+  "shooting_to_next_overall",
+  "passing_to_next_overall",
+  "dribbling_to_next_overall",
+  "defense_to_next_overall",
+  "physical_to_next_overall",
+  "goalkeeping_to_next_overall",
+]);
 
 function columnsWithListing(columns) {
   const next = [...columns];
@@ -56,6 +88,44 @@ function marketplaceRequiredForPage(scope, sortKey, rules) {
   if (["player", "evaluation"].includes(String(scope || "").toLowerCase())) return true;
   if (String(sortKey || "").toLowerCase() === LISTING_COLUMN) return true;
   return rules.some((rule) => String(rule?.column || "").toLowerCase() === LISTING_COLUMN);
+}
+
+function addRuleResponseColumns(selectedColumns, rules) {
+  rules.forEach((rule) => {
+    const column = String(rule?.column || "");
+    if (column === "contract_status") {
+      selectedColumns.add("active_contract_club_id");
+      selectedColumns.add("active_contract_club_name");
+      return;
+    }
+    if (VALID_PLAYER_COLUMNS.has(column)) selectedColumns.add(column);
+  });
+}
+
+function projectedDatabaseColumns(scope, view, includeProgression, rules = []) {
+  const availableColumns = includeProgression ? PLAYER_COLUMNS : PUBLIC_COLUMNS;
+  if (!TABLE_PAYLOAD_SCOPES.has(String(scope || "").toLowerCase())) return availableColumns;
+
+  const selectedColumns = new Set(TABLE_COMMON_RESPONSE_COLUMNS);
+  const normalizedView = String(view || "attributes").toLowerCase();
+
+  if (normalizedView === "contracts") {
+    TABLE_CONTRACT_RESPONSE_COLUMNS.forEach((column) => selectedColumns.add(column));
+  } else {
+    STAT_COLUMNS.forEach((column) => selectedColumns.add(column));
+  }
+
+  if (normalizedView === "next") {
+    TABLE_NEXT_RESPONSE_COLUMNS.forEach((column) => selectedColumns.add(column));
+  }
+
+  if (includeProgression && ["current", "all"].includes(normalizedView)) {
+    const suffix = normalizedView === "current" ? "prog_current_season" : "prog_all";
+    STAT_COLUMNS.forEach((column) => selectedColumns.add(`${column}_${suffix}`));
+  }
+
+  addRuleResponseColumns(selectedColumns, rules);
+  return availableColumns.filter((column) => selectedColumns.has(column));
 }
 
 function ruleSql(rule, parameters) {
@@ -276,7 +346,7 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const progressionRequested = String(query.includeProgression || "") === "1"
     || ["current", "all"].includes(view);
   const includeProgression = progressionRequested && (fullAccess || ownedProgression);
-  const databaseColumns = includeProgression ? PLAYER_COLUMNS : PUBLIC_COLUMNS;
+  const databaseColumns = projectedDatabaseColumns(scope, view, includeProgression, rules);
   const columns = columnsWithListing(databaseColumns);
   const marketplaceEmbedded = marketplaceRequiredForPage(scope, sortKey, rules);
   const marketplace = marketplaceEmbedded ? await marketplaceState() : null;
@@ -435,6 +505,7 @@ module.exports = {
   LISTING_COLUMN,
   columnsWithListing,
   marketplaceRequiredForPage,
+  projectedDatabaseColumns,
   ruleSql,
   orderSql,
   integerIds,
