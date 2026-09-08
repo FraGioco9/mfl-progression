@@ -1,4 +1,5 @@
 [
+  ["v1.127.12", "Complete global UI foundations and semantic ownership"],
   ["v1.127.11", "Refine mobile Player UX, filtering, titles, and repository architecture"],
   ["v1.127.10", "Consolidate architecture, mobile Player UX, footer consistency, and privacy"],
   ["v1.127.9", "Polish mobile UX, Evaluation, navigation reliability, and site workflows"],
