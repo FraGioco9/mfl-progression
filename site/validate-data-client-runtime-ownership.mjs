@@ -11,7 +11,7 @@ const MIGRATED_RUNTIMES = Object.freeze([
   "marketplace-overlay-runtime.js",
   "nationality-filter-options-runtime.js",
 ]);
-const directApiFetch = /\bfetch\s*\(\s*["'`]\/api\//g;
+const directApiFetch = /(^|[^.\w$])fetch\s*\(\s*["'`]\/api\//gm;
 
 const runtimeNames = (await readdir(siteRoot))
   .filter((name) => name.endsWith("-runtime.js"))
@@ -42,7 +42,7 @@ for (const name of MIGRATED_RUNTIMES) {
   if (!source.includes("__mflDataClient")) {
     throw new Error(`${name} must resolve the canonical data client explicitly.`);
   }
-  if (/\bfetch\s*\(\s*["'`]\/api\//.test(source)) {
+  if (/(^|[^.\w$])fetch\s*\(\s*["'`]\/api\//m.test(source)) {
     throw new Error(`${name} must not depend on the global fetch compatibility bridge for API calls.`);
   }
 }
