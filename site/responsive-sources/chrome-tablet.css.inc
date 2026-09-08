@@ -255,7 +255,7 @@ html:not(.mflInitialRouteResolved):is(
     border: 1px solid color-mix(in srgb, var(--border-strong) 72%, transparent);
     border-radius: 16px;
     background: color-mix(in srgb, var(--surface) 88%, transparent);
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    box-shadow: var(--mfl-shadow-mobile-navigation);
     backdrop-filter: blur(14px);
     transform: translateX(-50%);
   }

@@ -190,7 +190,7 @@ Specialized tiny steppers, table action buttons, mobile-only touch geometry, and
 - Search, Filters, saved Evaluation, Watchlist chooser/add/delete, Advanced Settings, and Bug Report consume those generic structural classes while retaining their domain-specific widths, bodies, controls, and responsive geometry.
 - The shared backdrop uses `--mfl-motion-standard` for its existing 180ms opacity/transform timing.
 - Tooltip shadow: `0 10px 26px rgba(0, 0, 0, 0.28)` (`--mfl-shadow-tooltip`)
-- Mobile navigation surface shadow: `0 10px 28px rgba(0, 0, 0, 0.18)` (`--mfl-shadow-mobile-navigation`)
+- Mobile navigation surface shadow: `0 10px 28px rgba(0, 0, 0, 0.18)` (`--mfl-shadow-mobile-navigation`), consumed by the canonical responsive mobile navigation rail
 - Ordinary dialogs remain fixed application-layer elements rather than browser top-layer popovers
 - Main scrolling is locked while a modal backdrop is open
 - Toasts remain above every modal/overlay
@@ -230,15 +230,15 @@ Uniform Width remains the only numeric player-table column-width contract.
 
 Equivalent transitions should consume these tokens when the semantic timing is the same.
 
-## Dropdowns
+## Dropdown mechanics
 
-`dropdowns.css` remains the specialist owner:
+`dropdowns.css` remains the specialist mechanics owner:
 
 - Gap: `8px`
-- Picker radius: `8px`
-- Shadow: `0 12px 36px rgba(0, 0, 0, 0.16)`
 - Maximum height: `min(320px, calc(100vh - 16px))`
 - Chevron inset: `10px`
+- Open/close positioning, native picker enhancement, and responsive/menu-specific geometry remain local to this owner.
+- Dropdown visual surface/radius/shadow values are foundation-owned and consumed by `dropdowns.css`; they are not mechanics literals.
 
 Inline selectors such as the Evaluation position selector may intentionally use different geometry.
 
