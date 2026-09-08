@@ -40,7 +40,7 @@ for (const token of [
   "box-shadow: var(--mfl-shadow-dropdown);",
 ]) {
   includes(customMenu, token, `Database Stats Custom menu must consume dropdown visual foundation ${token}`);
-  includes(statsValidator, `\"${token}\"`, `Database Stats regression validation must require ${token}`);
+  includes(statsValidator, `"${token}"`, `Database Stats regression validation must require ${token}`);
 }
 
 const retiredShadow = "--mfl-dropdown-" + "shadow";
