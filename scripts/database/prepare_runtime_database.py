@@ -262,6 +262,30 @@ def prepare_runtime_database(database_path: Path) -> None:
               ON players(wallet_address, overall DESC, player_id DESC);
             CREATE INDEX IF NOT EXISTS players_club_index
               ON players(active_contract_club_id, overall DESC, player_id DESC);
+            CREATE INDEX IF NOT EXISTS players_club_position_index
+              ON players(
+                active_contract_club_id,
+                CASE upper(trim(CASE WHEN instr(positions, ',') > 0 THEN substr(positions, 1, instr(positions, ',') - 1) ELSE positions END))
+                  WHEN 'GK' THEN 0
+                  WHEN 'RB' THEN 1
+                  WHEN 'CB' THEN 2
+                  WHEN 'LB' THEN 3
+                  WHEN 'RWB' THEN 4
+                  WHEN 'LWB' THEN 5
+                  WHEN 'CDM' THEN 6
+                  WHEN 'RM' THEN 7
+                  WHEN 'CM' THEN 8
+                  WHEN 'LM' THEN 9
+                  WHEN 'CAM' THEN 10
+                  WHEN 'RW' THEN 11
+                  WHEN 'CF' THEN 12
+                  WHEN 'LW' THEN 13
+                  WHEN 'ST' THEN 14
+                  ELSE 15
+                END,
+                overall DESC,
+                player_id DESC
+              );
             CREATE INDEX IF NOT EXISTS players_overall_index
               ON players(overall DESC, player_id DESC);
             CREATE INDEX IF NOT EXISTS players_retirement_index
