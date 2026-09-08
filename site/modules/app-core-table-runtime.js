@@ -42,7 +42,7 @@ async function tableEnsureAgentPageTitleNameOwner(address, hintedName = "") {
         type: "recent",
         walletAddresses: normalizedAddress,
       });
-      const response = await fetch("/api/data?" + parameters.toString(), {
+      const response = await window.__mflDataClient.fetch("/api/data?" + parameters.toString(), {
         cache: "no-store",
         headers: { Accept: "application/json" },
       });
