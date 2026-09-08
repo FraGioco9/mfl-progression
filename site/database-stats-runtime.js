@@ -34,6 +34,14 @@
     return DATABASE_STATS_PATH.test(String(pathname || ""));
   }
 
+  function dataClientFetch(input, init = {}, options = {}) {
+    const dataClient = window.__mflDataClient;
+    if (!dataClient || typeof dataClient.fetch !== "function") {
+      return Promise.reject(new Error("Canonical data client is unavailable."));
+    }
+    return dataClient.fetch(input, init, options);
+  }
+
   function formatCount(value) {
     return new Intl.NumberFormat("en-US").format(Number(value || 0));
   }
@@ -390,7 +398,11 @@
   async function loadData() {
     if (data) return data;
     if (!dataPromise) {
-      dataPromise = fetch(`/api/data?mode=database-stats&v=${encodeURIComponent(VERSION)}`, { cache: "no-store" })
+      dataPromise = dataClientFetch(
+        `/api/data?mode=database-stats&v=${encodeURIComponent(VERSION)}`,
+        { cache: "no-store" },
+        { dedupe: true, key: `database-stats:${VERSION}` },
+      )
         .then(async (response) => {
           const payload = await response.json().catch(() => ({}));
           if (!response.ok || !Array.isArray(payload.rows)) throw new Error(payload.error || "Could not load Database Stats.");
