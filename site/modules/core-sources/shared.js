@@ -694,7 +694,7 @@ function clearWalletPermissionCache(address = state.linkedWalletAddress) {
 }
 
 async function loadWalletPermissionVersion() {
-  const response = await fetch("/api/wallet-permissions-version", { cache: "no-store" });
+  const response = await window.__mflDataClient.fetch("/api/wallet-permissions-version", { cache: "no-store" });
   if (!response.ok) {
     return null;
   }
@@ -770,7 +770,7 @@ async function loadWalletPermissions(options = {}) {
   }
 
   try {
-    const response = await fetch("/api/wallet-access", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-access", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
@@ -2355,7 +2355,7 @@ async function loadSummary() {
 
   summaryLoadPromise = (async () => {
     try {
-      const response = await fetch("/api/data?mode=bootstrap", { cache: "no-store", headers: { Accept: "application/json" } });
+      const response = await window.__mflDataClient.fetch("/api/data?mode=bootstrap", { cache: "no-store", headers: { Accept: "application/json" } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Could not load the database summary.");
       state.manifest = data.manifest || null;
@@ -3939,7 +3939,7 @@ async function loadWalletPreferences(options = {}) {
     }
     state.playerNotes = {};
     applyWalletPlayerNotes(loadLocalWalletNotes());
-    const response = await fetch("/api/wallet-preferences", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {
       cache: "no-store",
       headers: walletProofHeaders(true),
     });
@@ -4061,7 +4061,7 @@ async function performWalletPreferencesSave(options = {}) {
       ...(shouldSaveSettings ? { settings: settingsPayload } : {}),
     };
 
-    const response = await fetch("/api/wallet-preferences", {
+    const response = await window.__mflDataClient.fetch("/api/wallet-preferences", {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -5150,7 +5150,7 @@ async function requestDatabaseSearch(rawQuery = "", type = "all", options = {}) 
   }
 
   try {
-    const response = await fetch(`/api/data?${parameters}`, {
+    const response = await window.__mflDataClient.fetch(`/api/data?${parameters}`, {
       cache: "no-store",
       headers: { Accept: "application/json" },
       signal: controller.signal,
@@ -6794,7 +6794,7 @@ async function requestIncrementalRoute(route, page = 1, options = {}) {
         controller.abort();
       }, ROUTE_REQUEST_TIMEOUT_MS);
       try {
-        const response = await fetch("/api/data?" + requestKey, {
+        const response = await window.__mflDataClient.fetch("/api/data?" + requestKey, {
           cache: "no-store",
           headers: walletProofHeaders(true),
           signal: controller.signal,
