@@ -52,6 +52,12 @@ function safeRules(value) {
   }
 }
 
+function marketplaceRequiredForPage(scope, sortKey, rules) {
+  if (["player", "evaluation"].includes(String(scope || "").toLowerCase())) return true;
+  if (String(sortKey || "").toLowerCase() === LISTING_COLUMN) return true;
+  return rules.some((rule) => String(rule?.column || "").toLowerCase() === LISTING_COLUMN);
+}
+
 function ruleSql(rule, parameters) {
   const column = String(rule?.column || "");
   const operator = String(rule?.operator || "");
@@ -265,13 +271,16 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const query = request.query || {};
   const scope = String(query.scope || "database").toLowerCase();
   const view = String(query.view || "attributes").toLowerCase();
+  const sortKey = String(query.sortKey || (scope === "club" ? "positions" : "overall"));
+  const rules = safeRules(query.filters);
   const progressionRequested = String(query.includeProgression || "") === "1"
     || ["current", "all"].includes(view);
   const includeProgression = progressionRequested && (fullAccess || ownedProgression);
   const databaseColumns = includeProgression ? PLAYER_COLUMNS : PUBLIC_COLUMNS;
   const columns = columnsWithListing(databaseColumns);
-  const marketplace = await marketplaceState();
-  setMarketplacePrices(marketplace.prices);
+  const marketplaceEmbedded = marketplaceRequiredForPage(scope, sortKey, rules);
+  const marketplace = marketplaceEmbedded ? await marketplaceState() : null;
+  setMarketplacePrices(marketplace?.prices || {});
   const baseConditions = [];
   const baseParameters = [];
   const playerIds = integerIds(query.playerIds);
@@ -366,7 +375,7 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   if (String(query.newMintsOnly || "") === "1") {
     conditions.push(scope === "mfl" ? "player_seasons >= 2" : "player_seasons = 1");
   }
-  appendAdvancedRules(conditions, parameters, safeRules(query.filters));
+  appendAdvancedRules(conditions, parameters, rules);
 
   const where = conditions.length ? ` WHERE ${conditions.join(" AND ")}` : "";
   const sameResultSet = where === sourceWhere && parametersEqual(parameters, baseParameters);
@@ -398,7 +407,7 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
   const order = orderSql(
     scope,
     view,
-    String(query.sortKey || (scope === "club" ? "positions" : "overall")),
+    sortKey,
     String(query.sortDirection || (scope === "club" ? "asc" : "desc")),
   );
   const rows = queryRows(
@@ -415,16 +424,17 @@ async function pagedData(request, signedWallet, fullAccess, ownedProgression) {
     sourceRows,
     totalPages,
     generatedAt: getGeneratedAt(),
-    marketplaceGeneratedAt: marketplace.generatedAt,
-    marketplaceFlowBlockHeight: marketplace.flowBlockHeight,
-    source: "sqlite-runtime+flow-marketplace",
+    marketplaceEmbedded,
+    marketplaceGeneratedAt: marketplace?.generatedAt || "",
+    marketplaceFlowBlockHeight: marketplace?.flowBlockHeight || 0,
+    source: marketplaceEmbedded ? "sqlite-runtime+flow-marketplace" : "sqlite-runtime",
   };
 }
-
 
 module.exports = {
   LISTING_COLUMN,
   columnsWithListing,
+  marketplaceRequiredForPage,
   ruleSql,
   orderSql,
   integerIds,
