@@ -1,0 +1,39 @@
+name: Temporary 754 Table repair
+
+on:
+  push:
+    branches:
+      - perf/754-table-data-client-final
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: perf/754-table-data-client-final
+      - name: Restore canonical Table action-menu condition
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          table_path = Path("site/modules/core-sources/table.js")
+          source = table_path.read_text(encoding="utf-8")
+          old = 'if (playerTableActionTrigger === trigger && menu.dataset.open !== "true") {'
+          new = 'if (playerTableActionTrigger === trigger && menu.dataset.open === "true") {'
+          if source.count(old) != 1:
+              raise SystemExit(f"Expected exactly one accidental condition, found {source.count(old)}")
+          table_path.write_text(source.replace(old, new), encoding="utf-8")
+
+          workflow_path = Path(".github/workflows/temporary-754-table-fix.yml")
+          workflow_path.unlink()
+          PY
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- site/modules/core-sources/table.js .github/workflows/temporary-754-table-fix.yml
+          git commit -m "Restore Table action menu condition"
+          git push origin HEAD:perf/754-table-data-client-final
