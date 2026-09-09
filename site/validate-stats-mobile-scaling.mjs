@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const read = (path) => readFileSync(resolve(root, path), "utf8").replace(/\r\n?/g, "\n");
@@ -11,17 +12,7 @@ const statsUi = read("stats-mobile-ui-runtime.js");
 const staticUi = read("static-ui-runtime.js");
 const routeCoreLoader = read("route-core-loader-runtime.js");
 const appConfig = read("modules/app-config.js");
-const appCore = [
-  "modules/core-sources/shared.js",
-  "modules/core-sources/evaluation.js",
-  "modules/core-sources/mfl-stats.js",
-  "modules/core-sources/club.js",
-  "modules/core-sources/settings.js",
-  "modules/core-sources/player.js",
-  "modules/core-sources/table.js",
-  "modules/core-sources/wallet.js",
-  "modules/core-sources/watchlist.js",
-].map(read).join("\n");
+const appCore = readCombinedCanonicalCoreSource();
 const mflStatsRuntime = read("modules/app-core-mfl-stats-runtime.js");
 const databaseStats = read("database-stats-runtime.js");
 

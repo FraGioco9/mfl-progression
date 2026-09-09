@@ -114,7 +114,7 @@ invariant(
     && sharedCoreManifest.sources[24] === "shared-route-runtime-gate.js"
     && sharedCoreManifest.sources[25] === "shared-core-contracts.js"
     && sharedCoreManifest.sources[26] === "shared-app-startup.js"
-    && sharedCoreManifest.sources[27] === "shared.js"
+    && sharedCoreManifest.sources[27] === "shared-shell-navigation.js"
     && sharedCoreManifest?.runtime === "app-core-runtime.js",
   "Canonical manifest must map the ordered shared core fragments to app-core-runtime.js.",
 );

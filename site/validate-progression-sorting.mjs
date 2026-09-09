@@ -1,23 +1,13 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
 import { createRequire } from "node:module";
 import { DatabaseSync } from "node:sqlite";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 // Execute the exact API ORDER BY contract so Progression sorting cannot regress behind source-only assertions.
 // Incremental responses retain this global API order instead of being re-sorted as isolated client-side pages.
 const require = createRequire(import.meta.url);
 const { orderSql } = require("./api/_data-page.js");
-const core = [
-  "./modules/core-sources/shared.js",
-  "./modules/core-sources/evaluation.js",
-  "./modules/core-sources/mfl-stats.js",
-  "./modules/core-sources/club.js",
-  "./modules/core-sources/settings.js",
-  "./modules/core-sources/player.js",
-  "./modules/core-sources/table.js",
-  "./modules/core-sources/wallet.js",
-  "./modules/core-sources/watchlist.js",
-].map((path) => fs.readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
+const core = readCombinedCanonicalCoreSource();
 
 assert.match(
   core,
