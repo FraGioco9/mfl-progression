@@ -1,0 +1,62 @@
+name: Update Shared transition validations once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-transitions-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-transitions-fragment
+          fetch-depth: 0
+      - name: Update transition-fragment validation ownership
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one replacement anchor, found {text.count(old)}')
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'site/check-core-types.mjs',
+              '  "modules/core-sources/shared-routing.js:TS2551": 1,\n  "modules/core-sources/shared.js:TS2304": 9,\n  "modules/core-sources/shared.js:TS2339": 317,',
+              '  "modules/core-sources/shared-routing.js:TS2551": 1,\n  "modules/core-sources/shared-transitions.js:TS2339": 6,\n  "modules/core-sources/shared.js:TS2304": 9,\n  "modules/core-sources/shared.js:TS2339": 311,',
+          )
+
+          replace_once(
+              'site/validate.mjs',
+              '''  sharedCoreManifest?.source === "shared-foundations.js"\n    && sharedCoreManifest?.sources?.length === 4\n    && sharedCoreManifest.sources[0] === "shared-foundations.js"\n    && sharedCoreManifest.sources[1] === "shared-session.js"\n    && sharedCoreManifest.sources[2] === "shared-routing.js"\n    && sharedCoreManifest.sources[3] === "shared.js"\n    && sharedCoreManifest?.runtime === "app-core-runtime.js",''',
+              '''  sharedCoreManifest?.source === "shared-foundations.js"\n    && sharedCoreManifest?.sources?.length === 5\n    && sharedCoreManifest.sources[0] === "shared-foundations.js"\n    && sharedCoreManifest.sources[1] === "shared-session.js"\n    && sharedCoreManifest.sources[2] === "shared-routing.js"\n    && sharedCoreManifest.sources[3] === "shared-transitions.js"\n    && sharedCoreManifest.sources[4] === "shared.js"\n    && sharedCoreManifest?.runtime === "app-core-runtime.js",''',
+          )
+
+          replace_once(
+              'site/validate-club-route-core.mjs',
+              '''  coreSourceByDomain.shared?.source === "shared-foundations.js"\n    && coreSourceByDomain.shared?.sources?.length === 4\n    && coreSourceByDomain.shared.sources[1] === "shared-session.js"\n    && coreSourceByDomain.shared.sources[2] === "shared-routing.js"\n    && coreSourceByDomain.shared.sources[3] === "shared.js"\n    && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",''',
+              '''  coreSourceByDomain.shared?.source === "shared-foundations.js"\n    && coreSourceByDomain.shared?.sources?.length === 5\n    && coreSourceByDomain.shared.sources[1] === "shared-session.js"\n    && coreSourceByDomain.shared.sources[2] === "shared-routing.js"\n    && coreSourceByDomain.shared.sources[3] === "shared-transitions.js"\n    && coreSourceByDomain.shared.sources[4] === "shared.js"\n    && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",''',
+          )
+
+          replace_once(
+              'site/validate-core-source-ownership.mjs',
+              '''const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");\ninvariant(\n  sharedEntry?.source === "shared-foundations.js"\n    && sharedEntry?.sources?.length === 4\n    && sharedEntry.sources[0] === "shared-foundations.js"\n    && sharedEntry.sources[1] === "shared-session.js"\n    && sharedEntry.sources[2] === "shared-routing.js"\n    && sharedEntry.sources[3] === "shared.js"\n    && sharedEntry.maxUniversalBytes === 355000,\n  "Shared core must keep foundations before session before routing before transitions and retain the explicit 355000-byte universal no-growth ceiling.",\n);\nconst sharedFoundations = await read("./modules/core-sources/shared-foundations.js");\nconst sharedSession = await read("./modules/core-sources/shared-session.js");\nconst sharedRouting = await read("./modules/core-sources/shared-routing.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");\ninvariant(\n  sharedFoundations.replace(/\\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),\n  "Shared foundations must end at the canonical DOM-binding boundary.",\n);\ninvariant(\n  sharedSession.startsWith('function normalizeSettingsTheme(value, fallback = "dark") {'),\n  "Shared session must begin at the canonical behavior boundary.",\n);\ninvariant(\n  sharedSession.replace(/\\s*$/, "").endsWith("function toggleMenu() {\\n  updateMenuVisibility();\\n}"),\n  "Shared session must end at the canonical shell/session boundary.",\n);\ninvariant(\n  sharedRouting.startsWith("function playerIdFromUrl() {")\n    && sharedRouting.replace(/\\s*$/, "").endsWith("let navigationTransitionSequence = 0;"),\n  "Shared routing must own URL parsing/path construction through the transition-state boundary.",\n);\ninvariant(\n  sharedNavigation.startsWith("function currentNavigationPath() {"),\n  "Shared navigation must begin at the canonical transition-execution boundary.",\n);\ninvariant(\n  !sharedFoundations.includes("function normalizeSettingsTheme")\n    && !sharedSession.includes("function playerIdFromUrl")\n    && !sharedRouting.includes("function currentNavigationPath"),\n  "Shared foundations, session, and routing must not absorb later ownership domains.",\n);''',
+              '''const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");\ninvariant(\n  sharedEntry?.source === "shared-foundations.js"\n    && sharedEntry?.sources?.length === 5\n    && sharedEntry.sources[0] === "shared-foundations.js"\n    && sharedEntry.sources[1] === "shared-session.js"\n    && sharedEntry.sources[2] === "shared-routing.js"\n    && sharedEntry.sources[3] === "shared-transitions.js"\n    && sharedEntry.sources[4] === "shared.js"\n    && sharedEntry.maxUniversalBytes === 355000,\n  "Shared core must keep foundations before session before routing before transitions before page lifecycle and retain the explicit 355000-byte universal no-growth ceiling.",\n);\nconst sharedFoundations = await read("./modules/core-sources/shared-foundations.js");\nconst sharedSession = await read("./modules/core-sources/shared-session.js");\nconst sharedRouting = await read("./modules/core-sources/shared-routing.js");\nconst sharedTransitions = await read("./modules/core-sources/shared-transitions.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");\ninvariant(\n  sharedFoundations.replace(/\\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),\n  "Shared foundations must end at the canonical DOM-binding boundary.",\n);\ninvariant(\n  sharedSession.startsWith('function normalizeSettingsTheme(value, fallback = "dark") {'),\n  "Shared session must begin at the canonical behavior boundary.",\n);\ninvariant(\n  sharedSession.replace(/\\s*$/, "").endsWith("function toggleMenu() {\\n  updateMenuVisibility();\\n}"),\n  "Shared session must end at the canonical shell/session boundary.",\n);\ninvariant(\n  sharedRouting.startsWith("function playerIdFromUrl() {")\n    && sharedRouting.replace(/\\s*$/, "").endsWith("let navigationTransitionSequence = 0;"),\n  "Shared routing must own URL parsing/path construction through the transition-state boundary.",\n);\ninvariant(\n  sharedTransitions.startsWith("function currentNavigationPath() {")\n    && sharedTransitions.replace(/\\s*$/, "").endsWith('Reflect.set(window, "__mflWaitForViewTransitionPaint", waitForViewTransitionPaint);'),\n  "Shared transitions must own canonical transition execution through the published transition facade.",\n);\ninvariant(\n  sharedNavigation.startsWith("function resetPageScroll() {"),\n  "Shared page lifecycle must begin at the canonical reset-scroll boundary.",\n);\ninvariant(\n  !sharedFoundations.includes("function normalizeSettingsTheme")\n    && !sharedSession.includes("function playerIdFromUrl")\n    && !sharedRouting.includes("function currentNavigationPath")\n    && !sharedTransitions.includes("function resetPageScroll"),\n  "Shared foundations, session, routing, and transitions must not absorb later ownership domains.",\n);''',
+          )
+          PY
+          rm .github/workflows/update-shared-transition-validations-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/check-core-types.mjs site/validate.mjs site/validate-club-route-core.mjs site/validate-core-source-ownership.mjs .github/workflows/update-shared-transition-validations-once.yml
+          git commit -m "Align validation with Shared transition fragment"
+          git push origin HEAD:arch/754-shared-transitions-fragment
