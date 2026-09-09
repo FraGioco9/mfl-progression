@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 20
+    && sharedEntry?.sources?.length === 21
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -77,9 +77,10 @@ invariant(
     && sharedEntry.sources[16] === "shared-global-search.js"
     && sharedEntry.sources[17] === "shared-wallet-row-classification.js"
     && sharedEntry.sources[18] === "shared-html-escaping.js"
-    && sharedEntry.sources[19] === "shared.js"
+    && sharedEntry.sources[19] === "shared-incremental-routing.js"
+    && sharedEntry.sources[20] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -100,6 +101,7 @@ const sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lif
 const sharedGlobalSearch = await read("./modules/core-sources/shared-global-search.js");
 const sharedWalletRowClassification = await read("./modules/core-sources/shared-wallet-row-classification.js");
 const sharedHtmlEscaping = await read("./modules/core-sources/shared-html-escaping.js");
+const sharedIncrementalRouting = await read("./modules/core-sources/shared-incremental-routing.js");
 const sharedRemaining = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -200,11 +202,19 @@ invariant(
   "Shared HTML escaping must own the universal escapeHtml primitive without retaining the unused CSV helper.",
 );
 invariant(
-  sharedRemaining.startsWith("function clubRouteTargetFromPath() {")
+  sharedIncrementalRouting.startsWith("function clubRouteTargetFromPath() {")
+    && sharedIncrementalRouting.replace(/\s*$/, "").endsWith("window.mflReloadIncrementalPage = reloadIncrementalPage;")
+    && !sharedIncrementalRouting.includes("function csvEscape")
+    && !sharedIncrementalRouting.includes("function mflChunkFromPublicData")
+    && !sharedIncrementalRouting.includes("function progressionDataColumns"),
+  "Shared incremental routing must own canonical route targeting, cache/request coordination, incremental payload application, and reload through the published reload facade.",
+);
+invariant(
+  sharedRemaining.startsWith("let pendingViewButtonPointer = null;")
     && !sharedRemaining.includes("function csvEscape")
     && !sharedRemaining.includes("function mflChunkFromPublicData")
     && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at the live incremental-routing boundary and keep unused serialization/data helpers retired.",
+  "Remaining Shared behavior must begin at the view-button pointer/interaction boundary and keep unused serialization/data helpers retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -225,8 +235,9 @@ invariant(
     && !sharedModalLifecycle.includes("async function openSearch")
     && !sharedGlobalSearch.includes("function linkedWalletAddressesForOwnedPlayers")
     && !sharedWalletRowClassification.includes("function escapeHtml")
-    && !sharedHtmlEscaping.includes("function mflChunkFromPublicData"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, and HTML escaping must not absorb later ownership domains.",
+    && !sharedHtmlEscaping.includes("function clubRouteTargetFromPath")
+    && !sharedIncrementalRouting.includes("let pendingViewButtonPointer"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, and incremental routing must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
