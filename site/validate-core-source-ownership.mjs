@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 17
+    && sharedEntry?.sources?.length === 18
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -74,9 +74,10 @@ invariant(
     && sharedEntry.sources[13] === "shared-player-display.js"
     && sharedEntry.sources[14] === "shared-player-actions.js"
     && sharedEntry.sources[15] === "shared-modal-lifecycle.js"
-    && sharedEntry.sources[16] === "shared.js"
+    && sharedEntry.sources[16] === "shared-global-search.js"
+    && sharedEntry.sources[17] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -94,6 +95,7 @@ const sharedWatchlistActions = await read("./modules/core-sources/shared-watchli
 const sharedPlayerDisplay = await read("./modules/core-sources/shared-player-display.js");
 const sharedPlayerActions = await read("./modules/core-sources/shared-player-actions.js");
 const sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lifecycle.js");
+const sharedGlobalSearch = await read("./modules/core-sources/shared-global-search.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -178,8 +180,13 @@ invariant(
   "Shared modal lifecycle must own generic show/hide transitions and drag-safe backdrop closing.",
 );
 invariant(
-  sharedNavigation.startsWith("async function openSearch() {"),
-  "Remaining Shared behavior must begin at the Global Search lifecycle boundary.",
+  sharedGlobalSearch.startsWith("async function openSearch() {")
+    && sharedGlobalSearch.replace(/\s*$/, "").endsWith("  })();\n}"),
+  "Shared Global Search must own open/close, matching, recent promotion, navigation, clear state, and result rendering through renderSearchResults().",
+);
+invariant(
+  sharedNavigation.startsWith("function linkedWalletAddressesForOwnedPlayers() {"),
+  "Remaining Shared behavior must begin at the linked-wallet/MFL data-helper boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -197,8 +204,9 @@ invariant(
     && !sharedWatchlistActions.includes("function countryCodeForNationality")
     && !sharedPlayerDisplay.includes("async function copyPlayerId")
     && !sharedPlayerActions.includes("function showModal")
-    && !sharedModalLifecycle.includes("async function openSearch"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, and generic modal lifecycle must not absorb later ownership domains.",
+    && !sharedModalLifecycle.includes("async function openSearch")
+    && !sharedGlobalSearch.includes("function linkedWalletAddressesForOwnedPlayers"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, and Global Search lifecycle must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
