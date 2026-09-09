@@ -75,8 +75,7 @@ REPRESENTATIVE_TABLE_QUERY_BUDGETS = (
             f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 0),
-        max_full_player_scans=1,
-        max_temp_btrees=1,
+        required_index="players_overall_order_index",
     ),
     QueryPlanBudget(
         name="database_attributes_deep_page",
@@ -85,8 +84,7 @@ REPRESENTATIVE_TABLE_QUERY_BUDGETS = (
             f"ORDER BY {DEFAULT_OVERALL_ORDER_SQL} LIMIT ? OFFSET ?"
         ),
         parameters=(100, 4000),
-        max_full_player_scans=1,
-        max_temp_btrees=1,
+        required_index="players_overall_order_index",
     ),
     QueryPlanBudget(
         name="agent_attributes",

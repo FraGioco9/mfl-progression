@@ -138,9 +138,16 @@ class RuntimeQueryPlanTests(unittest.TestCase):
                 metrics["database_attributes_first_page"].details,
                 metrics["database_attributes_deep_page"].details,
             )
-            self.assertEqual(metrics["database_attributes_first_page"].temp_btrees, 1)
+            self.assertEqual(metrics["database_attributes_first_page"].full_player_scans, 0)
+            self.assertEqual(metrics["database_attributes_first_page"].temp_btrees, 0)
+            self.assertTrue(
+                any(
+                    "players_overall_order_index" in detail
+                    for detail in metrics["database_attributes_first_page"].details
+                )
+            )
 
-    def test_deep_database_seek_query_uses_less_sqlite_work_than_offset(self) -> None:
+    def test_deep_database_seek_query_uses_far_less_sqlite_work_than_offset(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             database_path = self.prepare_database(directory)
             order = runtime_query_plans.DEFAULT_OVERALL_ORDER_SQL
@@ -174,29 +181,29 @@ class RuntimeQueryPlanTests(unittest.TestCase):
 
             self.assertEqual(seek.rows, offset.rows)
             self.assertTrue(
-                any("players_overall_index" in detail for detail in seek_plan),
+                any("players_overall_order_index" in detail for detail in seek_plan),
                 seek_plan,
             )
             self.assertLessEqual(
                 seek.vm_steps * 100,
-                offset.vm_steps * 50,
+                offset.vm_steps * 35,
                 f"seek={seek.vm_steps} VM steps, offset={offset.vm_steps} VM steps",
             )
 
-    def test_budget_detects_loss_of_hot_database_sort_index(self) -> None:
+    def test_budget_detects_loss_of_production_overall_order_index(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             database_path = self.prepare_database(directory)
             budget = next(
                 budget
                 for budget in runtime_query_plans.REPRESENTATIVE_TABLE_QUERY_BUDGETS
-                if budget.name == "agent_attributes"
+                if budget.name == "database_attributes_first_page"
             )
             with sqlite3.connect(database_path) as connection:
-                connection.execute("DROP INDEX players_wallet_overall_index")
+                connection.execute("DROP INDEX players_overall_order_index")
                 connection.execute("ANALYZE")
                 with self.assertRaisesRegex(
                     AssertionError,
-                    "players_wallet_overall_index|full players scans|temporary B-trees",
+                    "players_overall_order_index|full players scans|temporary B-trees",
                 ):
                     runtime_query_plans.assert_query_plan_budget(connection, budget)
 
