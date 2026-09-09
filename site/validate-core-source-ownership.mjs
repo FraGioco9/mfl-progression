@@ -57,25 +57,36 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 2
+    && sharedEntry?.sources?.length === 3
     && sharedEntry.sources[0] === "shared-foundations.js"
-    && sharedEntry.sources[1] === "shared.js"
+    && sharedEntry.sources[1] === "shared-session.js"
+    && sharedEntry.sources[2] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before navigation and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
-const sharedBehavior = await read("./modules/core-sources/shared.js");
+const sharedSession = await read("./modules/core-sources/shared-session.js");
+const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
   "Shared foundations must end at the canonical DOM-binding boundary.",
 );
 invariant(
-  sharedBehavior.startsWith('function normalizeSettingsTheme(value, fallback = "dark") {'),
-  "Shared behavior must begin at the canonical behavior boundary.",
+  sharedSession.startsWith('function normalizeSettingsTheme(value, fallback = "dark") {'),
+  "Shared session must begin at the canonical behavior boundary.",
 );
 invariant(
-  !sharedFoundations.includes("function normalizeSettingsTheme"),
-  "Shared foundations must not absorb behavior ownership.",
+  sharedSession.replace(/\s*$/, "").endsWith("function toggleMenu() {\n  updateMenuVisibility();\n}"),
+  "Shared session must end at the canonical shell/session boundary.",
+);
+invariant(
+  sharedNavigation.startsWith("function playerIdFromUrl() {"),
+  "Shared navigation must begin at the canonical URL-routing boundary.",
+);
+invariant(
+  !sharedFoundations.includes("function normalizeSettingsTheme")
+    && !sharedSession.includes("function playerIdFromUrl"),
+  "Shared foundations and session must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
@@ -105,4 +116,4 @@ for (const file of retiredFiles) {
   }
 }
 
-console.log("Canonical application-core manifest, ordered source-fragment ownership, Shared foundations/behavior boundary, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
+console.log("Canonical application-core manifest, ordered source-fragment ownership, Shared foundations/session/navigation boundaries, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");

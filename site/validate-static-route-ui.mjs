@@ -1,5 +1,6 @@
 import { invariant, includes, excludes } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
@@ -23,7 +24,7 @@ const [
   read("./database-stats-state-runtime.js"),
   read("./modules/app-entry.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    Promise.resolve(readCanonicalCoreSource("shared")),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),
