@@ -110,6 +110,26 @@ if (normalized.includes('data-mfl-static-player-shell="true"')) {
   return normalized.replace(emptyPlayerShell, staticPlayerShell);
 }
 
+async function readCanonicalCoreSource(entry) {
+  const sourceNames = Array.isArray(entry.sources) ? entry.sources : [];
+  if (!sourceNames.length) {
+    throw new Error(`Canonical ${entry.domain} core must define at least one source fragment.`);
+  }
+
+  const sourcePaths = sourceNames.map((sourceName) => resolve(siteRoot, "modules", "core-sources", sourceName));
+  const sourceParts = await Promise.all(sourcePaths.map(async (sourcePath, index) => {
+    const sourcePart = String(await readFile(sourcePath, "utf8")).replace(/\r\n?/g, "\n").replace(/\s*$/, "");
+    if (!sourcePart) throw new Error(`Canonical core source is empty: ${sourceNames[index]}.`);
+    return sourcePart;
+  }));
+
+  return {
+    sourceNames,
+    sourcePaths,
+    source: sourceParts.join("\n\n"),
+  };
+}
+
 await synchronizeReleaseProjections(siteRoot);
 const playerHtmlSource = String(await readFile(playerHtmlSourcePath, "utf8"))
   .replace(/\r\n?/g, "\n")
@@ -123,10 +143,8 @@ if (!appConfigRuntime) throw new Error("Canonical app configuration produced an 
 
 const artifacts = [];
 for (const entry of coreSourceManifest) {
-  const sourcePath = resolve(siteRoot, "modules", "core-sources", entry.source);
+  const { sourceNames, sourcePaths, source } = await readCanonicalCoreSource(entry);
   const runtimePath = resolve(siteRoot, "modules", entry.runtime);
-  const source = String(await readFile(sourcePath, "utf8")).replace(/\r\n?/g, "\n").replace(/\s*$/, "");
-  if (!source) throw new Error(`Canonical core source is empty: ${entry.source}.`);
   const sourceBytes = Buffer.byteLength(source, "utf8");
   if (entry.maxUniversalBytes !== null) {
     if (!Number.isInteger(entry.maxUniversalBytes) || entry.maxUniversalBytes <= 0) {
@@ -136,7 +154,7 @@ for (const entry of coreSourceManifest) {
       throw new Error(`Canonical ${entry.domain} core source is ${sourceBytes} bytes, above its ${entry.maxUniversalBytes}-byte universal ownership ceiling. Move route/domain behavior out of the universal core instead of growing shared runtime cost.`);
     }
   }
-  artifacts.push(Object.freeze({ ...entry, sourceName: entry.source, sourcePath, runtimePath, source, sourceBytes }));
+  artifacts.push(Object.freeze({ ...entry, sourceNames, sourcePaths, runtimePath, source, sourceBytes }));
 }
 
 const coreBuildId = createHash("sha256")
@@ -154,23 +172,24 @@ if (!artifacts.some(({ source }) => source.includes('icon: "calendar-clock"'))) 
 if (!artifacts.some(({ source }) => source.includes("`/retirement-${marker.icon}.svg`"))) {
   throw new Error("Canonical core sources do not render retirement marker SVG assets.");
 }
-const playerSource = artifacts.find(({ sourceName }) => sourceName === "player.js")?.source || "";
+const playerSource = artifacts.find(({ domain }) => domain === "player")?.source || "";
 if (!playerSource.includes('ageMarker.icon)}.svg')) {
   throw new Error("Canonical Player core source does not render retirement SVG markers.");
 }
 
-for (const { sourcePath, source } of artifacts) {
+for (const { sourcePaths, source } of artifacts) {
+  const sourceDescription = sourcePaths.join(", ");
   if (source.includes("window.eval") || source.includes("eval(")) {
-    throw new Error(`String evaluation leaked into canonical application core: ${sourcePath}.`);
+    throw new Error(`String evaluation leaked into canonical application core: ${sourceDescription}.`);
   }
   if (source.includes("__mflEvaluationRouteStability") || source.includes("evaluationRouteStabilityStyles")) {
-    throw new Error(`Legacy Evaluation route-stability ownership leaked into canonical application core: ${sourcePath}.`);
+    throw new Error(`Legacy Evaluation route-stability ownership leaked into canonical application core: ${sourceDescription}.`);
   }
   if (source.includes("__mflTooltipSettings?.gap") || source.includes("anchorHeight = 14")) {
-    throw new Error(`Legacy tooltip spacing ownership leaked into canonical application core: ${sourcePath}.`);
+    throw new Error(`Legacy tooltip spacing ownership leaked into canonical application core: ${sourceDescription}.`);
   }
   if (source.includes("function tableTooltipTarget(event)") || source.includes("showPlayerNoteTooltip(tooltip)")) {
-    throw new Error(`Delegated table tooltip ownership leaked outside the global Tooltip Height runtime: ${sourcePath}.`);
+    throw new Error(`Delegated table tooltip ownership leaked outside the global Tooltip Height runtime: ${sourceDescription}.`);
   }
 }
 if (!artifacts.some(({ source }) => source.includes("iconRect.top - tooltipRect.height - tooltipHeight"))) {

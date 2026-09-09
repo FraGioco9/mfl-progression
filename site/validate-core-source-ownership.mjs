@@ -8,17 +8,27 @@ const read = (path) => readValidationText(path, import.meta.url);
 
 const build = await read("./build-app-core.mjs");
 invariant(build.includes('import { coreSourceManifest } from "./modules/core-source-manifest.js";'), "Application-core build must consume the canonical core source manifest.");
-invariant(build.includes("for (const entry of coreSourceManifest)"), "Application-core build must generate every canonical split source from the manifest.");
-invariant(build.includes('resolve(siteRoot, "modules", "core-sources", entry.source)'), "Application-core build must resolve canonical split source files from manifest entries.");
+invariant(build.includes("for (const entry of coreSourceManifest)"), "Application-core build must generate every canonical source-fragment domain from the manifest.");
+invariant(build.includes('resolve(siteRoot, "modules", "core-sources", sourceName)'), "Application-core build must resolve every ordered canonical source fragment from manifest entries.");
+invariant(build.includes('sourceParts.join("\\n\\n")'), "Application-core build must concatenate ordered source fragments without behavior transforms.");
 invariant(!build.includes("app-core-build-normalizer"), "Application-core build must not depend on behavior-changing normalizers.");
 invariant(!build.includes("replaceRequired"), "Application-core build must not perform source-string behavior rewrites.");
 invariant(!build.includes("modules/app-core.js"), "Application-core build must not depend on the retired monolith.");
 invariant(build.includes("entry.maxUniversalBytes !== null"), "Application-core build must enforce the universal shared-core ceiling when one is configured.");
 
 const domains = new Set();
+const ownedSources = new Set();
 for (const entry of coreSourceManifest) {
   invariant(!domains.has(entry.domain), `Core source manifest domain must be unique: ${entry.domain}.`);
   domains.add(entry.domain);
+  invariant(Array.isArray(entry.sources) && entry.sources.length > 0, `Core source ${entry.domain} must define at least one ordered canonical source fragment.`);
+  invariant(Object.isFrozen(entry.sources), `Core source ${entry.domain} fragment order must be immutable.`);
+  invariant(entry.source === entry.sources[0], `Core source ${entry.domain} compatibility source alias must reference its first ordered fragment.`);
+  for (const sourceName of entry.sources) {
+    invariant(typeof sourceName === "string" && sourceName.endsWith(".js"), `Core source ${entry.domain} has an invalid fragment name.`);
+    invariant(!ownedSources.has(sourceName), `Canonical core source fragment must have one domain owner: ${sourceName}.`);
+    ownedSources.add(sourceName);
+  }
   invariant(
     entry.maxUniversalBytes === null || (Number.isInteger(entry.maxUniversalBytes) && entry.maxUniversalBytes > 0),
     `Core source ${entry.domain} must define either no byte ceiling or a positive universal ownership ceiling.`,
@@ -28,27 +38,29 @@ for (const entry of coreSourceManifest) {
     invariant(entry.maxUniversalBytes === null, `Route/domain source ${entry.domain} must not use an arbitrary hard byte ceiling; ownership and lazy loading are the architectural boundary.`);
   }
 
-  const [source, runtime] = await Promise.all([
-    read(`./modules/core-sources/${entry.source}`),
-    read(`./modules/${entry.runtime}`),
-  ]);
+  const sourceParts = await Promise.all(entry.sources.map((sourceName) => read(`./modules/core-sources/${sourceName}`)));
+  const source = sourceParts.map((part) => part.replace(/\s*$/, "")).join("\n\n");
+  const runtime = await read(`./modules/${entry.runtime}`);
   invariant(runtime.startsWith(entry.banner), `Generated ${entry.runtime} must carry the manifest-owned banner.`);
   invariant(
-    runtime.slice(entry.banner.length).replace(/\s*$/, "") === source.replace(/\s*$/, ""),
-    `Generated ${entry.runtime} must exactly match canonical ${entry.source}.`,
+    runtime.slice(entry.banner.length).replace(/\s*$/, "") === source,
+    `Generated ${entry.runtime} must exactly match the ordered canonical fragments: ${entry.sources.join(", ")}.`,
   );
   if (entry.maxUniversalBytes !== null) {
     invariant(
-      Buffer.byteLength(source.replace(/\s*$/, ""), "utf8") <= entry.maxUniversalBytes,
-      `Canonical ${entry.domain} source exceeded its universal ownership ceiling.`,
+      Buffer.byteLength(source, "utf8") <= entry.maxUniversalBytes,
+      `Canonical ${entry.domain} source fragments exceeded the universal ownership ceiling.`,
     );
   }
 }
 
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
-  sharedEntry?.source === "shared.js" && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep the explicit 355000-byte universal no-growth ceiling so route/domain behavior cannot silently return to the monolith.",
+  sharedEntry?.source === "shared.js"
+    && sharedEntry?.sources?.length === 1
+    && sharedEntry.sources[0] === "shared.js"
+    && sharedEntry.maxUniversalBytes === 355000,
+  "Shared core must retain its current compatibility source and explicit 355000-byte universal no-growth ceiling until the physical fragment split is introduced separately.",
 );
 
 const retiredFiles = [
@@ -78,4 +90,4 @@ for (const file of retiredFiles) {
   }
 }
 
-console.log("Canonical application-core manifest, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
+console.log("Canonical application-core manifest, ordered source-fragment ownership, compatibility aliases, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");

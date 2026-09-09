@@ -10,12 +10,16 @@ const entries = [
   ["watchlist", "watchlist.js", "app-core-watchlist-runtime.js", "// Generated Watchlist core from modules/core-sources/watchlist.js. Do not edit directly.\n"],
 ];
 
-export const coreSourceManifest = Object.freeze(entries.map(([domain, source, runtime, banner, maxUniversalBytes = null]) => Object.freeze({
-  domain,
-  source,
-  runtime,
-  banner,
-  maxUniversalBytes,
-})));
+export const coreSourceManifest = Object.freeze(entries.map(([domain, source, runtime, banner, maxUniversalBytes = null]) => {
+  const sources = Array.isArray(source) ? source : [source];
+  return Object.freeze({
+    domain,
+    source: sources[0],
+    sources: Object.freeze([...sources]),
+    runtime,
+    banner,
+    maxUniversalBytes,
+  });
+}));
 
 export const coreSourceByDomain = Object.freeze(Object.fromEntries(coreSourceManifest.map((entry) => [entry.domain, entry])));
