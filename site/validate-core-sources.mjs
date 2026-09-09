@@ -19,6 +19,7 @@ const artifacts = Object.freeze({
 
 export { canonicalCoreDomains };
 
+// Read one manifest-owned domain after its ordered source fragments are assembled.
 export function readCanonicalCoreSource(domain = "shared") {
   const source = canonicalCoreDomains[domain];
   if (typeof source !== "string") {
@@ -31,6 +32,7 @@ export function readCanonicalCoreArtifacts() {
   return artifacts;
 }
 
+// Read the complete canonical core when a validator spans Shared and route domains.
 export function readCombinedCanonicalCoreSource() {
   return Object.values(canonicalCoreDomains).join("\n");
 }
