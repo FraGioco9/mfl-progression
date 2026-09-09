@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { coreSourceByDomain } from "./modules/core-source-manifest.js";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 const includes = (source, expected, message) => {
@@ -15,7 +16,7 @@ const [sharedUi, staticUi, discountUi, evaluationSource, tableSource, generatedT
   read("./static-ui-runtime.js"),
   read("./evaluation-discount-rate-ui-runtime.js"),
   read("./modules/core-sources/evaluation.js"),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/app-core-table-runtime.js"),
   read("./build-app-core.mjs"),
   read("./bootstrap.js"),
@@ -73,14 +74,18 @@ excludes(bootstrap, 'if (column === "positions") return "POSITIONS";', "Bootstra
 includes(bootstrap, "function firstPaintTableColumnLabel(page, column)", "Bootstrap must derive first-paint labels from viewport and column identity.");
 
 excludes(buildCore, "app-core-mobile-table", "The canonical build must not depend on the retired mobile-table transform.");
-if (coreSourceByDomain.table?.source !== "table.js" || coreSourceByDomain.table?.runtime !== "app-core-table-runtime.js") {
-  throw new Error("The core manifest must emit Table runtime directly from table.js.");
+if (coreSourceByDomain.table?.source !== "table.js"
+  || coreSourceByDomain.table?.sources?.length !== 2
+  || coreSourceByDomain.table.sources[0] !== "table.js"
+  || coreSourceByDomain.table.sources[1] !== "table-interaction-bindings.js"
+  || coreSourceByDomain.table?.runtime !== "app-core-table-runtime.js") {
+  throw new Error("The core manifest must emit Table runtime from its ordered canonical fragments.");
 }
 
 const tableBanner = "// Generated Table core from modules/core-sources/table.js. Do not edit directly.\n";
 if (!generatedTable.startsWith(tableBanner)) throw new Error("Generated Table runtime is missing its canonical banner.");
 if (generatedTable.slice(tableBanner.length).replace(/\s*$/, "") !== tableSource.replace(/\s*$/, "")) {
-  throw new Error("Generated Table runtime must exactly match canonical table.js.");
+  throw new Error("Generated Table runtime must exactly match the manifest-assembled canonical Table source.");
 }
 
 console.log("Source-owned mobile Table scrolling, responsive geometry, compact headings, tooltip behavior, first-paint parity, and generated-runtime equivalence validation passed.");

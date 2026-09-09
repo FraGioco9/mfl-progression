@@ -6,7 +6,7 @@ const entries = [
   ["club", "club.js", "app-core-club-runtime.js", "// Generated Club core from modules/core-sources/club.js. Do not edit directly.\n"],
   ["settings", "settings.js", "app-core-settings-runtime.js", "// Generated Settings core from modules/core-sources/settings.js. Do not edit directly.\n"],
   ["player", "player.js", "app-core-player-runtime.js", "// Generated Player core from modules/core-sources/player.js. Do not edit directly.\n"],
-  ["table", "table.js", "app-core-table-runtime.js", "// Generated Table core from modules/core-sources/table.js. Do not edit directly.\n"],
+  ["table", ["table.js", "table-interaction-bindings.js"], "app-core-table-runtime.js", "// Generated Table core from modules/core-sources/table.js. Do not edit directly.\n"],
   ["wallet", "wallet.js", "app-core-wallet-runtime.js", "// Generated Wallet core from modules/core-sources/wallet.js. Do not edit directly.\n"],
   ["watchlist", "watchlist.js", "app-core-watchlist-runtime.js", "// Generated Watchlist core from modules/core-sources/watchlist.js. Do not edit directly.\n"],
 ];

@@ -123,7 +123,18 @@ invariant(String(sharedCoreManifest?.banner || "").includes("Do not edit directl
 const canonicalSharedCore = (await Promise.all(
   sharedCoreManifest.sources.map((sourceName) => readSite(`modules/core-sources/${sourceName}`)),
 )).map((part) => part.replace(/\s*$/, "")).join("\n\n");
-const canonicalTableCore = (await readSite("modules/core-sources/table.js")).replace(/\s*$/, "");
+const tableCoreManifest = coreSourceByDomain.table;
+invariant(
+  tableCoreManifest?.source === "table.js"
+    && tableCoreManifest?.sources?.length === 2
+    && tableCoreManifest.sources[0] === "table.js"
+    && tableCoreManifest.sources[1] === "table-interaction-bindings.js"
+    && tableCoreManifest?.runtime === "app-core-table-runtime.js",
+  "Canonical manifest must map the ordered Table core fragments to app-core-table-runtime.js.",
+);
+const canonicalTableCore = (await Promise.all(
+  tableCoreManifest.sources.map((sourceName) => readSite(`modules/core-sources/${sourceName}`)),
+)).map((part) => part.replace(/\s*$/, "")).join("\n\n");
 const coreSource = [
   canonicalSharedCore,
   await readSite("modules/core-sources/evaluation.js"),
