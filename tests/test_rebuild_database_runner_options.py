@@ -1,0 +1,126 @@
+from __future__ import annotations
+
+import os
+import sqlite3
+import tempfile
+import unittest
+from pathlib import Path
+from unittest import mock
+
+from scripts.database import competition_storage
+from scripts.database import rebuild_database_runner as runner
+from scripts.database import run_flow_rebuild_paged as paged
+
+
+class RebuildOptionTests(unittest.TestCase):
+    def test_environment_flags_default_on_and_parse_false(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertTrue(runner.environment_flag("MFL_TEST_OPTION"))
+        with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "false"}, clear=True):
+            self.assertFalse(runner.environment_flag("MFL_TEST_OPTION"))
+        with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "0"}, clear=True):
+            self.assertFalse(runner.environment_flag("MFL_TEST_OPTION"))
+
+    def test_invalid_environment_flag_fails_closed(self) -> None:
+        with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "sometimes"}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "must be true or false"):
+                runner.environment_flag("MFL_TEST_OPTION")
+
+    def test_disabled_progressions_reuse_previous_values_without_fetching(self) -> None:
+        column_definitions = ", ".join(
+            f"{column} INTEGER" for column in runner.PROGRESSION_COLUMNS
+        )
+        selected_columns = ", ".join(runner.PROGRESSION_COLUMNS)
+        values = tuple(range(1, len(runner.PROGRESSION_COLUMNS) + 1))
+
+        with tempfile.TemporaryDirectory() as directory:
+            previous_path = Path(directory) / "previous.db"
+            previous = sqlite3.connect(previous_path)
+            previous.execute(
+                f"CREATE TABLE players (player_id INTEGER PRIMARY KEY, {column_definitions})"
+            )
+            placeholders = ", ".join("?" for _ in range(len(values) + 1))
+            previous.execute(
+                f"INSERT INTO players (player_id, {selected_columns}) VALUES ({placeholders})",
+                (1, *values),
+            )
+            previous.commit()
+            previous.close()
+
+            current = sqlite3.connect(":memory:")
+            try:
+                current.execute(
+                    f"CREATE TABLE players (player_id INTEGER PRIMARY KEY, {column_definitions})"
+                )
+                current.executemany(
+                    "INSERT INTO players (player_id) VALUES (?)",
+                    [(1,), (2,)],
+                )
+                with mock.patch.object(paged, "PREVIOUS_DATABASE_PATH", previous_path):
+                    stats = runner.restore_previous_progressions(current)
+
+                restored = current.execute(
+                    f"SELECT {selected_columns} FROM players WHERE player_id = 1"
+                ).fetchone()
+                missing = current.execute(
+                    f"SELECT {selected_columns} FROM players WHERE player_id = 2"
+                ).fetchone()
+                self.assertEqual(restored, values)
+                self.assertTrue(all(value is None for value in missing))
+                self.assertEqual(stats, {"ALL": 1, "CURRENT_SEASON": 1})
+            finally:
+                current.close()
+
+    def test_disabled_competitions_restore_history_without_api_requests(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            previous_path = Path(directory) / "previous.db"
+            previous = sqlite3.connect(previous_path)
+            competition_storage.create_schema(previous)
+            previous.execute(
+                """
+                INSERT INTO competitions (
+                  competition_id, season_id, with_xp, detail_loaded
+                ) VALUES (100, 25, 1, 1)
+                """
+            )
+            previous.commit()
+            previous.close()
+
+            current = sqlite3.connect(":memory:")
+            try:
+                request_json = mock.Mock(side_effect=AssertionError("API must not be called"))
+                stats = runner.restore_competitions_without_fetch(
+                    current,
+                    previous_path,
+                    request_json,
+                    object(),
+                    log=lambda _message: None,
+                )
+                self.assertEqual(
+                    current.execute(
+                        "SELECT competition_id FROM competitions"
+                    ).fetchall(),
+                    [(100,)],
+                )
+                self.assertEqual(stats["restored"], 1)
+                request_json.assert_not_called()
+            finally:
+                current.close()
+
+    def test_registration_dates_are_not_part_of_competition_storage(self) -> None:
+        connection = sqlite3.connect(":memory:")
+        try:
+            competition_storage.create_schema(connection)
+            columns = {
+                str(row[1])
+                for row in connection.execute("PRAGMA table_info(competitions)")
+            }
+            self.assertNotIn("registration_start_date", columns)
+            self.assertNotIn("registration_end_date", columns)
+            self.assertIn("starting_date", columns)
+        finally:
+            connection.close()
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.database import clubs
+from scripts.database import competitions
 from scripts.database import populate_seasons_from_flow
 from scripts.database import run_flow_rebuild
 from scripts.database import run_flow_rebuild_paged
@@ -380,6 +381,15 @@ def rebuild_directly() -> int:
             limiter,
             contract_players,
             run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+        )
+        run_flow_rebuild.timed(
+            "Competition history",
+            competitions.refresh_competitions,
+            connection,
+            run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+            run_flow_rebuild.request_json,
+            limiter,
+            run_flow_rebuild.log,
         )
 
         flow_started = time.perf_counter()
