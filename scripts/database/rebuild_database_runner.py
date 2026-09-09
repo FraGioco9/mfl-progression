@@ -10,8 +10,8 @@ from typing import Any
 from scripts.database import rebuild_database as rebuild
 from scripts.database import run_flow_rebuild as pipeline
 from scripts.database import run_flow_rebuild_paged as paged
-PLAYER_REQUESTS_PER_MINUTE = 80
-PROGRESSION_REQUESTS_PER_MINUTE = 80
+PLAYER_REQUESTS_PER_MINUTE = 60
+PROGRESSION_REQUESTS_PER_MINUTE = 60
 MFL_API_TOKEN_ENVIRONMENT_VARIABLE = "MFL_API_TOKEN"
 
 
