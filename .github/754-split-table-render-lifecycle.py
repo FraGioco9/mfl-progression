@@ -61,9 +61,15 @@ for path in sorted(SITE.glob("validate*.mjs")):
         changed.append(path.name)
 if not changed:
     raise RuntimeError("No structural Table fragment-order validators were updated")
+
+stale_table_assertions = (
+    'tableCoreManifest?.sources?.length === 2\n    && tableCoreManifest.sources[0] === "table.js"\n    && tableCoreManifest.sources[1] === "table-interaction-bindings.js"',
+    'coreSourceByDomain.table?.sources?.length === 2\n    && coreSourceByDomain.table.sources[0] === "table.js"\n    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"',
+    'coreSourceByDomain.table?.sources?.length !== 2\n  || coreSourceByDomain.table.sources[0] !== "table.js"\n  || coreSourceByDomain.table.sources[1] !== "table-interaction-bindings.js"',
+)
 for path in sorted(SITE.glob("validate*.mjs")):
     text = read(path)
-    if 'table-interaction-bindings.js' in text and ('sources?.length === 2' in text or 'sources?.length !== 2' in text):
+    if any(stale in text for stale in stale_table_assertions):
         raise RuntimeError(f"Stale two-fragment Table assertion remains in {path}")
 
 print("Split Table render/view lifecycle into a third manifest-owned fragment.")
