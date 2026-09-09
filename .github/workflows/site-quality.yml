@@ -86,6 +86,10 @@ jobs:
         if: steps.changes.outputs.quality == 'true'
         run: npm run validate
 
+      - name: Browser routing regression
+        if: steps.changes.outputs.site == 'true'
+        run: node validation/browser-routing-regression.mjs
+
       - name: Commit generated site artifacts
         id: generated
         if: >-
