@@ -20,12 +20,16 @@ includes(projections, 'else if (firstPaintRouteRoot === "club" || firstPaintRout
 includes(projections, 'else if (firstPaintRouteRoot === "agents") firstPaintDocumentTitle = firstPaintAgentTitle();', "Agent refreshes must become Agent-aware during head parsing.");
 includes(projections, 'else if (firstPaintRouteRoot === "watchlist") firstPaintDocumentTitle = firstPaintWatchlistTitle();', "Watchlist refreshes must become Watchlist-aware during head parsing.");
 includes(projections, 'else if (firstPaintRouteRoot === "evaluation") firstPaintDocumentTitle = firstPaintEvaluationTitle();', "Evaluation refreshes must become Evaluation-aware during head parsing.");
+includes(projections, '"my-clubs": "My Clubs"', "My Clubs refreshes must have a parser-time title before application startup.");
+includes(projections, 'myclubs: "My Clubs"', "Legacy My Clubs refreshes must have the same parser-time title before canonical URL replacement.");
 includes(projections, 'mfl-player-first-paint-v1:', "Player first paint should upgrade from the generic fallback when canonical cached identity is already known.");
 includes(projections, 'mfl-evaluation-first-paint-name-v2:', "Evaluation first paint should use the full cached Player identity immediately when available.");
 includes(projections, 'root.dataset.initialEvaluationPlayerName = playerName;', "Early Evaluation identity must be handed to the canonical runtime without waiting for panel rendering.");
 includes(projections, 'return firstPaintTitleWithAppName("Agent");', "Unknown Agent identity must fall back to Agent - MFL Front Office rather than the raw address.");
 includes(projections, 'else firstPaintDocumentTitle = firstPaintTitleWithAppName("Page not found");', "Unknown direct routes must get a typed Page not found fallback during head parsing.");
 includes(indexHtml, 'const FIRST_PAINT_APP_NAME = "MFL Front Office";', "Generated index.html must contain the parser-time route title projection before app startup.");
+includes(indexHtml, '"my-clubs": "My Clubs"', "Generated first paint must render My Clubs - MFL Front Office directly on /my-clubs refresh.");
+includes(indexHtml, 'myclubs: "My Clubs"', "Generated first paint must render My Clubs - MFL Front Office directly on legacy /myclubs refresh.");
 includes(bootstrap, 'loadRuntime("/document-title-runtime.js")', "Document-title ownership must load from the guaranteed bootstrap runtime group.");
 excludes(appEntry, '"/document-title-runtime.js",', "Document-title ownership must not also load from the later application-entry runtime group.");
 includes(runtime, 'const APP_NAME = "MFL Front Office";', "Document titles must have one application-name owner.");
