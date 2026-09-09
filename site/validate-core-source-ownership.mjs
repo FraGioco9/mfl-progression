@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 19
+    && sharedEntry?.sources?.length === 20
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -76,9 +76,10 @@ invariant(
     && sharedEntry.sources[15] === "shared-modal-lifecycle.js"
     && sharedEntry.sources[16] === "shared-global-search.js"
     && sharedEntry.sources[17] === "shared-wallet-row-classification.js"
-    && sharedEntry.sources[18] === "shared.js"
+    && sharedEntry.sources[18] === "shared-html-escaping.js"
+    && sharedEntry.sources[19] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -98,6 +99,7 @@ const sharedPlayerActions = await read("./modules/core-sources/shared-player-act
 const sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lifecycle.js");
 const sharedGlobalSearch = await read("./modules/core-sources/shared-global-search.js");
 const sharedWalletRowClassification = await read("./modules/core-sources/shared-wallet-row-classification.js");
+const sharedHtmlEscaping = await read("./modules/core-sources/shared-html-escaping.js");
 const sharedRemaining = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -192,8 +194,15 @@ invariant(
   "Shared wallet-row classification must own linked-wallet ownership, MFL wallet detection, and the hidden Joined Agency-date rule.",
 );
 invariant(
-  sharedRemaining.startsWith("function escapeHtml(value) {"),
-  "Remaining Shared behavior must begin at the universal escaping/serialization boundary.",
+  sharedHtmlEscaping.startsWith("function escapeHtml(value) {")
+    && sharedHtmlEscaping.replace(/\s*$/, "").endsWith('.replaceAll("\'", "&#39;");\n}')
+    && !sharedHtmlEscaping.includes("csvEscape"),
+  "Shared HTML escaping must own the universal escapeHtml primitive without retaining the unused CSV helper.",
+);
+invariant(
+  sharedRemaining.startsWith("function mflChunkFromPublicData(chunk) {")
+    && !sharedRemaining.includes("function csvEscape"),
+  "Remaining Shared behavior must begin at the incremental public-data routing boundary and keep unused csvEscape retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -213,8 +222,9 @@ invariant(
     && !sharedPlayerActions.includes("function showModal")
     && !sharedModalLifecycle.includes("async function openSearch")
     && !sharedGlobalSearch.includes("function linkedWalletAddressesForOwnedPlayers")
-    && !sharedWalletRowClassification.includes("function escapeHtml"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, and wallet-row classification must not absorb later ownership domains.",
+    && !sharedWalletRowClassification.includes("function escapeHtml")
+    && !sharedHtmlEscaping.includes("function mflChunkFromPublicData"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, and HTML escaping must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
