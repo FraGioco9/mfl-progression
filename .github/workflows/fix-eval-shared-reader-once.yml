@@ -1,0 +1,21 @@
+name: Fix Evaluation shared reader once
+on:
+  push:
+    branches: [arch/754-shared-page-lifecycle-fragment]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-page-lifecycle-fragment
+      - run: node site/.tmp-fix-eval-shared-reader.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm site/.tmp-fix-eval-shared-reader.mjs .github/workflows/fix-eval-shared-reader-once.yml
+          git add site/validate-eval-ownership.mjs
+          git commit -m "Use assembled Shared in Evaluation ownership validation"
+          git push origin HEAD:arch/754-shared-page-lifecycle-fragment
