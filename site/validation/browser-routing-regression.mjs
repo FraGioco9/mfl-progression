@@ -9,7 +9,6 @@ import { fileURLToPath } from "node:url";
 
 const siteDirectory = resolve(fileURLToPath(new URL("../", import.meta.url)));
 const generatedAt = "2026-09-09T00:00:00.000Z";
-const testWallet = "0x1111111111111111";
 const testWatchlistId = "browser-list";
 const testPlayer = Object.freeze({
   player_id: 1,
