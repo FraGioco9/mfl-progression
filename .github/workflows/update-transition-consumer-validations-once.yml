@@ -1,0 +1,71 @@
+name: Update transition consumer validations once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-transitions-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-transitions-fragment
+          fetch-depth: 0
+      - name: Use assembled Shared in transition consumers
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              if text.count(old) != 1:
+                  raise SystemExit(f'{path}: expected one replacement anchor, found {text.count(old)}')
+              file.write_text(text.replace(old, new, 1))
+
+          replace_once(
+              'site/validate-watchlist-selector-navigation.mjs',
+              'import { readValidationText } from "./validation-text.mjs";\n',
+              'import { readValidationText } from "./validation-text.mjs";\nimport { readCanonicalCoreSource } from "./validate-core-sources.mjs";\n',
+          )
+          replace_once(
+              'site/validate-watchlist-selector-navigation.mjs',
+              '  read("./modules/core-sources/shared.js"),\n',
+              '  Promise.resolve(readCanonicalCoreSource("shared")),\n',
+          )
+
+          replace_once(
+              'site/validate-behavior-foundations.mjs',
+              'import { readValidationText } from "./validation-text.mjs";\n',
+              'import { readValidationText } from "./validation-text.mjs";\nimport { readCanonicalCoreSource } from "./validate-core-sources.mjs";\n',
+          )
+          replace_once(
+              'site/validate-behavior-foundations.mjs',
+              '  read("./modules/core-sources/shared.js"),\n',
+              '  Promise.resolve(readCanonicalCoreSource("shared")),\n',
+          )
+
+          replace_once(
+              'site/validate-loading-ownership.mjs',
+              'import { readValidationText } from "./validation-text.mjs";\n',
+              'import { readValidationText } from "./validation-text.mjs";\nimport { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";\n',
+          )
+          replace_once(
+              'site/validate-loading-ownership.mjs',
+              '''  Promise.all([\n    read("./modules/core-sources/shared.js"),\n    read("./modules/core-sources/evaluation.js"),\n    read("./modules/core-sources/mfl-stats.js"),\n    read("./modules/core-sources/club.js"),\n    read("./modules/core-sources/settings.js"),\n    read("./modules/core-sources/player.js"),\n    read("./modules/core-sources/table.js"),\n    read("./modules/core-sources/wallet.js"),\n    read("./modules/core-sources/watchlist.js"),\n  ]).then((parts) => parts.join("\\n")),\n''',
+              '  Promise.resolve(readCombinedCanonicalCoreSource()),\n',
+          )
+          PY
+          rm .github/workflows/update-transition-consumer-validations-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/validate-watchlist-selector-navigation.mjs site/validate-behavior-foundations.mjs site/validate-loading-ownership.mjs .github/workflows/update-transition-consumer-validations-once.yml
+          git commit -m "Make transition validators fragment-aware"
+          git push origin HEAD:arch/754-shared-transitions-fragment
