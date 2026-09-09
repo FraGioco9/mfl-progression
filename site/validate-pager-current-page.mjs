@@ -1,5 +1,6 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
@@ -8,7 +9,7 @@ const [controls, interactions, selectionStack, appCore, generatedCore, tableRunt
   read("./control-interactions-runtime.js"),
   read("./selection-stack-runtime.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    Promise.resolve(readCanonicalCoreSource("shared")),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),
