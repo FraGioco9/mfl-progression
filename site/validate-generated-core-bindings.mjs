@@ -3,10 +3,11 @@
 import ts from "@typescript/typescript6";
 
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 const artifacts = Object.freeze({
-  core: await read("./modules/core-sources/shared.js"),
+  core: readCanonicalCoreSource("shared"),
   routeChunks: Object.freeze({
     evaluation: await read("./modules/core-sources/evaluation.js"),
     mflstats: await read("./modules/core-sources/mfl-stats.js"),
