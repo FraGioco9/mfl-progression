@@ -40,6 +40,7 @@ invariant(titleFacadeIndex >= 0 && setPageIndex > titleFacadeIndex, "tableTitleF
 includes(tableCore, "function tableTitleForPageOwner(pageName) {", "Canonical Table source must own table-title implementation.");
 includes(tableCore, "__mflTableTitleForPageOwner = tableTitleForPageOwner;", "Table loading must activate the table-title owner.");
 
+// Public Table facades keep stable identities; incremental behavior dispatches behind them instead of replacing those functions.
 for (const [facade, ownerSlot, chunkOwner] of [
   ["buildHeader", "__mflTableBuildHeaderOwner", "tableBuildHeaderOwner"],
   ["applyFilters", "__mflTableApplyFiltersOwner", "tableApplyFiltersOwner"],
@@ -51,7 +52,8 @@ for (const [facade, ownerSlot, chunkOwner] of [
   ["restoreSavedTableState", "__mflTableRestoreSavedTableStateOwner", "tableRestoreSavedTableStateOwner"],
 ]) {
   includes(sharedCore, `let ${ownerSlot} = null;`, `Shared core must keep the stable ${facade} owner slot.`);
-  includes(sharedCore, `function ${facade}() {`, `Shared core must retain the ${facade} facade.`);
+  const facadeMarker = facade === "applyFilters" ? "function applyFilters(options = {}) {" : `function ${facade}() {`;
+  includes(sharedCore, facadeMarker, `Shared core must retain the ${facade} facade.`);
   includes(tableCore, `${ownerSlot} = ${chunkOwner};`, `Canonical Table source must activate ${facade}.`);
 }
 

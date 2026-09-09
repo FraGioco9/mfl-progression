@@ -52,10 +52,10 @@ includes(eagerCore, 'if (route.scope !== "club") globalThis.syncQuickFilterLabel
 includes(eagerCore, 'const clubPage = pageName === "club";', "The shared incremental loader must identify Club payloads explicitly.");
 includes(eagerCore, "if (tablePages.has(pageName) && !clubPage) {", "Club payloads must bypass generic saved-table filter restoration.");
 includes(eagerCore, 'state.currentPage = "club";', "Club ownership must be committed before the payload is handed back to the Club route owner.");
-includes(eagerCore, "if (!clubPage) originalApplyFilters.call(this, { save: false });", "Only non-Club incremental pages may render through the generic pre-route filter pipeline.");
+includes(eagerCore, "if (!clubPage) applyFilters.call(this, { save: false });", "Only non-Club incremental pages may render through the stable shared Table filter facade.");
 
-const incrementalLoaderStart = eagerCore.indexOf("window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage");
-const incrementalLoaderEnd = eagerCore.indexOf("})();", incrementalLoaderStart);
+const incrementalLoaderStart = eagerCore.indexOf("const loadIncrementalRoutePage = async function loadIncrementalRoutePage");
+const incrementalLoaderEnd = eagerCore.indexOf("window.mflLoadIncrementalRoutePage = loadIncrementalRoutePage;", incrementalLoaderStart);
 const incrementalLoader = eagerCore.slice(incrementalLoaderStart, incrementalLoaderEnd);
 invariant(incrementalLoaderStart >= 0 && incrementalLoaderEnd > incrementalLoaderStart, "Shared incremental route loader must exist.");
 excludes(incrementalLoader, "if (clubPage) applyFilters(", "Club payload loading must not execute the generic filter pipeline before Club state is reset.");

@@ -32,12 +32,12 @@ assert.match(sortResolverSource, /sourceSortSupported = sortKeySupportedByView/u
 assert.match(sortResolverSource, /if \(!sourceSortSupported && state\.tableSortSessionKey\) \{\s*state\.tableSortSessionSortState = resolvedSortState;/u, "An unsupported destination view must reset the page session itself to that view's canonical default.");
 
 assert.doesNotMatch(core, /async function setView\(viewName\)/u, "The retired normalized standard-view owner must not compete with canonical incremental table view loading.");
-const incrementalViewSource = sourceBetween(core, "setView = async function setIncrementalView", "setPage = async function setIncrementalPage");
+const incrementalViewSource = sourceBetween(core, "const setIncrementalView = async function setIncrementalView", "const setIncrementalPage = async function setIncrementalPage");
 assert.doesNotMatch(incrementalViewSource, /rememberTableSortState/u, "Incremental view loading must not own a separate per-view sort state.");
 assert.match(incrementalViewSource, /tableSortStateForView\([\s\S]*nextView/u, "Canonical table view switches must resolve the page sort against the destination view.");
 
 // The public incremental-route loader is the stable owner boundary immediately after setIncrementalPage; Club-search helpers must not delimit this validator slice.
-const incrementalPageSource = sourceBetween(core, "setPage = async function setIncrementalPage", "window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage");
+const incrementalPageSource = sourceBetween(core, "const setIncrementalPage = async function setIncrementalPage", "const loadIncrementalRoutePage = async function loadIncrementalRoutePage");
 assert.ok(incrementalPageSource.indexOf("resetTableSortSession(pageName, options);") < incrementalPageSource.indexOf("runPageTransition"), "Page sorting must reset before the destination transition can paint.");
 
 const sortClickSource = sourceBetween(core, "function buildHeader()", "function isMissingSortValue");

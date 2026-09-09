@@ -175,7 +175,8 @@ invariant(
   "View transitions must not be blanket-wrapped outside their cache-aware transition owners.",
 );
 invariant(
-  appCoreSource.includes('window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage')
+  appCoreSource.includes('const loadIncrementalRoutePage = async function loadIncrementalRoutePage')
+    && appCoreSource.includes('window.mflLoadIncrementalRoutePage = loadIncrementalRoutePage;')
     && appCoreSource.includes('return withInteractionBusy(loadAndRender, Reflect.get(window, "__mflInteractionBusy")?.reason);'),
   "The shared incremental route-page loader must acquire canonical route loading only at its uncached request boundary.",
 );
@@ -296,8 +297,8 @@ invariant(
     && !stagedViewOwner.includes("pendingViewTransition = null;"),
   "A staged view transition must remain the current loading owner until the global view-transition runner finishes its async loader.",
 );
-const incrementalViewStart = appCoreSource.indexOf("setView = async function setIncrementalView(viewName) {");
-const incrementalViewEnd = appCoreSource.indexOf("setPage = async function setIncrementalPage", incrementalViewStart);
+const incrementalViewStart = appCoreSource.indexOf("const setIncrementalView = async function setIncrementalView(viewName) {");
+const incrementalViewEnd = appCoreSource.indexOf("const setIncrementalPage = async function setIncrementalPage", incrementalViewStart);
 const incrementalViewOwner = appCoreSource.slice(incrementalViewStart, incrementalViewEnd);
 invariant(
   incrementalViewStart >= 0

@@ -221,8 +221,8 @@ invariant(
   "View transitions must use the same pager-hidden Table loading contract as every other uncached request."
 );
 
-const incrementalPageStart = appCoreSource.indexOf("setPage = async function setIncrementalPage(");
-const incrementalPageEnd = appCoreSource.indexOf("window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage", incrementalPageStart);
+const incrementalPageStart = appCoreSource.indexOf("const setIncrementalPage = async function setIncrementalPage(");
+const incrementalPageEnd = appCoreSource.indexOf("const loadIncrementalRoutePage = async function loadIncrementalRoutePage", incrementalPageStart);
 const incrementalPageSource = appCoreSource.slice(incrementalPageStart, incrementalPageEnd);
 const progressionTokenIndex = incrementalPageSource.indexOf('const progressionLoadingRequestToken = pageName === "progression" && !routeDataCacheReady(pageName, options)');
 const pageTransitionIndex = incrementalPageSource.indexOf("return runPageTransition(pageName, navigationUpdatesHistory, options, (navigationTransition) => setPage(pageName, false, {");
@@ -333,12 +333,12 @@ invariant(
 );
 
 const pageRenderStart = appCoreSource.indexOf("async function renderLoadedIncrementalRoute(pageName, updateHash, options, route, requestOptions = {})");
-const pageRenderEnd = appCoreSource.indexOf("applyFilters = function applyFiltersWithIncrementalData", pageRenderStart);
+const pageRenderEnd = appCoreSource.indexOf("const setIncrementalView = async function setIncrementalView", pageRenderStart);
 const pageRenderTransaction = appCoreSource.slice(pageRenderStart, pageRenderEnd);
 invariant(
   pageRenderTransaction.includes("tableLoadingRequestToken: renderLoadingRequestToken")
-    && pageRenderTransaction.indexOf("originalSetPage.call") < pageRenderTransaction.indexOf("finishRequest?.(renderLoadingRequestToken)"),
-  "Page navigation must retain Table loading ownership through the authoritative originalSetPage DOM commit.",
+    && pageRenderTransaction.indexOf("renderPage.call") < pageRenderTransaction.indexOf("finishRequest?.(renderLoadingRequestToken)"),
+  "Page navigation must retain Table loading ownership through the authoritative renderPage DOM commit.",
 );
 
 const reloadTransactionStart = appCoreSource.indexOf("async function reloadIncrementalPage(page = state.page, options = {}) {");
@@ -350,13 +350,13 @@ invariant(
   "Pager/filter reloads must retain Table loading ownership through applyFilters and the row DOM commit.",
 );
 
-const viewTransactionStart = appCoreSource.indexOf("setView = async function setIncrementalView(viewName) {");
-const viewTransactionEnd = appCoreSource.indexOf("setPage = async function setIncrementalPage", viewTransactionStart);
+const viewTransactionStart = appCoreSource.indexOf("const setIncrementalView = async function setIncrementalView(viewName) {");
+const viewTransactionEnd = appCoreSource.indexOf("const setIncrementalPage = async function setIncrementalPage", viewTransactionStart);
 const viewTransaction = appCoreSource.slice(viewTransactionStart, viewTransactionEnd);
 invariant(
   viewTransaction.includes("tableLoadingRequestToken: viewLoadingRequestToken")
-    && viewTransaction.indexOf("originalSetView.call(this, nextView)") < viewTransaction.indexOf("finishRequest?.(viewLoadingRequestToken)"),
-  "View switches must retain Table loading ownership through originalSetView and the row DOM commit.",
+    && viewTransaction.indexOf("applyTableViewOwner.call(this, nextView)") < viewTransaction.indexOf("finishRequest?.(viewLoadingRequestToken)"),
+  "View switches must retain Table loading ownership through the canonical Table view owner and the row DOM commit.",
 );
 
 invariant(

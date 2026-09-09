@@ -46,7 +46,7 @@ excludes(buildCore, "app-core-route-chunks", "The canonical build must not depen
 excludes(buildCore, "app-core-build-normalizer", "The canonical build must not depend on the retired build normalizer.");
 invariant(
   coreSourceByDomain.shared?.source === "shared-foundations.js"
-    && coreSourceByDomain.shared?.sources?.length === 24
+    && coreSourceByDomain.shared?.sources?.length === 25
     && coreSourceByDomain.shared.sources[1] === "shared-session.js"
     && coreSourceByDomain.shared.sources[2] === "shared-routing.js"
     && coreSourceByDomain.shared.sources[3] === "shared-transitions.js"
@@ -69,7 +69,8 @@ invariant(
     && coreSourceByDomain.shared.sources[20] === "shared-interaction-bindings.js"
     && coreSourceByDomain.shared.sources[21] === "shared-startup-lifecycle.js"
     && coreSourceByDomain.shared.sources[22] === "shared-layout-center.js"
-    && coreSourceByDomain.shared.sources[23] === "shared.js"
+    && coreSourceByDomain.shared.sources[23] === "shared-incremental-navigation.js"
+    && coreSourceByDomain.shared.sources[24] === "shared.js"
     && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",
   "The core manifest must generate the shared runtime from its ordered canonical fragments.",
 );
@@ -86,7 +87,7 @@ excludes(sharedCore, "renderSearchResultsNowV1500", "Retired release-era Global 
 excludes(sharedCore, "renderSearchResultsFromBootstrap", "Retired bootstrap Club-result wrapper must stay removed.");
 includes(sharedCore, 'const clubTarget = pageName === "club" ? clubRouteTargetFromPath() : null;', "Shared view switching must resolve Club identity canonically.");
 includes(sharedCore, 'window.__mflAppConfig?.routes?.clubPath?.(clubTarget.clubId, viewName)', "Shared Club view switching must use canonical URL construction.");
-includes(sharedCore, "setView = async function setIncrementalView(viewName) {", "Club views must share the canonical incremental view owner.");
+includes(sharedCore, "const setIncrementalView = async function setIncrementalView(viewName) {", "Club views must share the canonical incremental view owner.");
 includes(sharedCore, "const clubViewPayloadCache = new Map();", "Shared incremental routing must own the canonical Club payload cache.");
 includes(sharedCore, "function rememberClubViewPayload(route, payload) {", "Shared incremental routing must own Club payload cache writes.");
 includes(sharedCore, "function cachedClubViewPayload(route) {", "Shared incremental routing must own Club payload cache reads.");
