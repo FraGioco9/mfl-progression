@@ -1,0 +1,36 @@
+name: Issue 754 canonical Table validator readers
+
+on:
+  push:
+    branches:
+      - arch/754-table-interaction-bindings
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-table-interaction-bindings
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Migrate behavioral Table readers
+        run: |
+          python .github/754-canonical-table-validator-readers.py
+          for file in $(git diff --name-only -- 'site/validate*.mjs'); do node --check "$file"; done
+          rm .github/754-canonical-table-validator-readers.py
+          rm .github/workflows/754-canonical-table-validator-readers.yml
+          git diff --check
+      - name: Commit Table validator hygiene
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Use canonical Table source in behavioral validators"
+          git push origin HEAD:arch/754-table-interaction-bindings
