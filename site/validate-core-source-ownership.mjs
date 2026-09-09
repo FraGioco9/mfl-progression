@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 11
+    && sharedEntry?.sources?.length === 12
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -68,9 +68,10 @@ invariant(
     && sharedEntry.sources[7] === "shared-toast-core.js"
     && sharedEntry.sources[8] === "shared-personal-state.js"
     && sharedEntry.sources[9] === "shared-data-search.js"
-    && sharedEntry.sources[10] === "shared.js"
+    && sharedEntry.sources[10] === "shared-evaluation-lifecycle.js"
+    && sharedEntry.sources[11] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -82,6 +83,7 @@ const sharedTableState = await read("./modules/core-sources/shared-table-state.j
 const sharedToastCore = await read("./modules/core-sources/shared-toast-core.js");
 const sharedPersonalState = await read("./modules/core-sources/shared-personal-state.js");
 const sharedDataSearch = await read("./modules/core-sources/shared-data-search.js");
+const sharedEvaluationLifecycle = await read("./modules/core-sources/shared-evaluation-lifecycle.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -136,8 +138,13 @@ invariant(
   "Shared data/search must own generic row/value formatting through the canonical database-search index readiness boundary.",
 );
 invariant(
-  sharedNavigation.startsWith("const DEFAULT_EVALUATION_MFL_PER_USD = 400;"),
-  "Remaining Shared behavior must begin at the eager Evaluation lifecycle boundary.",
+  sharedEvaluationLifecycle.startsWith("const DEFAULT_EVALUATION_MFL_PER_USD = 400;")
+    && sharedEvaluationLifecycle.replace(/\s*$/, "").endsWith("return __mflEvaluationRenderPageOwner();\n}"),
+  "Shared Evaluation lifecycle must own eager Evaluation settings/search/readiness through the canonical renderEvaluationPage facade.",
+);
+invariant(
+  sharedNavigation.startsWith("function playerFirstPaintKnownValues(row) {"),
+  "Remaining Shared behavior must begin at the Player first-paint/navigation boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -149,8 +156,9 @@ invariant(
     && !sharedTableState.includes("function scheduleToastHide")
     && !sharedToastCore.includes("function showWatchlistToast")
     && !sharedPersonalState.includes("function formatCount")
-    && !sharedDataSearch.includes("const DEFAULT_EVALUATION_MFL_PER_USD"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, and data/search must not absorb later ownership domains.",
+    && !sharedDataSearch.includes("const DEFAULT_EVALUATION_MFL_PER_USD")
+    && !sharedEvaluationLifecycle.includes("function playerFirstPaintKnownValues"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, and Evaluation lifecycle must not absorb later ownership domains.",
 );
 
 const retiredFiles = [

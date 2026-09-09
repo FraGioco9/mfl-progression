@@ -1,23 +1,17 @@
 import { readValidationText } from "./validation-text.mjs";
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 const invariant = (condition, message) => { if (!condition) throw new Error(message); };
-const [searchRuntime, layoutRuntime, appEntry, walletPreferences, loadingStyles, appCoreSource] = await Promise.all([
+const [searchRuntime, layoutRuntime, appEntry, walletPreferences, loadingStyles] = await Promise.all([
   read("./evaluation-search-state-runtime.js"),
   read("./evaluation-layout-runtime.js"),
   read("./modules/app-entry.js"),
   read("./api/wallet-preferences.js"),
   read("./loading.css"),
-  Promise.all([
-    read("./modules/core-sources/shared.js"), read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"), read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"), read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"), read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
 ]);
-const artifacts = readCanonicalCoreArtifacts(appCoreSource);
+const appCoreSource = readCombinedCanonicalCoreSource();
+const artifacts = readCanonicalCoreArtifacts();
 const shared = String(artifacts.core || "");
 const evaluation = String(artifacts.routeChunks?.evaluation || "");
 

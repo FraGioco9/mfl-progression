@@ -1,20 +1,10 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
-
-const [appCore, rateRuntime, indexHtml] = await Promise.all([
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
+const appCore = readCombinedCanonicalCoreSource();
+const [rateRuntime, indexHtml] = await Promise.all([
   read("./evaluation-discount-rate-runtime.js"),
   read("./index.html"),
 ]);
