@@ -56,11 +56,26 @@ for (const entry of coreSourceManifest) {
 
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
-  sharedEntry?.source === "shared.js"
-    && sharedEntry?.sources?.length === 1
-    && sharedEntry.sources[0] === "shared.js"
+  sharedEntry?.source === "shared-foundations.js"
+    && sharedEntry?.sources?.length === 2
+    && sharedEntry.sources[0] === "shared-foundations.js"
+    && sharedEntry.sources[1] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must retain its current compatibility source and explicit 355000-byte universal no-growth ceiling until the physical fragment split is introduced separately.",
+  "Shared core must keep foundations before behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+);
+const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
+const sharedBehavior = await read("./modules/core-sources/shared.js");
+invariant(
+  sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
+  "Shared foundations must end at the canonical DOM-binding boundary.",
+);
+invariant(
+  sharedBehavior.startsWith('function normalizeSettingsTheme(value, fallback = "dark") {'),
+  "Shared behavior must begin at the canonical behavior boundary.",
+);
+invariant(
+  !sharedFoundations.includes("function normalizeSettingsTheme"),
+  "Shared foundations must not absorb behavior ownership.",
 );
 
 const retiredFiles = [
@@ -90,4 +105,4 @@ for (const file of retiredFiles) {
   }
 }
 
-console.log("Canonical application-core manifest, ordered source-fragment ownership, compatibility aliases, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
+console.log("Canonical application-core manifest, ordered source-fragment ownership, Shared foundations/behavior boundary, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
