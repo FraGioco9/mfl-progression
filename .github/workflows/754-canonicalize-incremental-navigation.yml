@@ -1,0 +1,44 @@
+name: Issue 754 canonical incremental navigation
+
+on:
+  push:
+    branches:
+      - refactor/754-incremental-navigation-ownership
+
+permissions:
+  contents: write
+
+jobs:
+  canonicalize:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: refactor/754-incremental-navigation-ownership
+          fetch-depth: 0
+
+      - name: Canonicalize incremental navigation ownership
+        run: python .github/scripts/754-canonicalize-incremental-navigation.py
+
+      - name: Verify source syntax and ownership diff
+        run: |
+          node --check site/modules/core-sources/shared-page-lifecycle.js
+          node --check site/modules/core-sources/shared-incremental-navigation.js
+          node --check site/modules/core-sources/shared.js
+          node --check site/modules/core-source-manifest.js
+          node --check site/validate.mjs
+          node --check site/validate-club-route-core.mjs
+          node --check site/validate-core-source-ownership.mjs
+          git diff --check
+
+      - name: Commit canonical ownership
+        run: |
+          set -euo pipefail
+          rm .github/scripts/754-canonicalize-incremental-navigation.py
+          rm .github/workflows/754-canonicalize-incremental-navigation.yml
+          git add -A
+          git diff --cached --check
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Canonicalize Shared incremental navigation ownership"
+          git push origin HEAD:refactor/754-incremental-navigation-ownership
