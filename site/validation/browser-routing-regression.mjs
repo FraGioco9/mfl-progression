@@ -301,7 +301,15 @@ const browserTestSource = String.raw`(() => {
     assert(!document.body.classList.contains("loading"), scenario + " left the global loading class active.");
     if (scenario === "database") {
       assert(stateValue.path === "/database/attributes", "Database canonical path is wrong: " + stateValue.path);
-      assert(stateValue.tableText.includes(expectedPlayerName), "Database did not render the fixture player.");
+      assert(
+        stateValue.tableText.includes(expectedPlayerName),
+        "Database did not render the fixture player. tableText=" + JSON.stringify(stateValue.tableText)
+          + " rows=" + document.querySelectorAll("#tableBody tr").length
+          + " width=" + window.innerWidth
+          + " dataLoading=" + document.documentElement.classList.contains("mflDataLoading")
+          + " emptyText=" + JSON.stringify(text("#emptyState"))
+          + " emptyHidden=" + hidden("#emptyState"),
+      );
       assert(stateValue.page === "database", "Database body page owner is wrong: " + stateValue.page);
     } else if (scenario === "player") {
       assert(stateValue.path === "/players/1", "Player canonical path is wrong: " + stateValue.path);
