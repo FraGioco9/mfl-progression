@@ -1,0 +1,96 @@
+name: Issue 754 Shared player actions split
+
+on:
+  push:
+    branches:
+      - arch/754-shared-player-actions
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-player-actions
+          fetch-depth: 0
+      - name: Apply dependency-closed Shared split
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement, found {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          shared_path = Path("site/modules/core-sources/shared.js")
+          fragment_path = Path("site/modules/core-sources/shared-player-actions.js")
+          shared = shared_path.read_text()
+          boundary = "function showModal(modal) {"
+          boundary_index = shared.find(boundary)
+          if boundary_index < 0:
+              raise SystemExit("showModal boundary not found")
+          expected_fragment = shared[:boundary_index].rstrip()
+          actual_fragment = fragment_path.read_text().rstrip()
+          if actual_fragment != expected_fragment:
+              raise SystemExit("shared-player-actions.js does not exactly match the canonical Shared prefix")
+          shared_path.write_text(shared[boundary_index:])
+
+          replace_once(
+              "site/modules/core-source-manifest.js",
+              '"shared-player-display.js", "shared.js"',
+              '"shared-player-display.js", "shared-player-actions.js", "shared.js"',
+          )
+
+          for validator, prefix in [
+              ("site/validate.mjs", "sharedCoreManifest"),
+              ("site/validate-club-route-core.mjs", "coreSourceByDomain.shared"),
+          ]:
+              replace_once(validator, f"{prefix}?.sources?.length === 15", f"{prefix}?.sources?.length === 16")
+              replace_once(
+                  validator,
+                  f'    && {prefix}.sources[14] === "shared.js"',
+                  f'    && {prefix}.sources[14] === "shared-player-actions.js"\n    && {prefix}.sources[15] === "shared.js"',
+              )
+
+          ownership = "site/validate-core-source-ownership.mjs"
+          replace_once(ownership, "sharedEntry?.sources?.length === 15", "sharedEntry?.sources?.length === 16")
+          replace_once(
+              ownership,
+              '    && sharedEntry.sources[14] === "shared.js"',
+              '    && sharedEntry.sources[14] === "shared-player-actions.js"\n    && sharedEntry.sources[15] === "shared.js"',
+          )
+          replace_once(
+              ownership,
+              "before Player display/calculation before remaining shared behavior",
+              "before Player display/calculation before Player action facades before remaining shared behavior",
+          )
+          replace_once(
+              ownership,
+              'const sharedPlayerDisplay = await read("./modules/core-sources/shared-player-display.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+              'const sharedPlayerDisplay = await read("./modules/core-sources/shared-player-display.js");\nconst sharedPlayerActions = await read("./modules/core-sources/shared-player-actions.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+          )
+          replace_once(
+              ownership,
+              'invariant(\n  sharedNavigation.startsWith("async function copyPlayerId(id) {"),\n  "Remaining Shared behavior must begin at the Player interaction boundary.",\n);',
+              'invariant(\n  sharedPlayerActions.startsWith("async function copyPlayerId(id) {")\n    && sharedPlayerActions.replace(/\\s*$/, "").endsWith("  return owner(playerId);\\n}"),\n  "Shared Player action facades must own cross-route Player ID copying and the stable Player render delegate.",\n);\ninvariant(\n  sharedNavigation.startsWith("function showModal(modal) {"),\n  "Remaining Shared behavior must begin at the generic modal lifecycle boundary.",\n);',
+          )
+          replace_once(
+              ownership,
+              '    && !sharedWatchlistActions.includes("function countryCodeForNationality")\n    && !sharedPlayerDisplay.includes("async function copyPlayerId"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, and Player display/calculation must not absorb later ownership domains.",',
+              '    && !sharedWatchlistActions.includes("function countryCodeForNationality")\n    && !sharedPlayerDisplay.includes("async function copyPlayerId")\n    && !sharedPlayerActions.includes("function showModal"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, and Player action facades must not absorb later ownership domains.",',
+          )
+          PY
+          rm .github/workflows/754-split-player-actions.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --check
+          git commit -m "Extract Shared player action facades"
+          git push origin HEAD:arch/754-shared-player-actions
