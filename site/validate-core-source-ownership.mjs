@@ -200,9 +200,11 @@ invariant(
   "Shared HTML escaping must own the universal escapeHtml primitive without retaining the unused CSV helper.",
 );
 invariant(
-  sharedRemaining.startsWith("function mflChunkFromPublicData(chunk) {")
-    && !sharedRemaining.includes("function csvEscape"),
-  "Remaining Shared behavior must begin at the incremental public-data routing boundary and keep unused csvEscape retired.",
+  sharedRemaining.startsWith("function clubRouteTargetFromPath() {")
+    && !sharedRemaining.includes("function csvEscape")
+    && !sharedRemaining.includes("function mflChunkFromPublicData")
+    && !sharedRemaining.includes("function progressionDataColumns"),
+  "Remaining Shared behavior must begin at the live incremental-routing boundary and keep unused serialization/data helpers retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")

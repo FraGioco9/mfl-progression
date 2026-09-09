@@ -1,26 +1,3 @@
-function mflChunkFromPublicData(chunk) {
-  const columns = Array.isArray(chunk?.columns) ? chunk.columns : [];
-  const rows = Array.isArray(chunk?.rows) ? chunk.rows : [];
-  const walletAddressIndex = columns.indexOf("wallet_address");
-  const walletNameIndex = columns.indexOf("wallet_name");
-  if (walletAddressIndex < 0 && walletNameIndex < 0) {
-    return { columns, rows: [] };
-  }
-
-  return {
-    columns,
-    rows: rows.filter((row) => {
-      const walletAddress = walletAddressIndex >= 0 ? normalizeWalletAddress(row[walletAddressIndex]).toLowerCase() : "";
-      const walletName = walletNameIndex >= 0 ? normalizedAgentName(row[walletNameIndex]).toLowerCase() : "";
-      return walletAddress === mflWalletAddress || walletName === "mfl";
-    }),
-  };
-}
-
-function progressionDataColumns(manifest) {
-  return manifest?.files?.progression?.columns || [];
-}
-
 function clubRouteTargetFromPath() {
   const route = window.__mflAppConfig?.routes?.clubRoute?.(window.location.pathname);
   return route
