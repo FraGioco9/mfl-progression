@@ -115,6 +115,148 @@ def validated_club_contract_players(
     return contract_players
 
 
+def _table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
+    table = table_name.replace('"', '""')
+    return {
+        str(row[1])
+        for row in connection.execute(f'PRAGMA table_info("{table}")').fetchall()
+    }
+
+
+def load_previous_mint_ages(previous_database_path: Path | None) -> dict[int, int]:
+    """Load stable mint ages, including a one-time derivation from legacy databases."""
+    if previous_database_path is None or not previous_database_path.exists():
+        run_flow_rebuild.log("No previous database available for mint-age reuse.")
+        return {}
+
+    mint_ages: dict[int, int] = {}
+    previous = sqlite3.connect(previous_database_path)
+    try:
+        mint_age_columns = _table_columns(previous, "player_mint_ages")
+        if {"player_id", "age_at_mint"}.issubset(mint_age_columns):
+            for player_id, age_at_mint in previous.execute(
+                "SELECT player_id, age_at_mint FROM player_mint_ages"
+            ).fetchall():
+                resolved_age = run_flow_rebuild.to_int(age_at_mint)
+                if resolved_age is not None and resolved_age > 0:
+                    mint_ages[int(player_id)] = resolved_age
+
+        player_columns = _table_columns(previous, "players")
+        if "player_id" not in player_columns:
+            return mint_ages
+
+        select_columns = ["player_id"]
+        has_explicit_mint_age = "age_at_mint" in player_columns
+        has_legacy_basis = {"age", "player_seasons"}.issubset(player_columns)
+        if has_explicit_mint_age:
+            select_columns.append("age_at_mint")
+        if has_legacy_basis:
+            select_columns.extend(("age", "player_seasons"))
+        if len(select_columns) == 1:
+            return mint_ages
+
+        rows = previous.execute(
+            f"SELECT {', '.join(select_columns)} FROM players"
+        ).fetchall()
+        for row in rows:
+            player_id = int(row[0])
+            if player_id in mint_ages:
+                continue
+            offset = 1
+            explicit_mint_age: int | None = None
+            if has_explicit_mint_age:
+                explicit_mint_age = run_flow_rebuild.to_int(row[offset])
+                offset += 1
+            if explicit_mint_age is not None and explicit_mint_age > 0:
+                mint_ages[player_id] = explicit_mint_age
+                continue
+            if not has_legacy_basis:
+                continue
+            age = run_flow_rebuild.to_int(row[offset])
+            player_seasons = run_flow_rebuild.to_int(row[offset + 1])
+            if age is None or player_seasons is None or age <= 0 or player_seasons <= 0:
+                continue
+            derived_mint_age = age - player_seasons + 1
+            if derived_mint_age > 0:
+                mint_ages[player_id] = derived_mint_age
+    finally:
+        previous.close()
+
+    return mint_ages
+
+
+def restore_previous_mint_ages(
+    connection: sqlite3.Connection,
+    previous_database_path: Path | None,
+) -> int:
+    """Resolve current seasons locally from stable mint ages before any Flow calls."""
+    mint_ages = load_previous_mint_ages(previous_database_path)
+    if not mint_ages:
+        run_flow_rebuild.log("Mint ages restored from previous database: 0")
+        return 0
+
+    updates: list[tuple[int, int]] = []
+    for player_id, current_age in connection.execute(
+        """
+        SELECT player_id, age
+        FROM players
+        WHERE player_seasons IS NULL OR player_seasons <= 0
+        """
+    ).fetchall():
+        mint_age = mint_ages.get(int(player_id))
+        seasons = populate_seasons_from_flow.player_seasons_from_mint_age(
+            current_age,
+            mint_age,
+        )
+        if seasons is not None:
+            updates.append((seasons, int(player_id)))
+
+    if updates:
+        connection.executemany(
+            """
+            UPDATE players
+            SET player_seasons = ?
+            WHERE player_id = ?
+              AND (player_seasons IS NULL OR player_seasons <= 0)
+            """,
+            updates,
+        )
+        connection.commit()
+    run_flow_rebuild.log(f"Mint ages restored from previous database: {len(updates)}")
+    return len(updates)
+
+
+def persist_mint_ages(connection: sqlite3.Connection) -> int:
+    """Persist the stable mint-age basis so later rebuilds can skip Flow for known players."""
+    connection.execute(
+        """
+        CREATE TABLE IF NOT EXISTS player_mint_ages (
+            player_id INTEGER PRIMARY KEY,
+            age_at_mint INTEGER NOT NULL
+        )
+        """
+    )
+    connection.execute("DELETE FROM player_mint_ages")
+    connection.execute(
+        """
+        INSERT INTO player_mint_ages(player_id, age_at_mint)
+        SELECT player_id, age - player_seasons + 1
+        FROM players
+        WHERE age IS NOT NULL
+          AND age > 0
+          AND player_seasons IS NOT NULL
+          AND player_seasons > 0
+          AND age - player_seasons + 1 > 0
+        """
+    )
+    connection.commit()
+    persisted = int(
+        connection.execute("SELECT COUNT(*) FROM player_mint_ages").fetchone()[0]
+    )
+    run_flow_rebuild.log(f"Mint ages persisted for future rebuilds: {persisted}")
+    return persisted
+
+
 def install_flow_wallet_id_cache() -> None:
     """Load all wallet/player relationships once instead of scanning the table per wallet."""
     cache: dict[tuple[int, bool], dict[str, WalletPlayerIds]] = {}
@@ -224,6 +366,12 @@ def rebuild_directly() -> int:
             players,
         )
         run_flow_rebuild.timed(
+            "Restore mint ages",
+            restore_previous_mint_ages,
+            connection,
+            run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+        )
+        run_flow_rebuild.timed(
             "Flow clubs and rosters",
             clubs.refresh_clubs,
             connection,
@@ -244,6 +392,11 @@ def rebuild_directly() -> int:
         run_flow_rebuild.log(
             f"\n=== Flow seasons ===\nFlow seasons updated: {updated_seasons} "
             f"in {run_flow_rebuild.format_duration(flow_seconds)}"
+        )
+        run_flow_rebuild.timed(
+            "Persist mint ages",
+            persist_mint_ages,
+            connection,
         )
 
         run_flow_rebuild.timed(
@@ -271,7 +424,7 @@ def rebuild_directly() -> int:
 
 
 if __name__ == "__main__":
-    run_flow_rebuild.MFL_REQUESTS_PER_MINUTE = 50
+    run_flow_rebuild.MFL_REQUESTS_PER_MINUTE = 60
     install_database_filename()
     install_concise_progression_logging()
     run_flow_rebuild_paged.fetch_all_player_sources = fetch_active_and_retired_player_sources
