@@ -712,6 +712,7 @@ async function runChromeRegression(executable, url) {
     "--no-sandbox",
     "--disable-gpu",
     "--disable-dev-shm-usage",
+    "--window-size=1280,900",
     `--remote-debugging-port=${debuggingPort}`,
     "--remote-debugging-address=127.0.0.1",
     `--user-data-dir=${userDataDirectory}`,
