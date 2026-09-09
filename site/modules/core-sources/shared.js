@@ -1,18 +1,3 @@
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function csvEscape(value) {
-  const text = value === null || value === undefined ? "" : String(value);
-  return `"${text.replaceAll('"', '""')}"`;
-}
-
-
 function mflChunkFromPublicData(chunk) {
   const columns = Array.isArray(chunk?.columns) ? chunk.columns : [];
   const rows = Array.isArray(chunk?.rows) ? chunk.rows : [];
