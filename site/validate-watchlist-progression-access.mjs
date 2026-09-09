@@ -1,18 +1,9 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const apiSource = String(await readFile(new URL("./api/data.js", import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
-const coreSource = String(await Promise.all([
-    readFile(new URL("./modules/core-sources/shared.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/evaluation.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/mfl-stats.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/club.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/settings.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/player.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/table.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/wallet.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/watchlist.js", import.meta.url), "utf8"),
-  ]).then((parts) => parts.join("\n"))).replace(/\r\n?/g, "\n");
+const coreSource = readCombinedCanonicalCoreSource().replace(/\r\n?/g, "\n");
 
 invariant(
   apiSource.includes('const playerEntityProgression = scope === "player";'),
