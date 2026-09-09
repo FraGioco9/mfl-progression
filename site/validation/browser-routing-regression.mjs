@@ -9,6 +9,34 @@ import { fileURLToPath } from "node:url";
 
 const siteDirectory = resolve(fileURLToPath(new URL("../", import.meta.url)));
 const generatedAt = "2026-09-09T00:00:00.000Z";
+const testWatchlistId = "browser1";
+const testPlayer = Object.freeze({
+  player_id: 1,
+  wallet_address: "0x2222222222222222",
+  wallet_name: "Browser Agent",
+  name: "Browser Player",
+  listing_price: null,
+  positions: "ST",
+  age: 23,
+  nationality: "Italy",
+  retirement_years: 5,
+  owned_since: 1700000000,
+  player_seasons: 1,
+  overall: 80,
+  pace: 90,
+  shooting: 82,
+  passing: 74,
+  dribbling: 86,
+  defense: 40,
+  physical: 78,
+  goalkeeping: 10,
+  height: 185,
+  preferred_foot: "Right",
+  active_contract_revenue_share: 10,
+  active_contract_club_id: "browser-club",
+  active_contract_club_name: "Browser FC",
+  active_contract_club_division: 2,
+});
 const searchColumns = [
   "player_id",
   "name",
@@ -22,17 +50,124 @@ const searchColumns = [
   "active_contract_club_name",
 ];
 const publicColumns = [
-  ...searchColumns,
+  "player_id",
+  "wallet_address",
+  "wallet_name",
+  "name",
+  "positions",
+  "age",
+  "nationality",
   "retirement_years",
   "owned_since",
   "player_seasons",
+  "overall",
+  "pace",
+  "shooting",
+  "passing",
+  "dribbling",
+  "defense",
+  "physical",
   "goalkeeping",
+  "height",
+  "preferred_foot",
+  "active_contract_revenue_share",
+  "active_contract_club_id",
+  "active_contract_club_name",
+  "active_contract_club_division",
 ];
+const pageColumns = [
+  "player_id",
+  "wallet_address",
+  "wallet_name",
+  "name",
+  "listing_price",
+  "positions",
+  "age",
+  "nationality",
+  "retirement_years",
+  "owned_since",
+  "player_seasons",
+  "overall",
+  "pace",
+  "shooting",
+  "passing",
+  "dribbling",
+  "defense",
+  "physical",
+  "goalkeeping",
+  "height",
+  "preferred_foot",
+  "active_contract_revenue_share",
+  "active_contract_club_id",
+  "active_contract_club_name",
+  "active_contract_club_division",
+];
+
+function rowForColumns(columns) {
+  return columns.map((column) => testPlayer[column] ?? null);
+}
 
 const browserTestSource = String.raw`(() => {
   "use strict";
 
+  const scenario = window.location.pathname === "/privacy"
+    ? "stale"
+    : window.location.pathname.startsWith("/database/")
+      ? "database"
+      : window.location.pathname.startsWith("/players/")
+        ? "player"
+        : window.location.pathname.startsWith("/watchlist/")
+          ? "watchlist"
+          : window.location.pathname === "/mfl/stats"
+            ? "mflstats"
+            : "unknown";
+  const testWallet = "0x1111111111111111";
+  const testWatchlistId = "browser1";
+  const expectedPlayerName = "Browser Player";
   const errors = [];
+  let parserSnapshot = null;
+
+  if (scenario === "watchlist") {
+    const proof = {
+      type: "user-signature",
+      address: testWallet,
+      message: "MFL Front Office Dapper Opt-In",
+      signingAddress: testWallet,
+      signatures: [{ keyId: 0, addr: testWallet, signature: "browser-regression" }],
+    };
+    localStorage.setItem("mfl-linked-wallet-v1", testWallet);
+    localStorage.setItem("mfl-linked-wallet-proof-v1", JSON.stringify(proof));
+    localStorage.setItem(
+      "mfl-wallet-watchlist-v1:" + testWallet,
+      JSON.stringify([{ id: testWatchlistId, name: "Browser List", playerIds: ["1"] }]),
+    );
+  }
+
+  if (scenario === "player") {
+    const knownValues = {
+      player_id: { raw: 1, display: "1" },
+      name: { raw: expectedPlayerName, display: expectedPlayerName },
+      positions: { raw: "ST", display: "ST" },
+      age: { raw: 23, display: "23" },
+      nationality: { raw: "Italy", display: "Italy" },
+      overall: { raw: 80, display: "80" },
+      goalkeeping: { raw: 10, display: "10" },
+      height: { raw: 185, display: "185" },
+      preferred_foot: { raw: "Right", display: "Right" },
+      retirement_years: { raw: 5, display: "5" },
+    };
+    sessionStorage.setItem(
+      "mfl-player-first-paint-v1:1",
+      JSON.stringify({
+        playerId: "1",
+        name: expectedPlayerName,
+        positions: ["ST"],
+        overall: "80",
+        knownValues,
+      }),
+    );
+  }
+
   const originalConsoleError = console.error.bind(console);
   console.error = (...args) => {
     errors.push(args.map((value) => String(value)).join(" "));
@@ -45,70 +180,249 @@ const browserTestSource = String.raw`(() => {
     errors.push(String(event.reason?.stack || event.reason || "unhandled rejection"));
   });
 
+  document.addEventListener("DOMContentLoaded", () => {
+    const root = document.documentElement;
+    parserSnapshot = {
+      initialPage: String(root.dataset.initialPage || ""),
+      initialTablePage: String(root.dataset.initialTablePage || ""),
+      initialTableView: String(root.dataset.initialTableView || ""),
+      initialEntityRoute: String(root.dataset.initialEntityRoute || ""),
+      storedWalletOptIn: String(root.dataset.storedWalletOptIn || ""),
+      title: document.title,
+    };
+  }, { once: true });
+
   const delay = (milliseconds) => new Promise((resolve) => window.setTimeout(resolve, milliseconds));
   const assert = (condition, message) => {
     if (!condition) throw new Error(message);
   };
   const finish = (status, detail) => {
+    const previous = document.querySelector("#mflBrowserRoutingRegression");
+    previous?.remove();
     const result = document.createElement("pre");
     result.id = "mflBrowserRoutingRegression";
     result.dataset.status = status;
     result.textContent = detail;
     document.body.appendChild(result);
   };
+  const text = (selector) => String(document.querySelector(selector)?.textContent || "").replace(/\s+/g, " ").trim();
+  const hidden = (selector) => {
+    const element = document.querySelector(selector);
+    return !(element instanceof HTMLElement) || element.hidden || getComputedStyle(element).display === "none";
+  };
+
+  async function waitFor(predicate, message, timeoutMs = 5000) {
+    const deadline = Date.now() + timeoutMs;
+    while (Date.now() < deadline) {
+      if (predicate()) return true;
+      await delay(25);
+    }
+    throw new Error(message);
+  }
+
+  function assertInitialFirstPaint() {
+    assert(parserSnapshot, "Parser-time first-paint snapshot was not captured.");
+    if (scenario === "database") {
+      assert(parserSnapshot.initialPage === "database/attributes", "Database first paint has the wrong initial path.");
+      assert(parserSnapshot.initialTablePage === "database", "Database first paint has the wrong table-page owner.");
+      assert(parserSnapshot.initialTableView === "attributes", "Database first paint has the wrong view.");
+    } else if (scenario === "player") {
+      assert(parserSnapshot.initialPage === "players/1", "Player first paint has the wrong initial path.");
+      assert(parserSnapshot.initialEntityRoute === "player", "Player first paint has the wrong entity owner.");
+      assert(parserSnapshot.title === expectedPlayerName + " - MFL Front Office", "Player parser-time title did not use the cached full name.");
+    } else if (scenario === "watchlist") {
+      assert(
+        parserSnapshot.initialPage === "watchlist/" + testWatchlistId + "/current-season",
+        "Watchlist first paint has the wrong initial path.",
+      );
+      assert(parserSnapshot.initialTablePage === "watchlist", "Watchlist first paint has the wrong table-page owner.");
+      assert(parserSnapshot.initialTableView === "current", "Watchlist first paint has the wrong view.");
+      assert(parserSnapshot.storedWalletOptIn === "true", "Watchlist first paint did not recognize the stored opt-in.");
+    } else if (scenario === "mflstats") {
+      assert(parserSnapshot.initialPage === "mfl/stats", "MFL Stats first paint has the wrong initial path.");
+      assert(parserSnapshot.initialTablePage === "mfl", "MFL Stats first paint has the wrong table-page owner.");
+      assert(parserSnapshot.initialTableView === "stats", "MFL Stats first paint has the wrong view.");
+    }
+  }
+
+  function assertInitialTiming(timeline) {
+    const entries = timeline.snapshot();
+    const phases = entries.map((entry) => entry.phase);
+    const commitIndex = phases.indexOf("content-commit");
+    const settledIndex = phases.indexOf("route-visually-settled", commitIndex + 1);
+    assert(commitIndex >= 0, scenario + " initial content-commit timing is missing.");
+    assert(settledIndex > commitIndex, scenario + " initial visual-settlement timing must follow content commit.");
+  }
+
+  function assertSpaTimingAfter(timeline, baselineSequence) {
+    const recentEntries = timeline.snapshot().filter((entry) => entry.sequence > baselineSequence);
+    const phases = recentEntries.map((entry) => entry.phase);
+    const startIndex = phases.lastIndexOf("route-transition-start");
+    const commitIndex = phases.indexOf("content-commit", startIndex + 1);
+    const completeIndex = phases.indexOf("route-transition-complete", commitIndex + 1);
+    const settledIndex = phases.indexOf("route-visually-settled", completeIndex + 1);
+    assert(startIndex >= 0, scenario + " SPA route-transition-start timing is missing.");
+    assert(commitIndex > startIndex, scenario + " SPA content-commit timing is missing after transition start.");
+    assert(completeIndex > commitIndex, scenario + " SPA completion timing must follow content commit.");
+    assert(settledIndex > completeIndex, scenario + " SPA visual settlement must follow route completion.");
+    assert(
+      recentEntries[commitIndex]?.detail?.source === "navigation-release",
+      scenario + " SPA content commit has the wrong canonical source.",
+    );
+  }
+
+  function routeState() {
+    if (scenario === "database") {
+      return {
+        path: window.location.pathname,
+        title: document.title,
+        tableText: text("#tableBody"),
+        page: String(document.body.dataset.page || ""),
+      };
+    }
+    if (scenario === "player") {
+      return {
+        path: window.location.pathname,
+        title: document.title,
+        hasPlayerName: text("#playerDetail").includes(expectedPlayerName),
+        pageHidden: hidden("#playerPage"),
+      };
+    }
+    if (scenario === "watchlist") {
+      return {
+        path: window.location.pathname,
+        title: document.title,
+        tableText: text("#tableBody"),
+        watchlistName: text("#watchlistButtonText"),
+        lockedHidden: hidden("#myPlayersLockedPage"),
+      };
+    }
+    return {
+      path: window.location.pathname,
+      title: document.title,
+      total: text("#mflStatsTotalPlayers"),
+      packable: text("#mflStatsPackablePlayers"),
+      statsHidden: hidden("#mflStatsPage"),
+    };
+  }
+
+  function assertRouteState(stateValue) {
+    assert(document.documentElement.dataset.mflRouteReady === "true", scenario + " route-ready flag is not settled.");
+    assert(!document.body.classList.contains("loading"), scenario + " left the global loading class active.");
+    if (scenario === "database") {
+      assert(stateValue.path === "/database/attributes", "Database canonical path is wrong: " + stateValue.path);
+      assert(stateValue.tableText.includes(expectedPlayerName), "Database did not render the fixture player.");
+      assert(stateValue.page === "database", "Database body page owner is wrong: " + stateValue.page);
+    } else if (scenario === "player") {
+      assert(stateValue.path === "/players/1", "Player canonical path is wrong: " + stateValue.path);
+      assert(stateValue.hasPlayerName, "Player detail did not render the fixture identity.");
+      assert(stateValue.title === expectedPlayerName + " - MFL Front Office", "Player title is not the full player name.");
+      assert(stateValue.pageHidden === false, "Player page remained hidden after readiness.");
+    } else if (scenario === "watchlist") {
+      assert(
+        stateValue.path === "/watchlist/" + testWatchlistId + "/current-season",
+        "Watchlist canonical path is wrong: " + stateValue.path,
+      );
+      assert(stateValue.tableText.includes(expectedPlayerName), "Watchlist did not render the stored fixture player.");
+      assert(stateValue.watchlistName === "Browser List", "Watchlist selector did not retain the selected list name.");
+      assert(stateValue.lockedHidden === true, "Watchlist incorrectly rendered the guest lock screen.");
+    } else if (scenario === "mflstats") {
+      assert(stateValue.path === "/mfl/stats", "MFL Stats canonical path is wrong: " + stateValue.path);
+      assert(stateValue.total === "1", "MFL Stats total count did not render the fixture player.");
+      assert(stateValue.packable === "1", "MFL Stats packable count did not classify the fixture player.");
+      assert(stateValue.statsHidden === false, "MFL Stats page remained hidden after readiness.");
+    }
+  }
+
+  async function navigateBackToScenario(setPage, timeline) {
+    await setPage("privacy", true);
+    await waitFor(() => window.location.pathname === "/privacy", scenario + " could not navigate to Privacy.");
+    const baselineSequence = timeline.snapshot().at(-1)?.sequence || 0;
+
+    if (scenario === "database") {
+      await setPage("database", true, { view: "attributes" });
+    } else if (scenario === "player") {
+      await setPage("player", true, { playerId: "1" });
+    } else if (scenario === "watchlist") {
+      await setPage("watchlist", true, { watchlistId: testWatchlistId, view: "current" });
+    } else if (scenario === "mflstats") {
+      await setPage("mfl", true, { view: "stats" });
+    }
+
+    await delay(100);
+    assertSpaTimingAfter(timeline, baselineSequence);
+  }
+
+  async function runRepresentativeRoute() {
+    const setPage = Reflect.get(window, "setPage");
+    const timeline = window.__mflClientPerformance;
+    assert(typeof setPage === "function", "Canonical setPage owner is unavailable.");
+    assert(timeline && typeof timeline.snapshot === "function", "Client performance timeline is unavailable.");
+    assert(scenario !== "unknown", "Browser regression scenario could not be derived from the route.");
+    assertInitialFirstPaint();
+    assertInitialTiming(timeline);
+
+    await waitFor(() => document.documentElement.dataset.mflRouteReady === "true", scenario + " direct refresh never settled.");
+    await delay(80);
+    const directState = routeState();
+    assertRouteState(directState);
+
+    await navigateBackToScenario(setPage, timeline);
+    const spaState = routeState();
+    assertRouteState(spaState);
+    assert(
+      JSON.stringify(spaState) === JSON.stringify(directState),
+      scenario + " direct refresh and SPA navigation did not converge to the same canonical state.",
+    );
+    assert(errors.length === 0, "Console/runtime errors occurred: " + errors.join(" | "));
+    finish("passed", scenario + ": direct refresh and SPA navigation converged with canonical timing and no runtime errors.");
+  }
+
+  async function runStaleNavigation() {
+    const runPageTransition = window.__mflRunPageTransition;
+    const transitionIsCurrent = window.__mflNavigationTransitionIsCurrent;
+    const timeline = window.__mflClientPerformance;
+    assert(typeof runPageTransition === "function", "Canonical page transition runner is unavailable.");
+    assert(typeof transitionIsCurrent === "function", "Canonical transition identity check is unavailable.");
+    assert(timeline && typeof timeline.snapshot === "function", "Client performance timeline is unavailable.");
+
+    await delay(80);
+    const baselineSequence = timeline.snapshot().at(-1)?.sequence || 0;
+    let staleCommitted = false;
+
+    const staleTransition = runPageTransition("changelog", true, {}, async (transition) => {
+      await delay(180);
+      if (transitionIsCurrent(transition)) {
+        staleCommitted = true;
+        document.documentElement.dataset.browserRouteCommit = "changelog";
+      }
+      return "stale";
+    });
+
+    await delay(60);
+    const currentTransition = runPageTransition("privacy", true, {}, async (transition) => {
+      assert(transitionIsCurrent(transition), "Latest transition was stale before its authoritative commit.");
+      document.documentElement.dataset.browserRouteCommit = "privacy";
+      return "current";
+    });
+
+    const [staleResult, currentResult] = await Promise.all([staleTransition, currentTransition]);
+    await delay(100);
+
+    assert(staleResult === null, "Superseded transition did not resolve as stale.");
+    assert(currentResult === "current", "Latest transition did not complete normally.");
+    assert(staleCommitted === false, "Superseded transition committed after a newer route won.");
+    assert(window.location.pathname === "/privacy", "Expected /privacy, got " + window.location.pathname + ".");
+    assert(document.documentElement.dataset.browserRouteCommit === "privacy", "Latest route content did not remain authoritative.");
+    assertSpaTimingAfter(timeline, baselineSequence);
+    assert(errors.length === 0, "Console/runtime errors occurred: " + errors.join(" | "));
+    finish("passed", "stale navigation: newest route remained authoritative with canonical timing.");
+  }
 
   async function run() {
     try {
-      const runPageTransition = window.__mflRunPageTransition;
-      const transitionIsCurrent = window.__mflNavigationTransitionIsCurrent;
-      const timeline = window.__mflClientPerformance;
-      assert(typeof runPageTransition === "function", "Canonical page transition runner is unavailable.");
-      assert(typeof transitionIsCurrent === "function", "Canonical transition identity check is unavailable.");
-      assert(timeline && typeof timeline.snapshot === "function", "Client performance timeline is unavailable.");
-
-      await delay(80);
-      const baselineSequence = timeline.snapshot().at(-1)?.sequence || 0;
-      let staleCommitted = false;
-
-      const staleTransition = runPageTransition("changelog", true, {}, async (transition) => {
-        await delay(180);
-        if (transitionIsCurrent(transition)) {
-          staleCommitted = true;
-          document.documentElement.dataset.browserRouteCommit = "changelog";
-        }
-        return "stale";
-      });
-
-      await delay(60);
-      const currentTransition = runPageTransition("privacy", true, {}, async (transition) => {
-        assert(transitionIsCurrent(transition), "Latest transition was stale before its authoritative commit.");
-        document.documentElement.dataset.browserRouteCommit = "privacy";
-        return "current";
-      });
-
-      const [staleResult, currentResult] = await Promise.all([staleTransition, currentTransition]);
-      await delay(100);
-
-      assert(staleResult === null, "Superseded transition did not resolve as stale.");
-      assert(currentResult === "current", "Latest transition did not complete normally.");
-      assert(staleCommitted === false, "Superseded transition committed after a newer route won.");
-      assert(window.location.pathname === "/privacy", "Expected /privacy, got " + window.location.pathname + ".");
-      assert(document.documentElement.dataset.browserRouteCommit === "privacy", "Latest route content did not remain authoritative.");
-
-      const recentEntries = timeline.snapshot().filter((entry) => entry.sequence > baselineSequence);
-      const phases = recentEntries.map((entry) => entry.phase);
-      const startIndex = phases.lastIndexOf("route-transition-start");
-      const commitIndex = phases.indexOf("content-commit", startIndex + 1);
-      const completeIndex = phases.indexOf("route-transition-complete", commitIndex + 1);
-      const settledIndex = phases.indexOf("route-visually-settled", completeIndex + 1);
-      assert(startIndex >= 0, "Latest route transition start timing is missing.");
-      assert(commitIndex > startIndex, "SPA content commit timing is missing after transition start.");
-      assert(completeIndex > commitIndex, "Route completion timing must follow content commit.");
-      assert(settledIndex > completeIndex, "Visually-settled timing must follow route completion.");
-      assert(recentEntries[commitIndex]?.detail?.source === "navigation-release", "SPA content commit has the wrong canonical source.");
-      assert(errors.length === 0, "Console/runtime errors occurred: " + errors.join(" | "));
-
-      finish("passed", "stale-result=null; current-result=current; phases=" + phases.join(","));
+      if (scenario === "stale") await runStaleNavigation();
+      else await runRepresentativeRoute();
     } catch (error) {
       finish("failed", String(error?.stack || error));
     }
@@ -160,6 +474,29 @@ function writeJson(response, data) {
   response.end(JSON.stringify(data));
 }
 
+function pageDataStub(url) {
+  const scope = String(url.searchParams.get("scope") || "database").toLowerCase();
+  const rows = [rowForColumns(pageColumns)];
+  const requestedPageSize = Number(url.searchParams.get("pageSize"));
+  const pageSize = scope === "mflstats"
+    ? rows.length
+    : (Number.isFinite(requestedPageSize) && requestedPageSize > 0 ? Math.trunc(requestedPageSize) : 100);
+  return {
+    columns: pageColumns,
+    rows,
+    page: 1,
+    pageSize,
+    totalRows: rows.length,
+    sourceRows: rows.length,
+    totalPages: 1,
+    generatedAt,
+    marketplaceEmbedded: false,
+    marketplaceGeneratedAt: "",
+    marketplaceFlowBlockHeight: 0,
+    source: "browser-regression",
+  };
+}
+
 function dataStub(url) {
   const mode = String(url.searchParams.get("mode") || "bootstrap");
   if (mode === "bootstrap") {
@@ -181,24 +518,31 @@ function dataStub(url) {
     };
   }
   if (mode === "search") {
+    const playerIds = new Set(
+      String(url.searchParams.get("playerIds") || "")
+        .split(",")
+        .map((entry) => entry.trim())
+        .filter(Boolean),
+    );
     return {
-      players: { columns: searchColumns, rows: [] },
+      players: {
+        columns: searchColumns,
+        rows: playerIds.has("1") ? [rowForColumns(searchColumns)] : [],
+      },
       agents: { columns: ["wallet_address", "wallet_name", "player_count"], rows: [] },
       clubs: [],
     };
   }
-  if (mode === "page") {
-    return {
-      columns: publicColumns,
-      rows: [],
-      page: 1,
-      pageSize: 100,
-      totalRows: 0,
-      sourceRows: 0,
-      generatedAt,
-    };
-  }
+  if (mode === "page") return pageDataStub(url);
   return {};
+}
+
+function walletPreferencesStub() {
+  return {
+    watchlists: [{ id: testWatchlistId, name: "Browser List", playerIds: ["1"] }],
+    playerNotes: {},
+    tableState: {},
+  };
 }
 
 async function responseForStaticPath(pathname) {
@@ -232,7 +576,19 @@ async function createRegressionServer() {
       return;
     }
     if (url.pathname === "/api/marketplace") {
-      writeJson(response, { generatedAt, prices: {} });
+      writeJson(response, { generatedAt, prices: {}, flowBlockHeight: 0 });
+      return;
+    }
+    if (url.pathname === "/api/wallet-preferences") {
+      writeJson(response, walletPreferencesStub());
+      return;
+    }
+    if (url.pathname === "/api/wallet-permissions-version") {
+      writeJson(response, { version: "browser-regression", updated_at: generatedAt });
+      return;
+    }
+    if (url.pathname === "/api/wallet-access") {
+      writeJson(response, { allowed: true, version: "browser-regression", updated_at: generatedAt });
       return;
     }
     if (url.pathname.startsWith("/api/")) {
@@ -334,7 +690,7 @@ async function connectCdp(webSocketUrl) {
 }
 
 async function waitForBrowserRegression(cdp) {
-  const deadline = Date.now() + 15_000;
+  const deadline = Date.now() + 20_000;
   while (Date.now() < deadline) {
     const evaluation = await cdp.send("Runtime.evaluate", {
       expression: '(() => { const el = document.querySelector("#mflBrowserRoutingRegression"); return el ? { status: el.dataset.status || "", detail: el.textContent || "" } : null; })()',
@@ -356,6 +712,7 @@ async function runChromeRegression(executable, url) {
     "--no-sandbox",
     "--disable-gpu",
     "--disable-dev-shm-usage",
+    "--window-size=1280,900",
     `--remote-debugging-port=${debuggingPort}`,
     "--remote-debugging-address=127.0.0.1",
     `--user-data-dir=${userDataDirectory}`,
@@ -370,8 +727,7 @@ async function runChromeRegression(executable, url) {
     const target = await waitForPageTarget(debuggingPort, url);
     cdp = await connectCdp(target.webSocketDebuggerUrl);
     await cdp.send("Runtime.enable");
-    const result = await waitForBrowserRegression(cdp);
-    return result;
+    return await waitForBrowserRegression(cdp);
   } catch (error) {
     throw new Error(`${error.message}\n${stderr.slice(-2000)}`, { cause: error });
   } finally {
@@ -386,15 +742,26 @@ async function runChromeRegression(executable, url) {
   }
 }
 
+const regressionScenarios = Object.freeze([
+  ["stale", "/privacy"],
+  ["database", "/database/attributes"],
+  ["player", "/players/1"],
+  ["watchlist", `/watchlist/${testWatchlistId}/current-season`],
+  ["mflstats", "/mfl/stats"],
+]);
+
 const server = await createRegressionServer();
 try {
   const address = server.address();
   assert(address && typeof address === "object", "Browser regression server did not expose a TCP address.");
   const executable = browserExecutable();
-  const url = `http://127.0.0.1:${address.port}/privacy?browser-regression=1`;
-  const result = await runChromeRegression(executable, url);
-  assert.equal(result.status, "passed");
-  console.log(`Browser routing regression passed: ${result.detail}`);
+
+  for (const [scenario, path] of regressionScenarios) {
+    const url = `http://127.0.0.1:${address.port}${path}`;
+    const result = await runChromeRegression(executable, url);
+    assert.equal(result.status, "passed");
+    console.log(`Browser routing regression passed: ${scenario}: ${result.detail}`);
+  }
 } finally {
   await new Promise((resolvePromise) => server.close(resolvePromise));
 }
