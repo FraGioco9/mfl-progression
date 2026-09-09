@@ -49,6 +49,9 @@ for (const [name, source] of [
   invariant(source.includes("Reflect.set(window, name, replacement)"), `${name} must replace global functions explicitly.`);
 }
 
+invariant(!watchlistRuntime.includes('replaceGlobalFunction("setPage"'), "Watchlist/My Players coordination must not replace the stable public setPage facade.");
+invariant(watchlistRuntime.includes('Reflect.set(window, "__mflSetPageFeatureOwner", setPageFeatureOwner);'), "Watchlist/My Players coordination must register its setPage behavior through the explicit feature-owner slot.");
+
 invariant(!evaluationRateRuntime.includes("window.eval"), "Evaluation discount-rate authority must not use window.eval.");
 invariant(!evaluationRateRuntime.includes("eval("), "Evaluation discount-rate authority must not use string evaluation.");
 invariant(

@@ -76,7 +76,7 @@ invariant(
   "The global route gate must not directly call table-owned updateFilterSummary before the lazy Table runtime exists.",
 );
 
-const routeGateStart = coreRuntime.indexOf("const routeRuntimeSetPage = async function setPageWithRouteRuntime");
+const routeGateStart = coreRuntime.indexOf("async function setPageWithRouteRuntime");
 const routeResetGuard = coreRuntime.indexOf("const crossPageNavigation = !runtimeReady", routeGateStart);
 const routeUpdaterLookup = coreRuntime.indexOf('const canonicalFilterSummaryUpdater = Reflect.get(window, "updateFilterSummary");', routeResetGuard);
 const routeUpdaterGuard = coreRuntime.indexOf('if (typeof canonicalFilterSummaryUpdater === "function") {', routeUpdaterLookup);

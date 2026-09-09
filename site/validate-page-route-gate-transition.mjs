@@ -3,11 +3,15 @@ import assert from "node:assert/strict";
 import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const appCoreSource = readCombinedCanonicalCoreSource();
-const routeSetPageAssignmentIndex = appCoreSource.indexOf("setPage = routeRuntimeSetPage;");
-const routeSetPageSection = routeSetPageAssignmentIndex >= 0
-  ? appCoreSource.slice(appCoreSource.lastIndexOf(";(() => {", routeSetPageAssignmentIndex), routeSetPageAssignmentIndex + "setPage = routeRuntimeSetPage;".length)
+const routeSetPageStart = appCoreSource.indexOf("async function setPageWithRouteRuntime(pageName, updateHash = true, options = {}) {");
+const routeSetPageEnd = appCoreSource.indexOf('Reflect.set(window, "__mflSetPageRouteOwner", setPageWithRouteRuntime);', routeSetPageStart);
+const routeSetPageSection = routeSetPageStart >= 0 && routeSetPageEnd > routeSetPageStart
+  ? appCoreSource.slice(routeSetPageStart, routeSetPageEnd)
   : "";
-assert.ok(routeSetPageAssignmentIndex >= 0, "Could not locate the lazy setPage route gate.");
+assert.ok(routeSetPageStart >= 0 && routeSetPageEnd > routeSetPageStart, "Could not locate the named lazy setPage route gate.");
+assert.doesNotMatch(appCoreSource, /setPage = routeRuntimeSetPage/, "The lazy route gate must not replace the stable public setPage function.");
+assert.match(routeSetPageSection, /const featureOwnerBeforeRuntime = Reflect\.get\(window, "__mflSetPageFeatureOwner"\);[\s\S]*?const featureOwnerAfterRuntime = Reflect\.get\(window, "__mflSetPageFeatureOwner"\);/, "Lazy route loading must detect a feature owner installed during runtime hydration without replacing setPage.");
+assert.match(routeSetPageSection, /featureOwnerAfterRuntime\.call\(this, pageName, updateHash,[\s\S]*?__mflRouteRuntimeReady: true/, "A feature owner installed during lazy loading must receive the in-flight navigation exactly through the runtime-ready handoff.");
 assert.match(routeSetPageSection, /const stagedTransition = incomingOptions\.__mflNavigationTransition[\s\S]*?pendingViewTransition/, "Lazy route loads must retain an inherited page/view transition identity through runtime loading.");
 assert.match(routeSetPageSection, /const loadCommittedRoute = async \(transition = stagedTransition\) => \{/, "The lazy route gate must receive the owning page/view transition.");
 assert.match(routeSetPageSection, /__mflNavigationTransition: transition/, "The lazy route gate must forward the owning transition into downstream page renderers.");
