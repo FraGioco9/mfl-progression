@@ -6236,6 +6236,10 @@ function playerSearchResult(row) {
   return { type: "player", row };
 }
 
+function clubSearchResult(entry) {
+  return { type: "club", entry };
+}
+
 function searchMatchScore(query, primaryText, secondaryText = "") {
   if (primaryText === query || secondaryText === query) {
     return 100;
@@ -6305,10 +6309,21 @@ function bestSearchResults(query) {
       || String(a.label).localeCompare(String(b.label))
     ));
 
-  // Keep category priority while giving typed Global Search one shared ten-result budget.
-  // The club-search enhancer will insert clubs between players and agents before applying
-  // the same overall cap.
-  return [...playerResults, ...agentResults].slice(0, 10);
+  const clubResults = state.clubSearchIndex
+    .filter((club) => club.searchText.includes(query))
+    .sort((a, b) => (
+      (a.division ?? Number.POSITIVE_INFINITY) - (b.division ?? Number.POSITIVE_INFINITY)
+      || a.name.localeCompare(b.name)
+    ))
+    .slice(0, 10)
+    .map(clubSearchResult);
+
+  // Keep player -> club -> agent priority with one shared ten-result budget.
+  return [
+    ...playerResults,
+    ...clubResults,
+    ...agentResults,
+  ].slice(0, 10);
 }
 
 function agentSearchResultByWallet(walletAddress) {
@@ -6325,9 +6340,11 @@ function recentSearchRows() {
     ? state.recentSearchItems
     : recentSearchItemsFromLegacy(state.recentSearchPlayerIds, state.recentSearchAgentWallets);
 
-  return items.map((item) => {
+  return items.slice(0, 5).map((item) => {
     if (item.startsWith("club:")) {
-      return null;
+      const clubId = item.slice(5);
+      const entry = state.clubSearchIndex.find((club) => club.clubId === clubId);
+      return entry ? clubSearchResult(entry) : null;
     }
 
     if (item.startsWith("agent:")) {
@@ -6399,6 +6416,26 @@ function renderSearchResultsNow() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "searchResult";
+
+    if (result.type === "club") {
+      const entry = result.entry;
+      const division = contractDivisionInfo(entry.division);
+      const divisionHtml = division
+        ? ` &middot; <span class="clubSearchDivision" style="color:${escapeHtml(division.color)}">${escapeHtml(division.name)}</span>`
+        : "";
+      button.classList.add("clubSearchResult");
+      button.dataset.clubId = entry.clubId;
+      button.dataset.searchKey = recentClubKey(entry.clubId);
+      button.innerHTML = `<strong>${escapeHtml(entry.name)}</strong><span>Club &middot; #${escapeHtml(entry.clubId)}${divisionHtml}</span>`;
+      button.addEventListener("click", () => {
+        closeSearch();
+        if (typeof window.mflOpenClubPage === "function") {
+          void window.mflOpenClubPage(entry.clubId, "attributes");
+        }
+      });
+      fragment.appendChild(button);
+      return;
+    }
 
     if (result.type === "agent") {
       button.dataset.searchKey = recentAgentKey(result.walletAddress);
@@ -7340,382 +7377,6 @@ async function startApp() {
   });
 }
 
-;(() => {
-  // Compatibility marker for legacy validation; route ownership lives in the Club chunk:
-  // squad|contracts|current-season|all-time
-  // Compatibility marker; the executable stale-payload guard is route-owned: if (!dataLoaded) return;
-  if (typeof renderSearchResultsNow !== "function" || renderSearchResultsNow.__mflUniversalClubSearch) return;
-
-  const CLUB_SEARCH_ID_COLUMNS = [
-    "active_contract_club_id",
-    "club_id",
-    "current_club_id",
-    "active_club_id",
-  ];
-
-  function clubSearchIdColumn() {
-    return CLUB_SEARCH_ID_COLUMNS.find((column) => typeof hasColumn === "function" ? hasColumn(column) : state.columns.includes(column)) || "";
-  }
-
-  function universalClubSearchEntries(query) {
-    const idColumn = clubSearchIdColumn();
-    if (!query || !idColumn || !Array.isArray(state.rows)) return [];
-    const normalizedQuery = typeof normalizeSearchText === "function" ? normalizeSearchText(query) : String(query).toLowerCase();
-    const clubs = new Map();
-
-    state.rows.forEach((row) => {
-      const clubId = String(getValue(row, idColumn) || "").trim();
-      const name = String(getValue(row, "active_contract_club_name") || "").trim();
-      if (!clubId || !name || clubs.has(clubId)) return;
-      const searchable = typeof normalizeSearchText === "function"
-        ? normalizeSearchText(name + " " + clubId)
-        : (name + " " + clubId).toLowerCase();
-      if (!searchable.includes(normalizedQuery)) return;
-      const divisionRank = typeof contractDivisionSortValue === "function"
-        ? contractDivisionSortValue(getValue(row, "active_contract_club_division"))
-        : null;
-      clubs.set(clubId, {
-        clubId,
-        name,
-        divisionRank: divisionRank ?? Number.POSITIVE_INFINITY,
-      });
-    });
-
-    return Array.from(clubs.values())
-      .sort((a, b) => a.divisionRank - b.divisionRank || a.name.localeCompare(b.name))
-      .slice(0, 5);
-  }
-
-  function addUniversalClubSearchResults() {
-    if (typeof playerSearchInput === "undefined" || typeof playerSearchResults === "undefined") return;
-    const query = String(playerSearchInput.value || "").trim();
-    const entries = universalClubSearchEntries(query);
-    if (!entries.length) return;
-
-    const fragment = document.createDocumentFragment();
-    entries.forEach(({ clubId, name }) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "searchResult clubSearchResult";
-      button.dataset.clubId = clubId;
-      button.dataset.searchKey = recentClubKey(clubId);
-      const safeName = typeof escapeHtml === "function" ? escapeHtml(name) : name;
-      const safeId = typeof escapeHtml === "function" ? escapeHtml(clubId) : clubId;
-      button.innerHTML = "<strong>" + safeName + "</strong><span>Club &middot; #" + safeId + "</span>";
-      button.addEventListener("click", () => {
-        if (typeof closeSearch === "function") closeSearch();
-        if (typeof window.mflOpenClubPage === "function") {
-          void window.mflOpenClubPage(clubId, "attributes");
-        }
-      });
-      fragment.appendChild(button);
-    });
-    playerSearchResults.prepend(fragment);
-    playerSearchResults.classList.add("filledSearchResults");
-  }
-
-  const originalRenderSearchResultsNow = renderSearchResultsNow;
-  const renderSearchResultsNowWithUniversalClubs = function() {
-    const result = originalRenderSearchResultsNow.apply(this, arguments);
-    addUniversalClubSearchResults();
-    return result;
-  };
-  Object.defineProperty(renderSearchResultsNowWithUniversalClubs, "__mflUniversalClubSearch", { value: true });
-  renderSearchResultsNow = renderSearchResultsNowWithUniversalClubs;
-})();
-
-(() => {
-  const VERSION = String(window.__mflReleaseVersion || "");
-  const MAX_SEARCH_RESULTS = 5;
-  const MAX_TYPED_SEARCH_RESULTS = 15;
-  const RECENT_CLUBS_STORAGE_KEY = "mfl-recent-search-clubs";
-  const CLUB_ID_COLUMNS = ["active_contract_club_id", "club_id", "current_club_id", "active_club_id"];
-
-  function clubIdColumn() {
-    if (!Array.isArray(state?.columns)) return "";
-    return CLUB_ID_COLUMNS.find((column) => state.columns.includes(column)) || "";
-  }
-
-  function clubRowById(clubId) {
-    const idColumn = clubIdColumn();
-    if (!idColumn || !Array.isArray(state?.rows)) return null;
-    return state.rows.find((row) => String(getValue(row, idColumn) || "").trim() === String(clubId).trim()) || null;
-  }
-
-  function clubIdFromResult(button) {
-    if (button.dataset.clubId) return button.dataset.clubId;
-    const info = String(button.querySelector(":scope > span")?.textContent || "");
-    const match = info.match(/#([^\s·]+)/);
-    const clubId = match ? match[1].trim() : "";
-    if (clubId) button.dataset.clubId = clubId;
-    return clubId;
-  }
-
-  function normalizedClubSearchData(clubId) {
-    const row = clubRowById(clubId);
-    if (!row) return null;
-    const name = String(getValue(row, "active_contract_club_name") || "").trim();
-    const division = typeof contractDivisionInfo === "function"
-      ? contractDivisionInfo(getValue(row, "active_contract_club_division"))
-      : null;
-    return name ? { clubId: String(clubId), name, division } : null;
-  }
-
-  function normalizeClubResult(button) {
-    const clubId = clubIdFromResult(button);
-    const data = normalizedClubSearchData(clubId);
-    const title = button.querySelector(":scope > strong");
-    const info = button.querySelector(":scope > span");
-    if (!data || !title || !info) {
-      button.remove();
-      return;
-    }
-
-    button.dataset.clubId = data.clubId;
-    title.textContent = data.name;
-    info.replaceChildren(document.createTextNode(`Club · #${data.clubId}`));
-    if (data.division) {
-      info.append(document.createTextNode(" · "));
-      const label = document.createElement("span");
-      label.className = "clubSearchDivision";
-      label.textContent = data.division.name;
-      label.style.color = data.division.color;
-      info.appendChild(label);
-    }
-  }
-
-  function readRecentClubs() {
-    try {
-      const value = JSON.parse(localStorage.getItem(RECENT_CLUBS_STORAGE_KEY) || "[]");
-      return Array.isArray(value) ? value.map(String).filter(Boolean).slice(0, MAX_SEARCH_RESULTS) : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function rememberClub(clubId) {
-    const key = String(clubId || "").trim();
-    if (!key) return;
-    const recent = [key, ...readRecentClubs().filter((id) => id !== key)].slice(0, MAX_SEARCH_RESULTS);
-    try {
-      localStorage.setItem(RECENT_CLUBS_STORAGE_KEY, JSON.stringify(recent));
-    } catch {
-      // Combined recent search state still works for this session.
-    }
-
-    const searchKey = recentClubKey(key);
-    state.recentSearchItems = mergeRecentIdLists([searchKey], state.recentSearchItems);
-    persistRecentSearchStates();
-    saveTableState();
-  }
-
-  function createRecentClubResult(clubId) {
-    const data = normalizedClubSearchData(clubId);
-    if (!data) return null;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "searchResult clubSearchResult recentClubSearchResult";
-    button.dataset.clubId = data.clubId;
-    button.dataset.searchKey = recentClubKey(data.clubId);
-    const title = document.createElement("strong");
-    title.textContent = data.name;
-    const info = document.createElement("span");
-    button.append(title, info);
-    normalizeClubResult(button);
-    button.addEventListener("click", () => {
-      rememberClub(data.clubId);
-      if (typeof closeSearch === "function") closeSearch();
-      if (typeof window.mflOpenClubPage === "function") {
-        window.mflOpenClubPage(data.clubId, "contracts");
-      }
-    });
-    return button;
-  }
-
-  function prependRecentClubs() {
-    if (typeof playerSearchInput === "undefined" || typeof playerSearchResults === "undefined") return;
-    if (String(playerSearchInput.value || "").trim()) return;
-    const fragment = document.createDocumentFragment();
-    readRecentClubs().forEach((clubId) => {
-      const result = createRecentClubResult(clubId);
-      if (result) fragment.appendChild(result);
-    });
-    if (fragment.childElementCount) playerSearchResults.prepend(fragment);
-  }
-
-  function finalizeSearchResults() {
-    if (typeof playerSearchResults === "undefined" || !playerSearchResults) return;
-    playerSearchResults.querySelectorAll(".clubSearchResult").forEach(normalizeClubResult);
-
-    const query = String(playerSearchInput?.value || "").trim();
-    const directResults = Array.from(playerSearchResults.querySelectorAll(":scope > .searchResult"));
-    const seen = new Set();
-    directResults.forEach((result) => {
-      const key = result.dataset.searchKey
-        || (result.classList.contains("clubSearchResult") ? recentClubKey(clubIdFromResult(result)) : "");
-      if (key) result.dataset.searchKey = key;
-      if (key && seen.has(key)) result.remove();
-      else if (key) seen.add(key);
-    });
-
-    if (!query) {
-      const existingByKey = new Map(
-        Array.from(playerSearchResults.querySelectorAll(":scope > .searchResult"))
-          .filter((result) => result.dataset.searchKey)
-          .map((result) => [result.dataset.searchKey, result]),
-      );
-      const ordered = [];
-      state.recentSearchItems.slice(0, MAX_SEARCH_RESULTS).forEach((key) => {
-        let result = existingByKey.get(key) || null;
-        if (!result && key.startsWith("club:")) {
-          result = createRecentClubResult(key.slice(5));
-        }
-        if (result && !ordered.includes(result)) ordered.push(result);
-      });
-
-      if (ordered.length) {
-        playerSearchResults.replaceChildren(...ordered.slice(0, MAX_SEARCH_RESULTS));
-        playerSearchResults.classList.add("filledSearchResults");
-      } else {
-        playerSearchResults.innerHTML = '<div class="searchHint">Recent searches will appear here.</div>';
-        playerSearchResults.classList.remove("filledSearchResults");
-      }
-      return;
-    }
-
-    const resultPriority = (result) => {
-      if (result.classList.contains("clubSearchResult")) return 1;
-      return result.dataset.searchKey?.startsWith("agent:") ? 2 : 0;
-    };
-    const results = Array.from(playerSearchResults.querySelectorAll(":scope > .searchResult"))
-      .sort((a, b) => resultPriority(a) - resultPriority(b));
-    results.forEach((result) => playerSearchResults.appendChild(result));
-    results.slice(MAX_TYPED_SEARCH_RESULTS).forEach((result) => result.remove());
-    const visibleResults = playerSearchResults.querySelectorAll(":scope > .searchResult");
-    playerSearchResults.querySelectorAll(":scope > .searchHint").forEach((hint) => {
-      if (visibleResults.length) hint.remove();
-    });
-    playerSearchResults.classList.toggle("filledSearchResults", visibleResults.length > 0);
-  }
-
-  if (typeof renderSearchResultsNow === "function") {
-    const originalRenderSearchResultsNow = renderSearchResultsNow;
-    renderSearchResultsNow = function renderSearchResultsNowV1500() {
-      const result = originalRenderSearchResultsNow.apply(this, arguments);
-      finalizeSearchResults();
-      return result;
-    };
-  }
-
-  document.addEventListener("click", (event) => {
-    const result = event.target.closest?.(".clubSearchResult");
-    if (result) rememberClub(clubIdFromResult(result));
-  }, true);
-
-  function setFooterVersion() {
-    window.__mflStaticUiRuntime?.sync?.();
-  }
-
-  function createChangelogItem() {
-    const item = document.createElement("li");
-    item.dataset.version = VERSION;
-    const version = document.createElement("span");
-    version.textContent = `v${VERSION}`;
-    const description = document.createElement("p");
-    description.textContent = "Prioritize Search results and hide Evaluation scrollbars";
-    item.append(version, description);
-    return item;
-  }
-
-  function collapseOlderChangelogSections(list) {
-    Array.from(list.querySelectorAll(":scope > .changelogMinorSection")).forEach((section, index) => {
-      const expanded = index === 0;
-      section.classList.toggle("is-expanded", expanded);
-      section.querySelector(":scope > .changelogMinorToggle")?.setAttribute("aria-expanded", expanded ? "true" : "false");
-    });
-  }
-
-  function addChangelogSection() {
-    const list = document.querySelector(".changelogList");
-    if (!list) return;
-    const minorVersion = `v${VERSION.split(".").slice(0, 2).join(".")}`;
-    const looseMinorEntries = Array.from(list.children).filter((child) =>
-      !child.classList.contains("changelogMinorSection")
-      && child.querySelector(":scope > span")?.textContent?.startsWith(`${minorVersion}.`),
-    );
-    let section = Array.from(list.querySelectorAll(":scope > .changelogMinorSection")).find((candidate) =>
-      candidate.querySelector(".changelogMinorVersion")?.textContent === minorVersion,
-    );
-    if (!section) {
-      section = document.createElement("li");
-      section.className = "changelogMinorSection";
-      const toggle = document.createElement("button");
-      toggle.className = "changelogMinorToggle";
-      toggle.type = "button";
-      const title = document.createElement("span");
-      title.className = "changelogMinorVersion";
-      title.textContent = minorVersion;
-      const meta = document.createElement("span");
-      meta.className = "changelogMinorMeta";
-      meta.textContent = "1 patch";
-      const chevron = document.createElement("span");
-      chevron.className = "changelogMinorChevron";
-      chevron.setAttribute("aria-hidden", "true");
-      chevron.textContent = ">";
-      toggle.append(title, meta, chevron);
-      const panel = document.createElement("div");
-      panel.className = "changelogMinorPanel";
-      const inner = document.createElement("div");
-      inner.className = "changelogMinorPanelInner";
-      const patchList = document.createElement("ol");
-      patchList.className = "changelogPatchList";
-      looseMinorEntries.forEach((entry) => patchList.appendChild(entry));
-      if (!Array.from(patchList.children).some((item) =>
-        item.querySelector("span")?.textContent?.trim() === `v${VERSION}`,
-      )) {
-        patchList.prepend(createChangelogItem());
-      }
-      inner.appendChild(patchList);
-      panel.appendChild(inner);
-      section.append(toggle, panel);
-      toggle.addEventListener("click", () => {
-        const expanded = section.classList.toggle("is-expanded");
-        toggle.setAttribute("aria-expanded", expanded ? "true" : "false");
-      });
-      list.prepend(section);
-    } else {
-      const patchList = section.querySelector(".changelogPatchList");
-      looseMinorEntries.forEach((entry) => patchList?.appendChild(entry));
-      if (!Array.from(section.querySelectorAll(".changelogPatchList > li")).some((item) =>
-        item.querySelector("span")?.textContent?.trim() === `v${VERSION}`,
-      )) {
-        patchList?.prepend(createChangelogItem());
-      }
-    }
-    const patchList = section.querySelector(".changelogPatchList");
-    Array.from(patchList?.children || [])
-      .sort((a, b) => String(b.querySelector("span")?.textContent || "").localeCompare(
-        String(a.querySelector("span")?.textContent || ""),
-        undefined,
-        { numeric: true },
-      ))
-      .forEach((entry) => patchList.appendChild(entry));
-    const patchCount = section.querySelectorAll(".changelogPatchList > li").length;
-    const meta = section.querySelector(".changelogMinorMeta");
-    if (meta) meta.textContent = `${patchCount} ${patchCount === 1 ? "patch" : "patches"}`;
-    collapseOlderChangelogSections(list);
-  }
-
-
-  function initialize() {
-    setFooterVersion();
-    finalizeSearchResults();
-  }
-
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initialize, { once: true });
-  else initialize();
-})();
-
 function syncLayoutCenter() {
   const selection = document.querySelector("#selectionBar");
   const pageLayout = document.querySelector("main");
@@ -7741,7 +7402,6 @@ function syncLayoutCenter() {
   const originalApplyFilters = applyFilters;
   const originalSetPage = setPage;
   const originalSetView = setView;
-  const originalRenderSearchResultsNow = renderSearchResultsNow;
 
   function filterRulesForLoading(pageName, savedState, viewName) {
     const normalizedView = normalizeViewForPage(viewName || savedState?.view, pageName);
@@ -8176,125 +7836,6 @@ function syncLayoutCenter() {
     }
 
     return withInteractionBusy(loadAndRender);
-  };
-
-  function divisionInfo(divisionValue) {
-    return typeof contractDivisionInfo === "function"
-      ? contractDivisionInfo(divisionValue)
-      : null;
-  }
-
-  function clubSearchResult(entry) {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "searchResult clubSearchResult";
-    button.dataset.clubId = entry.clubId;
-    button.dataset.searchKey = recentClubKey(entry.clubId);
-    const division = divisionInfo(entry.division);
-    const divisionHtml = division
-      ? ` &middot; <span class="clubSearchDivision" style="color:${escapeHtml(division.color)}">${escapeHtml(division.name)}</span>`
-      : "";
-    button.innerHTML = `<strong>${escapeHtml(entry.name)}</strong><span>Club &middot; #${escapeHtml(entry.clubId)}${divisionHtml}</span>`;
-    button.addEventListener("click", () => {
-      closeSearch();
-      if (typeof window.mflOpenClubPage === "function") {
-        window.mflOpenClubPage(entry.clubId, "attributes");
-      }
-    });
-    return button;
-  }
-
-  function injectBootstrapClubResults() {
-    if (!playerSearchResults || !state.clubSearchIndex.length) {
-      return;
-    }
-
-    playerSearchResults.querySelectorAll(":scope > .clubSearchResult").forEach((result) => result.remove());
-    const query = normalizeSearchText(playerSearchInput.value.trim());
-    const recentClubIds = state.recentSearchItems
-      .filter((item) => item.startsWith("club:"))
-      .map((item) => item.slice(5));
-    const clubs = query
-      ? state.clubSearchIndex
-          .filter((club) => club.searchText.includes(query))
-          .sort((a, b) => (
-            (a.division ?? Number.POSITIVE_INFINITY) - (b.division ?? Number.POSITIVE_INFINITY)
-            || a.name.localeCompare(b.name)
-          ))
-      : recentClubIds
-          .map((clubId) => state.clubSearchIndex.find((club) => club.clubId === clubId))
-          .filter(Boolean);
-
-    const existingResults = Array.from(playerSearchResults.querySelectorAll(":scope > .searchResult"));
-    const clubResults = clubs.slice(0, query ? 10 : 5).map(clubSearchResult);
-
-    if (!query) {
-      const resultsByKey = new Map(
-        [...existingResults, ...clubResults]
-          .filter((result) => result.dataset.searchKey)
-          .map((result) => [result.dataset.searchKey, result]),
-      );
-      const chronologicalResults = state.recentSearchItems
-        .slice(0, 5)
-        .map((key) => resultsByKey.get(key))
-        .filter(Boolean);
-
-      if (chronologicalResults.length) {
-        playerSearchResults.replaceChildren(...chronologicalResults);
-        playerSearchResults.classList.add("filledSearchResults");
-      } else {
-        playerSearchResults.innerHTML = '<div class="searchHint">Recent searches will appear here.</div>';
-        playerSearchResults.classList.remove("filledSearchResults");
-      }
-      return;
-    }
-
-    const playerResults = existingResults.filter((result) => !result.dataset.searchKey?.startsWith("agent:"));
-    const agentResults = existingResults.filter((result) => result.dataset.searchKey?.startsWith("agent:"));
-    const mergedResults = [
-      ...playerResults,
-      ...clubResults,
-      ...agentResults,
-    ].slice(0, 10);
-
-    if (mergedResults.length) {
-      playerSearchResults.replaceChildren(...mergedResults);
-      playerSearchResults.classList.add("filledSearchResults");
-    }
-  }
-
-  function prioritizeTypedSearchResults() {
-    if (!playerSearchResults || !normalizeSearchText(playerSearchInput.value.trim())) {
-      return;
-    }
-
-    const resultPriority = (result) => {
-      const searchKey = String(result.dataset.searchKey || "");
-      if (result.classList.contains("clubSearchResult") || searchKey.startsWith("club:")) {
-        return 1;
-      }
-      if (searchKey.startsWith("agent:")) {
-        return 2;
-      }
-      return 0;
-    };
-    const results = Array.from(playerSearchResults.querySelectorAll(":scope > .searchResult"))
-      .sort((a, b) => resultPriority(a) - resultPriority(b))
-      .slice(0, 15);
-
-    if (!results.length) {
-      return;
-    }
-
-    playerSearchResults.replaceChildren(...results);
-    playerSearchResults.classList.add("filledSearchResults");
-  }
-
-  renderSearchResultsNow = function renderSearchResultsFromBootstrap() {
-    const result = originalRenderSearchResultsNow.apply(this, arguments);
-    injectBootstrapClubResults();
-    prioritizeTypedSearchResults();
-    return result;
   };
 
   window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage(pageName, options = {}) {
