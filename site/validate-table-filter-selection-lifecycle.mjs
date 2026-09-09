@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 import { coreSourceByDomain } from "./modules/core-source-manifest.js";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 const invariant = (condition, message) => { if (!condition) throw new Error(message); };
@@ -9,7 +10,7 @@ const [staticUi, bootstrap, selectionStack, sharedCore, tableCore, generatedShar
   read("./static-ui-runtime.js"),
   read("./bootstrap.js"),
   read("./selection-stack-runtime.js"),
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   read("./modules/core-sources/table.js"),
   read("./modules/app-core-runtime.js"),
   read("./modules/app-core-table-runtime.js"),

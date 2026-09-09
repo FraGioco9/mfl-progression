@@ -1,18 +1,9 @@
 import fs from "node:fs";
 import assert from "node:assert/strict";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 // Sorting stays page-scoped until a destination view cannot represent the active key; Next Overall desc means lowest gap first, while Progression desc means largest increase then highest matching raw stat.
-const core = [
-  "./modules/core-sources/shared.js",
-  "./modules/core-sources/evaluation.js",
-  "./modules/core-sources/mfl-stats.js",
-  "./modules/core-sources/club.js",
-  "./modules/core-sources/settings.js",
-  "./modules/core-sources/player.js",
-  "./modules/core-sources/table.js",
-  "./modules/core-sources/wallet.js",
-  "./modules/core-sources/watchlist.js",
-].map((path) => fs.readFileSync(new URL(path, import.meta.url), "utf8")).join("\n");
+const core = readCombinedCanonicalCoreSource();
 const bootstrap = fs.readFileSync(new URL("./bootstrap.js", import.meta.url), "utf8");
 const entry = fs.readFileSync(new URL("./modules/app-entry.js", import.meta.url), "utf8");
 const dataPage = fs.readFileSync(new URL("./api/_data-page.js", import.meta.url), "utf8");

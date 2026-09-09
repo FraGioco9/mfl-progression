@@ -1,20 +1,11 @@
 import { readFile } from "node:fs/promises";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 const invariant = (condition, message) => { if (!condition) throw new Error(message); };
 
 const [appCore, settingsCore, walletPreferencesApi] = await Promise.all([
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
+  Promise.resolve(readCombinedCanonicalCoreSource()),
   read("./modules/core-sources/settings.js"),
   read("./api/wallet-preferences.js"),
 ]);

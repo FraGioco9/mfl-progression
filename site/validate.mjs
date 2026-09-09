@@ -85,13 +85,18 @@ excludes(buildCore, "normalizeBuiltApplicationCoreArtifacts", "The core build mu
 excludes(buildCore, "modules/app-core.js", "The core build must not depend on the legacy application-core monolith.");
 const sharedCoreManifest = coreSourceByDomain.shared;
 invariant(
-  sharedCoreManifest?.source === "shared.js"
+  sharedCoreManifest?.source === "shared-foundations.js"
+    && sharedCoreManifest?.sources?.length === 2
+    && sharedCoreManifest.sources[0] === "shared-foundations.js"
+    && sharedCoreManifest.sources[1] === "shared.js"
     && sharedCoreManifest?.runtime === "app-core-runtime.js",
-  "Canonical manifest must map the shared core source to app-core-runtime.js.",
+  "Canonical manifest must map the ordered shared core fragments to app-core-runtime.js.",
 );
 invariant(String(sharedCoreManifest?.banner || "").includes("Do not edit directly"), "Generated core artifacts must carry manifest-owned ownership banners.");
 
-const canonicalSharedCore = (await readSite("modules/core-sources/shared.js")).replace(/\s*$/, "");
+const canonicalSharedCore = (await Promise.all(
+  sharedCoreManifest.sources.map((sourceName) => readSite(`modules/core-sources/${sourceName}`)),
+)).map((part) => part.replace(/\s*$/, "")).join("\n\n");
 const canonicalTableCore = (await readSite("modules/core-sources/table.js")).replace(/\s*$/, "");
 const coreSource = [
   canonicalSharedCore,

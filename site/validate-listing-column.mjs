@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 import {
   TABLE_BASE_COLUMNS,
@@ -21,17 +22,7 @@ assert.ok(TABLE_SORTABLE_COLUMNS.includes("listing_price"));
 assert.equal(TABLE_COLUMN_LABELS.listing_price, "Listing");
 assert.equal(TABLE_COLUMN_CLASSES.listing_price, "col-listing");
 
-const core = [
-  "site/modules/core-sources/shared.js",
-  "site/modules/core-sources/evaluation.js",
-  "site/modules/core-sources/mfl-stats.js",
-  "site/modules/core-sources/club.js",
-  "site/modules/core-sources/settings.js",
-  "site/modules/core-sources/player.js",
-  "site/modules/core-sources/table.js",
-  "site/modules/core-sources/wallet.js",
-  "site/modules/core-sources/watchlist.js",
-].map(read).join("\n");
+const core = readCombinedCanonicalCoreSource();
 assert.match(core, /listingFilterOptions/);
 assert.match(core, /value: "for_sale", label: "For Sale"/);
 assert.match(core, /value: "not_for_sale", label: "Not For Sale"/);

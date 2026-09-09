@@ -1,12 +1,12 @@
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 const includes = (source, token, message) => { if (!source.includes(token)) throw new Error(message); };
 
-const [indexHtml, appConfig, shared, club, bootstrap, staticUi, bugReportRuntime, titles, styles, footer] = await Promise.all([
+const [indexHtml, appConfig, club, bootstrap, staticUi, bugReportRuntime, titles, styles, footer] = await Promise.all([
   read("./index.html"),
   read("./modules/app-config.js"),
-  read("./modules/core-sources/shared.js"),
   read("./modules/core-sources/club.js"),
   read("./bootstrap.js"),
   read("./static-ui-runtime.js"),
@@ -15,6 +15,7 @@ const [indexHtml, appConfig, shared, club, bootstrap, staticUi, bugReportRuntime
   read("./styles-base.css"),
   read("./footer.css"),
 ]);
+const shared = readCanonicalCoreSource("shared");
 
 for (const token of [
   '<section id="privacyPage" class="pageView privacyPage" hidden>',

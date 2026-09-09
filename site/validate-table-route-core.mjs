@@ -2,11 +2,12 @@ import { invariant, includes, excludes } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
 import { coreSourceByDomain } from "./modules/core-source-manifest.js";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
 const [sharedCore, tableCore, generatedTable, appConfig, routeLoader, buildCore, appEntry] = await Promise.all([
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   read("./modules/core-sources/table.js"),
   read("./modules/app-core-table-runtime.js"),
   read("./modules/app-config.js"),
