@@ -473,21 +473,10 @@ function writeJson(response, data) {
 
 function pageDataStub(url) {
   const scope = String(url.searchParams.get("scope") || "database").toLowerCase();
-  const playerIds = new Set(
-    String(url.searchParams.get("playerIds") || "")
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean),
-  );
-  const includePlayer = scope === "database"
-    || scope === "mfl"
-    || scope === "mflstats"
-    || (scope === "player" && String(url.searchParams.get("playerId") || "") === "1")
-    || (scope === "watchlist" && playerIds.has("1"));
-  const rows = includePlayer ? [rowForColumns(pageColumns)] : [];
+  const rows = [rowForColumns(pageColumns)];
   const requestedPageSize = Number(url.searchParams.get("pageSize"));
   const pageSize = scope === "mflstats"
-    ? Math.max(1, rows.length)
+    ? rows.length
     : (Number.isFinite(requestedPageSize) && requestedPageSize > 0 ? Math.trunc(requestedPageSize) : 100);
   return {
     columns: pageColumns,
