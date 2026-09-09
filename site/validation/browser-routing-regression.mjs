@@ -284,7 +284,7 @@ const browserTestSource = String.raw`(() => {
       return {
         path: window.location.pathname,
         title: document.title,
-        detailText: text("#playerDetail"),
+        hasPlayerName: text("#playerDetail").includes(expectedPlayerName),
         pageHidden: hidden("#playerPage"),
       };
     }
@@ -315,7 +315,7 @@ const browserTestSource = String.raw`(() => {
       assert(stateValue.page === "database", "Database body page owner is wrong: " + stateValue.page);
     } else if (scenario === "player") {
       assert(stateValue.path === "/players/1", "Player canonical path is wrong: " + stateValue.path);
-      assert(stateValue.detailText.includes(expectedPlayerName), "Player detail did not render the fixture identity.");
+      assert(stateValue.hasPlayerName, "Player detail did not render the fixture identity.");
       assert(stateValue.title === expectedPlayerName + " - MFL Front Office", "Player title is not the full player name.");
       assert(stateValue.pageHidden === false, "Player page remained hidden after readiness.");
     } else if (scenario === "watchlist") {
