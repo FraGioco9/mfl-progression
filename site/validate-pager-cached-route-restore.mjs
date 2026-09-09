@@ -4,6 +4,7 @@ import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
+// Cached pager behavior spans Shared fragments, so validate the manifest-assembled Shared owner rather than the physical tail file.
 const [loadingRuntime, sharedCore] = await Promise.all([
   read("./table-loading-runtime.js"),
   Promise.resolve(readCanonicalCoreSource("shared")),
