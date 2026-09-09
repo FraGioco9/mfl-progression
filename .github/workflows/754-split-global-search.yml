@@ -1,0 +1,105 @@
+name: Issue 754 Shared Global Search split
+
+on:
+  push:
+    branches:
+      - arch/754-shared-global-search
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-global-search
+          fetch-depth: 0
+      - name: Apply dependency-closed Shared split
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement, found {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          shared_path = Path("site/modules/core-sources/shared.js")
+          shared = shared_path.read_text()
+          boundary = "function linkedWalletAddressesForOwnedPlayers() {"
+          boundary_index = shared.find(boundary)
+          if boundary_index < 0:
+              raise SystemExit("linkedWalletAddressesForOwnedPlayers boundary not found")
+          fragment = shared[:boundary_index].rstrip() + "\n"
+          if not fragment.startswith("async function openSearch() {"):
+              raise SystemExit("Global Search fragment does not begin at openSearch")
+          if not fragment.rstrip().endswith("  })();\n}"):
+              raise SystemExit("Global Search fragment does not end at renderSearchResults")
+          Path("site/modules/core-sources/shared-global-search.js").write_text(fragment)
+          shared_path.write_text(shared[boundary_index:])
+
+          replace_once(
+              "site/modules/core-source-manifest.js",
+              '"shared-modal-lifecycle.js", "shared.js"',
+              '"shared-modal-lifecycle.js", "shared-global-search.js", "shared.js"',
+          )
+
+          for validator, prefix in [
+              ("site/validate.mjs", "sharedCoreManifest"),
+              ("site/validate-club-route-core.mjs", "coreSourceByDomain.shared"),
+          ]:
+              replace_once(validator, f"{prefix}?.sources?.length === 17", f"{prefix}?.sources?.length === 18")
+              replace_once(
+                  validator,
+                  f'    && {prefix}.sources[16] === "shared.js"',
+                  f'    && {prefix}.sources[16] === "shared-global-search.js"\n    && {prefix}.sources[17] === "shared.js"',
+              )
+
+          ownership = "site/validate-core-source-ownership.mjs"
+          replace_once(ownership, "sharedEntry?.sources?.length === 17", "sharedEntry?.sources?.length === 18")
+          replace_once(
+              ownership,
+              '    && sharedEntry.sources[16] === "shared.js"',
+              '    && sharedEntry.sources[16] === "shared-global-search.js"\n    && sharedEntry.sources[17] === "shared.js"',
+          )
+          replace_once(
+              ownership,
+              "before generic modal lifecycle before remaining shared behavior",
+              "before generic modal lifecycle before Global Search lifecycle before remaining shared behavior",
+          )
+          replace_once(
+              ownership,
+              'const sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lifecycle.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+              'const sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lifecycle.js");\nconst sharedGlobalSearch = await read("./modules/core-sources/shared-global-search.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+          )
+          replace_once(
+              ownership,
+              'invariant(\n  sharedNavigation.startsWith("async function openSearch() {"),\n  "Remaining Shared behavior must begin at the Global Search lifecycle boundary.",\n);',
+              'invariant(\n  sharedGlobalSearch.startsWith("async function openSearch() {")\n    && sharedGlobalSearch.replace(/\\s*$/, "").endsWith("  })();\\n}"),\n  "Shared Global Search must own open/close, matching, recent promotion, navigation, clear state, and result rendering through renderSearchResults().",\n);\ninvariant(\n  sharedNavigation.startsWith("function linkedWalletAddressesForOwnedPlayers() {"),\n  "Remaining Shared behavior must begin at the linked-wallet/MFL data-helper boundary.",\n);',
+          )
+          replace_once(
+              ownership,
+              '    && !sharedPlayerActions.includes("function showModal")\n    && !sharedModalLifecycle.includes("async function openSearch"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, and generic modal lifecycle must not absorb later ownership domains.",',
+              '    && !sharedPlayerActions.includes("function showModal")\n    && !sharedModalLifecycle.includes("async function openSearch")\n    && !sharedGlobalSearch.includes("function linkedWalletAddressesForOwnedPlayers"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, and Global Search lifecycle must not absorb later ownership domains.",',
+          )
+
+          validator = Path("site/validate-global-search-open-lifecycle.mjs")
+          text = validator.read_text()
+          old = '''import { invariant } from "./validation/assertions.mjs";\nimport { readFile } from "node:fs/promises";\n\nconst read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\\r\\n?/g, "\\n");\n\nconst sourceCore = await Promise.all([\n  read("./modules/core-sources/shared.js"),\n  read("./modules/core-sources/evaluation.js"),\n  read("./modules/core-sources/mfl-stats.js"),\n  read("./modules/core-sources/club.js"),\n  read("./modules/core-sources/settings.js"),\n  read("./modules/core-sources/player.js"),\n  read("./modules/core-sources/table.js"),\n  read("./modules/core-sources/wallet.js"),\n  read("./modules/core-sources/watchlist.js"),\n]).then((parts) => parts.join("\\n"));\n'''
+          new = '''import { invariant } from "./validation/assertions.mjs";\nimport { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";\n\nconst sourceCore = readCombinedCanonicalCoreSource();\n'''
+          if text.count(old) != 1:
+              raise SystemExit("validate-global-search-open-lifecycle.mjs source assembly block did not match")
+          validator.write_text(text.replace(old, new, 1))
+          PY
+          rm .github/workflows/754-split-global-search.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --check
+          git commit -m "Extract Shared Global Search lifecycle"
+          git push origin HEAD:arch/754-shared-global-search
