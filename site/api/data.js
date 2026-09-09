@@ -1,4 +1,3 @@
-const { createHash } = require("node:crypto");
 const { performance } = require("node:perf_hooks");
 const {
   PUBLIC_REVALIDATE_CACHE_CONTROL,
@@ -8,6 +7,7 @@ const {
   sendNotModified,
 } = require("./_data-auth");
 const { getGeneratedAt } = require("./_database");
+const { snapshotEtag, requestMatchesEtag } = require("./_http-cache");
 const { pagedData } = require("./_data-page");
 const {
   bootstrapData,
@@ -31,17 +31,7 @@ const PUBLIC_SNAPSHOT_MODES = new Set([
 ]);
 
 function publicSnapshotEtag(request) {
-  const identity = `${getGeneratedAt()}\n${String(request.url || "")}`;
-  const digest = createHash("sha256").update(identity).digest("hex").slice(0, 24);
-  return `"mfl-${digest}"`;
-}
-
-function requestMatchesEtag(request, etag) {
-  const value = String(request.headers?.["if-none-match"] || "");
-  return value.split(",").some((candidate) => {
-    const normalized = candidate.trim();
-    return normalized === etag || normalized === `W/${etag}`;
-  });
+  return snapshotEtag(getGeneratedAt(), String(request.url || ""));
 }
 
 function requiresSignedWallet(mode, scope, accessMode, publicEntityProgression, publicWatchlistProgression) {
