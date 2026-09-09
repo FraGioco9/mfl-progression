@@ -12,7 +12,7 @@ const [source, generatedTable] = await Promise.all([
     read("./modules/core-sources/club.js"),
     read("./modules/core-sources/settings.js"),
     read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
+    Promise.resolve(readCanonicalCoreSource("table")),
     read("./modules/core-sources/wallet.js"),
     read("./modules/core-sources/watchlist.js"),
   ]).then((parts) => parts.join("\n")),

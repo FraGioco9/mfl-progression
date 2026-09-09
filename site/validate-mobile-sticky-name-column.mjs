@@ -1,5 +1,6 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
@@ -7,7 +8,7 @@ const [styles, responsive, bootstrap, tableSource, sharedTableUi] = await Promis
   read("./styles.css"),
   read("./responsive.css"),
   read("./bootstrap.js"),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./shared-table-ui-runtime.js"),
 ]);
 

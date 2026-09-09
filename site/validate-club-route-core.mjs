@@ -22,7 +22,7 @@ const [
   appConfig,
 ] = await Promise.all([
   Promise.resolve(readCanonicalCoreSource("shared")),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/core-sources/club.js"),
   read("./modules/app-core-runtime.js"),
   read("./modules/app-core-table-runtime.js"),
@@ -77,7 +77,14 @@ invariant(
     && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",
   "The core manifest must generate the shared runtime from its ordered canonical fragments.",
 );
-invariant(coreSourceByDomain.table?.source === "table.js" && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js", "The core manifest must generate Table runtime directly from table.js.");
+invariant(
+  coreSourceByDomain.table?.source === "table.js"
+    && coreSourceByDomain.table?.sources?.length === 2
+    && coreSourceByDomain.table.sources[0] === "table.js"
+    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"
+    && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js",
+  "The core manifest must generate Table runtime from its ordered canonical fragments.",
+);
 invariant(coreSourceByDomain.club?.source === "club.js" && coreSourceByDomain.club?.runtime === "app-core-club-runtime.js", "The core manifest must generate Club runtime directly from club.js.");
 
 excludes(sharedCore, 'const CLUB_PAGE = "club";', "Club route implementation must not execute in shared core.");

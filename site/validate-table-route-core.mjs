@@ -8,7 +8,7 @@ const read = async (path) => String(await readFile(new URL(path, import.meta.url
 
 const [sharedCore, tableCore, generatedTable, appConfig, routeLoader, buildCore, appEntry] = await Promise.all([
   Promise.resolve(readCanonicalCoreSource("shared")),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/app-core-table-runtime.js"),
   read("./modules/app-config.js"),
   read("./route-core-loader-runtime.js"),
@@ -27,6 +27,9 @@ includes(buildCore, 'from "./modules/core-source-manifest.js"', "The build must 
 includes(buildCore, "for (const entry of coreSourceManifest)", "The build must generate Table and other core runtimes from the canonical manifest.");
 invariant(
   coreSourceByDomain.table?.source === "table.js"
+    && coreSourceByDomain.table?.sources?.length === 2
+    && coreSourceByDomain.table.sources[0] === "table.js"
+    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"
     && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js",
   "Canonical manifest must map Table source ownership to its generated runtime.",
 );
@@ -168,7 +171,7 @@ const tableBanner = String(coreSourceByDomain.table?.banner || "");
 invariant(tableBanner && generatedTable.startsWith(tableBanner), "Generated Table runtime must carry the canonical manifest-owned build banner.");
 invariant(
   generatedTable.slice(tableBanner.length).replace(/\s*$/, "") === tableCore.replace(/\s*$/, ""),
-  "Generated Table runtime must exactly match canonical table.js.",
+  "Generated Table runtime must exactly match the manifest-assembled canonical Table source.",
 );
 
 console.log("Source-owned Table facades, lazy Table-only handlers, page/filter/pager controls, delegated Table-body interactions, typed control references, editable pager, canonical dependency loading, and generated-runtime equivalence validation passed.");

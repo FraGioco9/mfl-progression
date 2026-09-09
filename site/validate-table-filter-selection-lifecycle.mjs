@@ -11,7 +11,7 @@ const [staticUi, bootstrap, selectionStack, sharedCore, tableCore, generatedShar
   read("./bootstrap.js"),
   read("./selection-stack-runtime.js"),
   Promise.resolve(readCanonicalCoreSource("shared")),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/app-core-runtime.js"),
   read("./modules/app-core-table-runtime.js"),
   read("./build-app-core.mjs"),
@@ -125,6 +125,9 @@ invariant(
     && buildCore.includes('from "./modules/core-source-manifest.js"')
     && buildCore.includes("for (const entry of coreSourceManifest)")
     && coreSourceByDomain.table?.source === "table.js"
+    && coreSourceByDomain.table?.sources?.length === 2
+    && coreSourceByDomain.table.sources[0] === "table.js"
+    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"
     && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js",
   "The canonical build must copy source-owned Table behavior directly from the manifest instead of restoring retired filter/reset transforms.",
 );

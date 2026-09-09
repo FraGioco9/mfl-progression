@@ -1,10 +1,11 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
 const [source, generatedTable, stacking] = await Promise.all([
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/app-core-table-runtime.js"),
   read("./stacking.css"),
 ]);

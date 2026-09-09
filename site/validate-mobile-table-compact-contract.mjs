@@ -3,8 +3,10 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
+
 const root = dirname(fileURLToPath(import.meta.url));
-const tableSource = readFileSync(resolve(root, "modules/core-sources/table.js"), "utf8");
+const tableSource = readCanonicalCoreSource("table");
 const tableRuntimeSource = readFileSync(resolve(root, "modules/app-core-table-runtime.js"), "utf8");
 const sharedTableUiSource = readFileSync(resolve(root, "shared-table-ui-runtime.js"), "utf8");
 const projectionSource = readFileSync(resolve(root, "sync-release-projections.mjs"), "utf8");
@@ -84,7 +86,7 @@ assert.ok(tableRuntimeSource.startsWith(tableBanner), "Generated Table runtime m
 assert.equal(
   tableRuntimeSource.slice(tableBanner.length).replace(/\s*$/, ""),
   tableSource.replace(/\s*$/, ""),
-  "Generated Table runtime must exactly match canonical table.js.",
+  "Generated Table runtime must exactly match the manifest-assembled canonical Table source.",
 );
 
 console.log("Source-owned mobile compact table contract validation passed.");
