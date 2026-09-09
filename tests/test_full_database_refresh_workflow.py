@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import unittest
+
 from tests.workflow_sources import read_workflow
-from pathlib import Path
 
 
 class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
@@ -10,7 +10,7 @@ class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.workflow = read_workflow(".github/workflows/full-database-refresh.yml")
         cls.restore_step = cls.workflow.split(
-            "- name: Restore previous database for email comparison", 1
+            "- name: Restore previous database", 1
         )[1].split("- name: Rebuild database", 1)[0]
 
     def test_previous_database_candidates_come_from_artifacts_not_recent_runs(self) -> None:
@@ -34,11 +34,45 @@ class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
         self.assertNotIn("PRAGMA table_info(players)", self.restore_step)
         self.assertNotIn("sqlite3.connect", self.restore_step)
 
-    def test_progression_email_step_still_requires_restored_database(self) -> None:
+    def test_manual_fetch_options_default_to_enabled(self) -> None:
+        for option in (
+            "fetch_progressions",
+            "fetch_competitions",
+            "send_progression_emails",
+        ):
+            option_tail = self.workflow.split(f"      {option}:\n", 1)[1]
+            option_block = option_tail[:300]
+            self.assertIn("default: true", option_block)
+            self.assertIn("type: boolean", option_block)
+
+    def test_rebuild_receives_fetch_options(self) -> None:
+        self.assertIn(
+            "MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}",
+            self.workflow,
+        )
+        self.assertIn(
+            "MFL_FETCH_COMPETITIONS: ${{ inputs.fetch_competitions }}",
+            self.workflow,
+        )
+
+    def test_progression_email_requires_restored_database_and_enabled_progressions(self) -> None:
+        self.assertIn(
+            "inputs.send_progression_emails && inputs.fetch_progressions",
+            self.workflow,
+        )
         self.assertIn(
             "hashFiles('builder/previous-database/mfl_database.db') != ''",
             self.workflow,
         )
+
+    def test_scheduler_metadata_inputs_remain_available(self) -> None:
+        for option in (
+            "trigger_source",
+            "intended_at",
+            "occurrence_key",
+            "triggered_at",
+        ):
+            self.assertIn(f"      {option}:\n", self.workflow)
 
 
 if __name__ == "__main__":

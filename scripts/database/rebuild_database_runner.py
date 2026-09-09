@@ -1,18 +1,42 @@
 from __future__ import annotations
 
 import os
+import sqlite3
 import sys
 import threading
 import traceback
 from collections.abc import Callable
 from typing import Any
 
+from scripts.database import competition_storage
+from scripts.database import competitions
 from scripts.database import rebuild_database as rebuild
 from scripts.database import run_flow_rebuild as pipeline
 from scripts.database import run_flow_rebuild_paged as paged
+
 PLAYER_REQUESTS_PER_MINUTE = 60
 PROGRESSION_REQUESTS_PER_MINUTE = 60
 MFL_API_TOKEN_ENVIRONMENT_VARIABLE = "MFL_API_TOKEN"
+FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PROGRESSIONS"
+FETCH_COMPETITIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_COMPETITIONS"
+PROGRESSION_COLUMNS = tuple(
+    f"{attribute}_prog_{suffix}"
+    for suffix in ("all", "current_season")
+    for attribute in pipeline.ATTRIBUTES
+)
+CANONICAL_COMPETITION_REFRESH = competitions.refresh_competitions
+
+
+def environment_flag(name: str, default: bool = True) -> bool:
+    value = os.environ.get(name)
+    if value is None:
+        return default
+    normalized = value.strip().lower()
+    if normalized in {"1", "true", "yes", "on"}:
+        return True
+    if normalized in {"0", "false", "no", "off"}:
+        return False
+    raise RuntimeError(f"{name} must be true or false, got {value!r}")
 
 
 def install_mfl_api_authentication() -> None:
@@ -60,9 +84,91 @@ def install_thread_error_logging() -> None:
     threading.excepthook = report_thread_failure
 
 
+def restore_previous_progressions(connection: Any) -> dict[str, int]:
+    """Reuse progression columns from the previous database without PlayMFL requests."""
+    previous_database_path = paged.PREVIOUS_DATABASE_PATH
+    if not previous_database_path.is_file():
+        pipeline.log("Progression fetching disabled; no previous database is available to reuse.")
+        return {"ALL": 0, "CURRENT_SEASON": 0}
+
+    previous = sqlite3.connect(previous_database_path)
+    try:
+        previous_columns = {
+            str(row[1])
+            for row in previous.execute("PRAGMA table_info(players)").fetchall()
+        }
+        required_columns = {"player_id", *PROGRESSION_COLUMNS}
+        if not required_columns.issubset(previous_columns):
+            missing = sorted(required_columns - previous_columns)
+            pipeline.log(
+                "Progression fetching disabled; previous database progression schema is "
+                f"incomplete ({', '.join(missing)})."
+            )
+            return {"ALL": 0, "CURRENT_SEASON": 0}
+
+        selected_columns = ", ".join(("player_id", *PROGRESSION_COLUMNS))
+        any_value = " OR ".join(
+            f"{column} IS NOT NULL" for column in PROGRESSION_COLUMNS
+        )
+        rows = previous.execute(
+            f"SELECT {selected_columns} FROM players WHERE {any_value}"
+        ).fetchall()
+    finally:
+        previous.close()
+
+    assignments = ", ".join(f"{column} = ?" for column in PROGRESSION_COLUMNS)
+    connection.executemany(
+        f"UPDATE players SET {assignments} WHERE player_id = ?",
+        [tuple(row[1:]) + (int(row[0]),) for row in rows],
+    )
+    connection.commit()
+
+    restored = int(
+        connection.execute(
+            f"SELECT COUNT(*) FROM players WHERE {any_value}"
+        ).fetchone()[0]
+    )
+    pipeline.log(
+        f"Progression fetching disabled; reused previous progression data for {restored} players."
+    )
+    return {"ALL": restored, "CURRENT_SEASON": restored}
+
+
+def restore_competitions_without_fetch(
+    connection: sqlite3.Connection,
+    previous_database_path: Any,
+    _request_json: Any,
+    _limiter: Any,
+    log: Callable[[str], None] = print,
+) -> dict[str, int]:
+    """Keep permanent competition history while making no competition API requests."""
+    restored = competition_storage.restore_previous_history(
+        connection,
+        previous_database_path,
+        log,
+    )
+    total = int(connection.execute("SELECT COUNT(*) FROM competitions").fetchone()[0])
+    log(
+        "Competition fetching disabled; "
+        f"reused {restored} previously stored competitions."
+    )
+    return {
+        "restored": restored,
+        "active_discovered": 0,
+        "active_saved": 0,
+        "historical_discovered": 0,
+        "historical_requested": 0,
+        "historical_saved": 0,
+        "total": total,
+    }
+
+
 def configure_rebuild() -> None:
     """Install the authenticated, rate-limited production rebuild configuration."""
     install_mfl_api_authentication()
+    fetch_progressions = environment_flag(FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE)
+    fetch_competitions = environment_flag(FETCH_COMPETITIONS_ENVIRONMENT_VARIABLE)
+
     pipeline.MFL_REQUESTS_PER_MINUTE = PLAYER_REQUESTS_PER_MINUTE
     pipeline.MFL_WORKERS = 320
     pipeline.RateLimiter = paged.RollingRateLimiter
@@ -71,13 +177,14 @@ def configure_rebuild() -> None:
     configured_player_fetcher = rebuild.fetch_active_and_retired_player_sources
 
     def fetch_players_with_logging(limiter: paged.RollingRateLimiter) -> Any:
-        return run_with_error_logging(
-            "/players",
-            lambda: paged.fetch_player_sources_and_prepare_progressions(
+        if fetch_progressions:
+            operation = lambda: paged.fetch_player_sources_and_prepare_progressions(
                 configured_player_fetcher,
                 limiter,
-            ),
-        )
+            )
+        else:
+            operation = lambda: configured_player_fetcher(limiter)
+        return run_with_error_logging("/players", operation)
 
     def refresh_progressions_with_own_limiter(
         connection: object,
@@ -94,17 +201,41 @@ def configure_rebuild() -> None:
             ),
         )
 
+    def reuse_progressions(
+        connection: object,
+        _player_limiter: paged.RollingRateLimiter,
+    ) -> dict[str, int]:
+        return run_with_error_logging(
+            "Previous progression reuse",
+            lambda: restore_previous_progressions(connection),
+        )
+
     pipeline.fetch_all_player_sources = fetch_players_with_logging
-    pipeline.refresh_progressions = refresh_progressions_with_own_limiter
+    pipeline.refresh_progressions = (
+        refresh_progressions_with_own_limiter
+        if fetch_progressions
+        else reuse_progressions
+    )
+    competitions.refresh_competitions = (
+        CANONICAL_COMPETITION_REFRESH
+        if fetch_competitions
+        else restore_competitions_without_fetch
+    )
 
     rebuild.install_database_filename()
     rebuild.install_concise_progression_logging()
     rebuild.install_flow_wallet_id_cache()
 
+    progression_status = (
+        f"enabled at {PROGRESSION_REQUESTS_PER_MINUTE} starts/min"
+        if fetch_progressions
+        else "disabled"
+    )
     pipeline.log(
         "PlayMFL runtime configuration: "
         f"/players {PLAYER_REQUESTS_PER_MINUTE} starts/min, "
-        f"/players/progressions {PROGRESSION_REQUESTS_PER_MINUTE} starts/min, "
+        f"/players/progressions {progression_status}, "
+        f"competitions {'enabled' if fetch_competitions else 'disabled'}, "
         f"{pipeline.MFL_WORKERS} workers"
     )
 

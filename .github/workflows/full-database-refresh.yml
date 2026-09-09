@@ -26,6 +26,21 @@ on:
         required: false
         default: ""
         type: string
+      fetch_progressions:
+        description: Fetch player progression data; disable to reuse previous values.
+        required: false
+        default: true
+        type: boolean
+      fetch_competitions:
+        description: Fetch competition data; disable to reuse previous competition history.
+        required: false
+        default: true
+        type: boolean
+      send_progression_emails:
+        description: Send progression notification emails after the rebuild.
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -284,7 +299,7 @@ jobs:
         with:
           node-version: 22
 
-      - name: Restore previous database for email comparison
+      - name: Restore previous database
         working-directory: builder
         shell: bash
         env:
@@ -295,10 +310,12 @@ jobs:
         working-directory: builder
         env:
           MFL_API_TOKEN: ${{ secrets.MFL_API_TOKEN }}
+          MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}
+          MFL_FETCH_COMPETITIONS: ${{ inputs.fetch_competitions }}
         run: python -m scripts.database.rebuild_database_runner
 
       - name: Send progression emails
-        if: hashFiles('builder/previous-database/mfl_database.db') != ''
+        if: ${{ inputs.send_progression_emails && inputs.fetch_progressions && hashFiles('builder/previous-database/mfl_database.db') != '' }}
         working-directory: builder
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
