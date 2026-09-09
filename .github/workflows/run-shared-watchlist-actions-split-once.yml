@@ -31,14 +31,17 @@ jobs:
               raise SystemExit(f"Expected exactly one split marker, found {source.count(marker)}")
           split_at = source.index(marker)
           fragment = source[:split_at].rstrip()
-          remainder = source[split_at:]
+          separator = source[len(fragment):split_at]
+          if not separator.startswith("\n\n"):
+              raise SystemExit(f"Expected at least the canonical two-newline fragment separator, found {separator!r}")
+          remainder = separator[2:] + source[split_at:]
 
           if not fragment.startswith("function removePlayerIdFromAllWatchlists(playerId) {"):
               raise SystemExit("Watchlist actions fragment does not start at canonical mutation boundary")
           if not fragment.endswith("renderPlayerPage(key);\n  }\n}"):
               raise SystemExit("Watchlist actions fragment does not end at canonical toggleWatchlistPlayer boundary")
-          if not remainder.startswith(marker):
-              raise SystemExit("Remaining Shared fragment does not start at nationality display boundary")
+          if not remainder.lstrip().startswith(marker):
+              raise SystemExit("Remaining Shared fragment does not start at nationality display boundary after preserved separator whitespace")
           if fragment + "\n\n" + remainder.rstrip() != source.rstrip():
               raise SystemExit("Split would change assembled Shared source bytes")
 
