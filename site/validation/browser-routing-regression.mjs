@@ -9,7 +9,7 @@ import { fileURLToPath } from "node:url";
 
 const siteDirectory = resolve(fileURLToPath(new URL("../", import.meta.url)));
 const generatedAt = "2026-09-09T00:00:00.000Z";
-const testWatchlistId = "browser-list";
+const testWatchlistId = "browser1";
 const testPlayer = Object.freeze({
   player_id: 1,
   wallet_address: "0x2222222222222222",
@@ -122,7 +122,7 @@ const browserTestSource = String.raw`(() => {
             ? "mflstats"
             : "unknown";
   const testWallet = "0x1111111111111111";
-  const testWatchlistId = "browser-list";
+  const testWatchlistId = "browser1";
   const expectedPlayerName = "Browser Player";
   const errors = [];
   let parserSnapshot = null;
