@@ -126,9 +126,10 @@ const canonicalSharedCore = (await Promise.all(
 const tableCoreManifest = coreSourceByDomain.table;
 invariant(
   tableCoreManifest?.source === "table.js"
-    && tableCoreManifest?.sources?.length === 2
+    && tableCoreManifest?.sources?.length === 3
     && tableCoreManifest.sources[0] === "table.js"
-    && tableCoreManifest.sources[1] === "table-interaction-bindings.js"
+    && tableCoreManifest.sources[1] === "table-render-lifecycle.js"
+    && tableCoreManifest.sources[2] === "table-interaction-bindings.js"
     && tableCoreManifest?.runtime === "app-core-table-runtime.js",
   "Canonical manifest must map the ordered Table core fragments to app-core-table-runtime.js.",
 );
