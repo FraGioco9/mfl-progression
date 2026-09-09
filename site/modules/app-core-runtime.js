@@ -7340,14 +7340,6 @@ async function startApp() {
   });
 }
 
-
-
-
-
-
-
-
-
 ;(() => {
   // Compatibility marker for legacy validation; route ownership lives in the Club chunk:
   // squad|contracts|current-season|all-time
