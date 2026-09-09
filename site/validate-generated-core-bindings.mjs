@@ -14,7 +14,7 @@ const artifacts = Object.freeze({
     club: await read("./modules/core-sources/club.js"),
     settings: await read("./modules/core-sources/settings.js"),
     player: await read("./modules/core-sources/player.js"),
-    table: await read("./modules/core-sources/table.js"),
+    table: await Promise.resolve(readCanonicalCoreSource("table")),
     wallet: await read("./modules/core-sources/wallet.js"),
     watchlist: await read("./modules/core-sources/watchlist.js"),
   }),

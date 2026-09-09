@@ -10,7 +10,7 @@ const source = await Promise.all([
     readFile(new URL("./modules/core-sources/club.js", import.meta.url), "utf8"),
     readFile(new URL("./modules/core-sources/settings.js", import.meta.url), "utf8"),
     readFile(new URL("./modules/core-sources/player.js", import.meta.url), "utf8"),
-    readFile(new URL("./modules/core-sources/table.js", import.meta.url), "utf8"),
+    Promise.resolve(readCanonicalCoreSource("table")),
     readFile(new URL("./modules/core-sources/wallet.js", import.meta.url), "utf8"),
     readFile(new URL("./modules/core-sources/watchlist.js", import.meta.url), "utf8"),
   ]).then((parts) => parts.join("\n"));

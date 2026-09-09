@@ -2,12 +2,13 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const root = dirname(fileURLToPath(import.meta.url));
 const styles = readFileSync(resolve(root, "styles.css"), "utf8");
 const sharedTableUi = readFileSync(resolve(root, "shared-table-ui-runtime.js"), "utf8");
 const releaseProjection = readFileSync(resolve(root, "sync-release-projections.mjs"), "utf8");
-const tableSource = readFileSync(resolve(root, "modules/core-sources/table.js"), "utf8");
+const tableSource = Promise.resolve(readCanonicalCoreSource("table"));
 const generatedTable = readFileSync(resolve(root, "modules/app-core-table-runtime.js"), "utf8");
 
 const playerCellGeometry = styles.match(/#progressionPage \.playerTableScroller td \{([\s\S]*?)\n\}/)?.[1] || "";

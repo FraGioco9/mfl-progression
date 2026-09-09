@@ -8,7 +8,7 @@ const [motion, styles, sharedSource, tableSource, coreRuntime, tableRuntime, fil
   read("./motion.css"),
   read("./filter-controls.css"),
   Promise.resolve(readCanonicalCoreSource("shared")),
-  read("./modules/core-sources/table.js"),
+  Promise.resolve(readCanonicalCoreSource("table")),
   read("./modules/app-core-runtime.js"),
   read("./modules/app-core-table-runtime.js"),
   read("./filter-controls-runtime.js"),
