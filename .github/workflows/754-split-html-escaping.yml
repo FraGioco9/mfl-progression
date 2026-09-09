@@ -1,0 +1,99 @@
+name: Split Shared HTML escaping
+
+on:
+  push:
+    branches:
+      - arch/754-shared-html-escaping
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-html-escaping
+          fetch-depth: 0
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+      - name: Extract eager HTML escaping and retire unused CSV helper
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          root = Path('site')
+          shared_path = root / 'modules/core-sources/shared.js'
+          source = shared_path.read_text(encoding='utf-8').replace('\r\n', '\n').replace('\r', '\n')
+          start = 'function escapeHtml(value) {'
+          csv_boundary = '\nfunction csvEscape(value) {'
+          remaining_start = 'function mflChunkFromPublicData(chunk) {'
+          assert source.startswith(start), 'Shared head moved before HTML-escaping extraction.'
+          assert source.count('function csvEscape(value) {') == 1, 'Unexpected csvEscape ownership.'
+          escape_end = source.index(csv_boundary)
+          fragment = source[:escape_end].rstrip() + '\n'
+          remaining_index = source.index(remaining_start)
+          remainder = source[remaining_index:]
+          assert fragment.startswith(start)
+          assert fragment.rstrip().endswith('.replaceAll("\'", "&#39;");\n}')
+          assert 'csvEscape' not in fragment
+          assert remainder.startswith(remaining_start)
+          assert 'csvEscape' not in remainder
+          (root / 'modules/core-sources/shared-html-escaping.js').write_text(fragment, encoding='utf-8')
+          shared_path.write_text(remainder, encoding='utf-8')
+
+          manifest_path = root / 'modules/core-source-manifest.js'
+          manifest = manifest_path.read_text(encoding='utf-8')
+          old = '"shared-global-search.js", "shared-wallet-row-classification.js", "shared.js"'
+          new = '"shared-global-search.js", "shared-wallet-row-classification.js", "shared-html-escaping.js", "shared.js"'
+          assert manifest.count(old) == 1
+          manifest_path.write_text(manifest.replace(old, new), encoding='utf-8')
+
+          ownership_path = root / 'validate-core-source-ownership.mjs'
+          ownership = ownership_path.read_text(encoding='utf-8')
+          replacements = [
+              ('sharedEntry?.sources?.length === 19', 'sharedEntry?.sources?.length === 20'),
+              ('&& sharedEntry.sources[18] === "shared.js"', '&& sharedEntry.sources[18] === "shared-html-escaping.js"\n    && sharedEntry.sources[19] === "shared.js"'),
+              ('before linked-wallet/MFL row classification before remaining shared behavior', 'before linked-wallet/MFL row classification before universal HTML escaping before remaining shared behavior'),
+              ('const sharedWalletRowClassification = await read("./modules/core-sources/shared-wallet-row-classification.js");\nconst sharedRemaining = await read("./modules/core-sources/shared.js");', 'const sharedWalletRowClassification = await read("./modules/core-sources/shared-wallet-row-classification.js");\nconst sharedHtmlEscaping = await read("./modules/core-sources/shared-html-escaping.js");\nconst sharedRemaining = await read("./modules/core-sources/shared.js");'),
+              ('invariant(\n  sharedRemaining.startsWith("function escapeHtml(value) {"),\n  "Remaining Shared behavior must begin at the universal escaping/serialization boundary.",\n);', 'invariant(\n  sharedHtmlEscaping.startsWith("function escapeHtml(value) {")\n    && sharedHtmlEscaping.replace(/\\s*$/, "").endsWith(\'.replaceAll("\\\'", "&#39;");\\n}\')\n    && !sharedHtmlEscaping.includes("csvEscape"),\n  "Shared HTML escaping must own the universal escapeHtml primitive without retaining the unused CSV helper.",\n);\ninvariant(\n  sharedRemaining.startsWith("function mflChunkFromPublicData(chunk) {")\n    && !sharedRemaining.includes("function csvEscape"),\n  "Remaining Shared behavior must begin at the incremental public-data routing boundary and keep unused csvEscape retired.",\n);'),
+              ('&& !sharedWalletRowClassification.includes("function escapeHtml"),', '&& !sharedWalletRowClassification.includes("function escapeHtml")\n    && !sharedHtmlEscaping.includes("function mflChunkFromPublicData"),'),
+              ('Global Search lifecycle, and wallet-row classification must not absorb later ownership domains.', 'Global Search lifecycle, wallet-row classification, and HTML escaping must not absorb later ownership domains.'),
+          ]
+          for old, new in replacements:
+              assert ownership.count(old) == 1, f'ownership replacement missing: {old}'
+              ownership = ownership.replace(old, new)
+          ownership_path.write_text(ownership, encoding='utf-8')
+
+          for relative in ['validate.mjs', 'validate-club-route-core.mjs']:
+              path = root / relative
+              text = path.read_text(encoding='utf-8')
+              assert text.count('sources?.length === 19') == 1, f'{relative}: shared count anchor moved'
+              text = text.replace('sources?.length === 19', 'sources?.length === 20')
+              if relative == 'validate.mjs':
+                  old_tail = '&& sharedCoreManifest.sources[18] === "shared.js"'
+                  new_tail = '&& sharedCoreManifest.sources[18] === "shared-html-escaping.js"\n    && sharedCoreManifest.sources[19] === "shared.js"'
+              else:
+                  old_tail = '&& coreSourceByDomain.shared.sources[18] === "shared.js"'
+                  new_tail = '&& coreSourceByDomain.shared.sources[18] === "shared-html-escaping.js"\n    && coreSourceByDomain.shared.sources[19] === "shared.js"'
+              assert text.count(old_tail) == 1, f'{relative}: shared tail anchor moved'
+              path.write_text(text.replace(old_tail, new_tail), encoding='utf-8')
+          PY
+      - name: Verify exact extraction
+        run: |
+          grep -q '^function escapeHtml(value) {' site/modules/core-sources/shared-html-escaping.js
+          grep -q '^function mflChunkFromPublicData(chunk) {' site/modules/core-sources/shared.js
+          ! grep -R 'function csvEscape' site/modules/core-sources
+          node --check site/modules/core-sources/shared-html-escaping.js
+          node --check site/modules/core-sources/shared.js
+      - name: Remove one-shot workflow and commit
+        run: |
+          rm .github/workflows/754-split-html-escaping.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site .github/workflows/754-split-html-escaping.yml
+          git commit -m "Split Shared HTML escaping"
+          git push origin HEAD:arch/754-shared-html-escaping
