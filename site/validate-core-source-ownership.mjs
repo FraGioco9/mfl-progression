@@ -10,7 +10,7 @@ const build = await read("./build-app-core.mjs");
 invariant(build.includes('import { coreSourceManifest } from "./modules/core-source-manifest.js";'), "Application-core build must consume the canonical core source manifest.");
 invariant(build.includes("for (const entry of coreSourceManifest)"), "Application-core build must generate every canonical source-fragment domain from the manifest.");
 invariant(build.includes('resolve(siteRoot, "modules", "core-sources", sourceName)'), "Application-core build must resolve every ordered canonical source fragment from manifest entries.");
-invariant(build.includes('sourceParts.join("\\n\\n")'), "Application-core build must concatenate ordered source fragments without behavior transforms.");
+invariant(build.includes("sourceParts.join(\"\\n\\n\")"), "Application-core build must concatenate ordered source fragments without behavior transforms.");
 invariant(!build.includes("app-core-build-normalizer"), "Application-core build must not depend on behavior-changing normalizers.");
 invariant(!build.includes("replaceRequired"), "Application-core build must not perform source-string behavior rewrites.");
 invariant(!build.includes("modules/app-core.js"), "Application-core build must not depend on the retired monolith.");
@@ -140,8 +140,9 @@ invariant(
     && sharedPageLifecycle.includes("async function renderPage(pageName, updateHash = true, options = {}) {")
     && sharedPageLifecycle.includes("function applyFilters(options = {}) {")
     && sharedPageLifecycle.includes("return setIncrementalView.apply(this, arguments);")
-    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("return setIncrementalPage.call(this, pageName, updateHash, options);\n}"),
-  "Shared page lifecycle must own stable Table/page facades and the canonical base page renderer without later public-function replacement.",
+    && sharedPageLifecycle.includes('const featureOwner = Reflect.get(window, "__mflSetPageFeatureOwner");')
+    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("return setPageWithRouteRuntime.call(this, pageName, updateHash, options);\n}"),
+  "Shared page lifecycle must own stable Table/page facades and the canonical base page renderer while dispatching setPage through explicit feature/route owners without replacing the public function.",
 );
 invariant(
   sharedHomeSummary.startsWith("function updateStatusDate(generatedAt) {")
