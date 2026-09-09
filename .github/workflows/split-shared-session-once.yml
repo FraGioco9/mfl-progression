@@ -1,0 +1,60 @@
+name: Split Shared session once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-session-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-session-fragment
+          fetch-depth: 0
+      - name: Split Shared session owner
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          shared_path = Path('site/modules/core-sources/shared.js')
+          session_path = Path('site/modules/core-sources/shared-session.js')
+          manifest_path = Path('site/modules/core-source-manifest.js')
+
+          source = shared_path.read_text().replace('\r\n', '\n').replace('\r', '\n')
+          marker = 'function playerIdFromUrl() {'
+          if source.count(marker) != 1:
+            raise SystemExit(f'Expected one Shared routing boundary, found {source.count(marker)}')
+
+          boundary = source.index(marker)
+          session = source[:boundary].rstrip()
+          navigation = source[boundary:].rstrip()
+          if not session or not navigation:
+            raise SystemExit('Shared session split produced an empty fragment')
+
+          reconstructed = f'{session}\n\n{navigation}'
+          if reconstructed != source.rstrip():
+            raise SystemExit('Shared session split does not reconstruct the previous canonical source exactly')
+
+          session_path.write_text(session + '\n')
+          shared_path.write_text(navigation + '\n')
+
+          manifest = manifest_path.read_text()
+          old = '["shared", ["shared-foundations.js", "shared.js"], "app-core-runtime.js"'
+          new = '["shared", ["shared-foundations.js", "shared-session.js", "shared.js"], "app-core-runtime.js"'
+          if old not in manifest:
+            raise SystemExit('Shared manifest fragment list anchor not found')
+          manifest_path.write_text(manifest.replace(old, new, 1))
+          PY
+          rm .github/workflows/split-shared-session-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/modules/core-sources/shared-session.js site/modules/core-sources/shared.js site/modules/core-source-manifest.js .github/workflows/split-shared-session-once.yml
+          git commit -m "Split Shared session from navigation"
+          git push origin HEAD:arch/754-shared-session-fragment
