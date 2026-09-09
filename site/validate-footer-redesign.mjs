@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
@@ -11,7 +12,7 @@ const [indexHtml, footer, responsive, stylesBase, styles, staticUi, bootstrap, s
   read("./styles.css"),
   read("./static-ui-runtime.js"),
   read("./bootstrap.js"),
-  read("./modules/core-sources/shared.js"),
+  readCanonicalCoreSource("shared"),
   read("./selection-stack-runtime.js"),
 ]);
 

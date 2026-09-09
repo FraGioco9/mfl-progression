@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
@@ -10,7 +11,7 @@ const [indexHtml, responsive, stylesBase, bootstrap, sharedTableUi, appCore] = a
   read("./bootstrap.js"),
   read("./shared-table-ui-runtime.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

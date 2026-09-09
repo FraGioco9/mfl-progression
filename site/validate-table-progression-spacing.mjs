@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
@@ -5,7 +6,7 @@ const read = async (path) => String(await readFile(new URL(path, import.meta.url
 
 const [appCoreSource, tableRuntime] = await Promise.all([
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

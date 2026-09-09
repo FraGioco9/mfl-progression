@@ -1,7 +1,7 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 const includes = (source, value, label) => invariant(source.includes(value), `${label}: missing ${value}`);
@@ -9,7 +9,7 @@ const excludes = (source, value, label) => invariant(!source.includes(value), `$
 
 const [coreSource, stylesBase] = await Promise.all([
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

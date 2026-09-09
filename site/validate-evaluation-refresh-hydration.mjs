@@ -1,11 +1,11 @@
 import { readValidationText } from "./validation-text.mjs";
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 const invariant = (condition, message) => { if (!condition) throw new Error(message); };
 const [appCoreSource, bootstrap, searchRuntime, loading, responsive, indexHtml] = await Promise.all([
   Promise.all([
-    read("./modules/core-sources/shared.js"), read("./modules/core-sources/evaluation.js"),
+    readCanonicalCoreSource("shared"), read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"), read("./modules/core-sources/club.js"),
     read("./modules/core-sources/settings.js"), read("./modules/core-sources/player.js"),
     read("./modules/core-sources/table.js"), read("./modules/core-sources/wallet.js"),

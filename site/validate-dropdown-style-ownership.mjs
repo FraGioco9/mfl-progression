@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
@@ -8,7 +9,7 @@ const [stylesBase, styles, dropdowns, runtime, shared] = await Promise.all([
   read("./styles.css"),
   read("./dropdowns.css"),
   read("./dropdowns-runtime.js"),
-  Promise.all([read("./modules/core-sources/shared.js"), read("./modules/core-sources/evaluation.js")]).then((parts) => parts.join("\n")),
+  Promise.all([readCanonicalCoreSource("shared"), read("./modules/core-sources/evaluation.js")]).then((parts) => parts.join("\n")),
 ]);
 
 for (const required of [
