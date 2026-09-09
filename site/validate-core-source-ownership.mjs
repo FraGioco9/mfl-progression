@@ -57,17 +57,19 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 4
+    && sharedEntry?.sources?.length === 5
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
-    && sharedEntry.sources[3] === "shared.js"
+    && sharedEntry.sources[3] === "shared-transitions.js"
+    && sharedEntry.sources[4] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
 const sharedRouting = await read("./modules/core-sources/shared-routing.js");
+const sharedTransitions = await read("./modules/core-sources/shared-transitions.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -87,14 +89,20 @@ invariant(
   "Shared routing must own URL parsing/path construction through the transition-state boundary.",
 );
 invariant(
-  sharedNavigation.startsWith("function currentNavigationPath() {"),
-  "Shared navigation must begin at the canonical transition-execution boundary.",
+  sharedTransitions.startsWith("function currentNavigationPath() {")
+    && sharedTransitions.replace(/\s*$/, "").endsWith('Reflect.set(window, "__mflWaitForViewTransitionPaint", waitForViewTransitionPaint);'),
+  "Shared transitions must own canonical transition execution through the published transition facade.",
+);
+invariant(
+  sharedNavigation.startsWith("function resetPageScroll() {"),
+  "Shared page lifecycle must begin at the canonical reset-scroll boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
     && !sharedSession.includes("function playerIdFromUrl")
-    && !sharedRouting.includes("function currentNavigationPath"),
-  "Shared foundations, session, and routing must not absorb later ownership domains.",
+    && !sharedRouting.includes("function currentNavigationPath")
+    && !sharedTransitions.includes("function resetPageScroll"),
+  "Shared foundations, session, routing, and transitions must not absorb later ownership domains.",
 );
 
 const retiredFiles = [

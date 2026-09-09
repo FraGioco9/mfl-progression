@@ -1,5 +1,6 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
@@ -36,7 +37,7 @@ const [
   read("./stats-mobile-ui-runtime.js"),
   read("./control-interactions-runtime.js"),
   read("./static-ui-runtime.js"),
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   read("./global-search-runtime.js"),
   read("./scrollbars.css"),
   read("../docs/ui-behavior-foundations.md"),

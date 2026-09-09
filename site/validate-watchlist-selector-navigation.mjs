@@ -1,12 +1,13 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
 const [controls, releaseProjection, sharedSource, generatedCore, index, bootstrap, sharedUi, watchlistSource, watchlistCore] = await Promise.all([
   read("./control-interactions-runtime.js"),
   read("./sync-release-projections.mjs"),
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   read("./modules/app-core-runtime.js"),
   read("./index.html"),
   read("./bootstrap.js"),
