@@ -8,7 +8,7 @@ const root = dirname(fileURLToPath(import.meta.url));
 const styles = readFileSync(resolve(root, "styles.css"), "utf8");
 const sharedTableUi = readFileSync(resolve(root, "shared-table-ui-runtime.js"), "utf8");
 const releaseProjection = readFileSync(resolve(root, "sync-release-projections.mjs"), "utf8");
-const tableSource = Promise.resolve(readCanonicalCoreSource("table"));
+const tableSource = readCanonicalCoreSource("table");
 const generatedTable = readFileSync(resolve(root, "modules/app-core-table-runtime.js"), "utf8");
 
 const playerCellGeometry = styles.match(/#progressionPage \.playerTableScroller td \{([\s\S]*?)\n\}/)?.[1] || "";
