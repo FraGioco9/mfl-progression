@@ -373,11 +373,15 @@ async function runChromeRegression(executable, url) {
     const result = await waitForBrowserRegression(cdp);
     return result;
   } catch (error) {
-    throw new Error(`${error.message}\n${stderr.slice(-2000)}`);
+    throw new Error(`${error.message}\n${stderr.slice(-2000)}`, { cause: error });
   } finally {
     cdp?.close();
-    if (child.exitCode === null) child.kill("SIGKILL");
-    await new Promise((resolvePromise) => child.once("close", resolvePromise));
+    if (child.exitCode === null) {
+      await new Promise((resolvePromise) => {
+        child.once("close", resolvePromise);
+        child.kill("SIGKILL");
+      });
+    }
     await rm(userDataDirectory, { recursive: true, force: true });
   }
 }
