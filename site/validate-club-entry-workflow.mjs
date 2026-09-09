@@ -1,28 +1,18 @@
 import { invariant, includes, excludes } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
 const [coreSource, routeLoader, appEntry, appConfig] = await Promise.all([
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
+  Promise.resolve(readCombinedCanonicalCoreSource()),
   read("./route-core-loader-runtime.js"),
   read("./modules/app-entry.js"),
   read("./modules/app-config.js"),
 ]);
 
-const artifacts = readCanonicalCoreArtifacts(coreSource);
+const artifacts = readCanonicalCoreArtifacts();
 const eagerCore = String(artifacts.core || "");
 const clubCore = String(artifacts.routeChunks?.club || "");
 new Function(eagerCore);
