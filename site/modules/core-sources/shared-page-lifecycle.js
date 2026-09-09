@@ -489,5 +489,9 @@ async function renderPage(pageName, updateHash = true, options = {}) {
 }
 
 async function setPage(pageName, updateHash = true, options = {}) {
-  return setIncrementalPage.call(this, pageName, updateHash, options);
+  const featureOwner = Reflect.get(window, "__mflSetPageFeatureOwner");
+  if (typeof featureOwner === "function") {
+    return featureOwner.call(this, pageName, updateHash, options);
+  }
+  return setPageWithRouteRuntime.call(this, pageName, updateHash, options);
 }

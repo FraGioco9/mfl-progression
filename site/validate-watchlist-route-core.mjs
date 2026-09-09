@@ -110,8 +110,10 @@ includes(tableLoading, "controller.subscribe(sync)", "Table loading must subscri
 includes(tableLoading, '["database", "mfl", "progression", "watchlist", "myplayers", "agents", "club"]', "Watchlist must participate in canonical table-loading classification.");
 
 includes(watchlistRouteRuntime, "function interactionBusyChainIncludes(candidate, target) {", "Watchlist/My Players coordination must recognize the loading wrapper chain.");
-includes(watchlistRouteRuntime, "const delegatedSetPage = candidate;", "Watchlist setPage wrapper must capture an immutable delegate.");
-includes(watchlistRouteRuntime, "await delegatedSetPage.call(this, pageName, updateHash, nextOptions);", "Watchlist route coordination must delegate through its captured shared setPage owner.");
+includes(watchlistRouteRuntime, 'const delegatedSetPage = globalFunction("__mflSetPageRouteOwner");', "Watchlist route coordination must capture the explicit immutable route owner.");
+includes(watchlistRouteRuntime, "await delegatedSetPage.call(this, pageName, updateHash, nextOptions);", "Watchlist route coordination must delegate through its captured route owner.");
+includes(watchlistRouteRuntime, 'Reflect.set(window, "__mflSetPageFeatureOwner", setPageFeatureOwner);', "Watchlist/My Players coordination must register through the stable setPage feature-owner slot.");
+excludes(watchlistRouteRuntime, 'replaceGlobalFunction("setPage"', "Watchlist/My Players coordination must not replace the stable public setPage function.");
 includes(watchlistRouteRuntime, "if (watchlistNavigation && walletPreferencesSyncActive()) await waitForWalletPreferencesSettled();", "Watchlist navigation must wait for required wallet-preference synchronization.");
 includes(watchlistRouteRuntime, "const delegatedSwitchWatchlist = candidate;", "Direct Watchlist switch wrapper must capture an immutable delegate.");
 for (const forbidden of ['classList.add("mflDataLoading"', 'classList.remove("mflDataLoading"', "nav.pager", "__mflTableLoadingRuntime", "window.eval"]) {

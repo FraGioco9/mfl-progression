@@ -6,8 +6,7 @@
   window.__mflWatchlistMyPlayersRouteRuntime?.destroy?.();
   let sequence = 0;
   let latestIntent = null;
-  let originalSetPage = null;
-  let wrappedSetPage = null;
+  let setPageFeatureOwner = null;
   let originalSwitchWatchlist = null;
   let wrappedSwitchWatchlist = null;
   let originalLoadWalletPreferences = null;
@@ -186,7 +185,7 @@
     }
   }
 
-  async function reconcile(intent, setPageDelegate = originalSetPage) {
+  async function reconcile(intent, setPageDelegate = globalFunction("__mflSetPageRouteOwner")) {
     if (destroyed || reconciling || !intent || latestIntent?.sequence !== intent.sequence) return;
     if (intentSatisfied(intent) || typeof setPageDelegate !== "function") return;
     reconciling = true;
@@ -345,16 +344,16 @@
     installWatchlistSaveResponseDedupe();
     installWatchlistFilterGate();
 
-    const candidate = globalFunction("setPage");
-    if (!candidate) return false;
-    if (candidate === wrappedSetPage || interactionBusyChainIncludes(candidate, wrappedSetPage)) {
+    const delegatedSetPage = globalFunction("__mflSetPageRouteOwner");
+    if (!delegatedSetPage) return false;
+    const installedFeatureOwner = globalFunction("__mflSetPageFeatureOwner");
+    if (installedFeatureOwner === setPageFeatureOwner) {
       installWatchlistSwitchLoadDedupe();
       return true;
     }
+    if (installedFeatureOwner) return false;
 
-    const delegatedSetPage = candidate;
-    originalSetPage = delegatedSetPage;
-    wrappedSetPage = async function setPageWithLatestWatchlistMyPlayersIntent(pageName, updateHash = true, options = {}) {
+    setPageFeatureOwner = async function setPageWithLatestWatchlistMyPlayersIntent(pageName, updateHash = true, options = {}) {
       const normalizedPage = String(pageName || "");
       const tableNavigation = TABLE_PAGES.has(normalizedPage);
       const pairNavigation = PAIR.has(normalizedPage);
@@ -387,7 +386,7 @@
       }
     };
 
-    replaceGlobalFunction("setPage", candidate, wrappedSetPage);
+    Reflect.set(window, "__mflSetPageFeatureOwner", setPageFeatureOwner);
     installWatchlistSwitchLoadDedupe();
     return true;
   }
@@ -417,8 +416,8 @@
     if (wrappedLoadWalletPreferences && originalLoadWalletPreferences) {
       replaceGlobalFunction("loadWalletPreferences", wrappedLoadWalletPreferences, originalLoadWalletPreferences);
     }
-    if (wrappedSetPage && originalSetPage) {
-      replaceGlobalFunction("setPage", wrappedSetPage, originalSetPage);
+    if (globalFunction("__mflSetPageFeatureOwner") === setPageFeatureOwner) {
+      Reflect.set(window, "__mflSetPageFeatureOwner", null);
     }
   }
 

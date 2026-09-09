@@ -1,12 +1,13 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
 const [motion, styles, sharedSource, tableSource, coreRuntime, tableRuntime, filterRuntime, sharedTableUi, controls] = await Promise.all([
   read("./motion.css"),
   read("./filter-controls.css"),
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   read("./modules/core-sources/table.js"),
   read("./modules/app-core-runtime.js"),
   read("./modules/app-core-table-runtime.js"),
@@ -76,7 +77,7 @@ invariant(
   "The global route gate must not directly call table-owned updateFilterSummary before the lazy Table runtime exists.",
 );
 
-const routeGateStart = coreRuntime.indexOf("const routeRuntimeSetPage = async function setPageWithRouteRuntime");
+const routeGateStart = coreRuntime.indexOf("async function setPageWithRouteRuntime");
 const routeResetGuard = coreRuntime.indexOf("const crossPageNavigation = !runtimeReady", routeGateStart);
 const routeUpdaterLookup = coreRuntime.indexOf('const canonicalFilterSummaryUpdater = Reflect.get(window, "updateFilterSummary");', routeResetGuard);
 const routeUpdaterGuard = coreRuntime.indexOf('if (typeof canonicalFilterSummaryUpdater === "function") {', routeUpdaterLookup);

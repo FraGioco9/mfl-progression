@@ -10,7 +10,7 @@ const build = await read("./build-app-core.mjs");
 invariant(build.includes('import { coreSourceManifest } from "./modules/core-source-manifest.js";'), "Application-core build must consume the canonical core source manifest.");
 invariant(build.includes("for (const entry of coreSourceManifest)"), "Application-core build must generate every canonical source-fragment domain from the manifest.");
 invariant(build.includes('resolve(siteRoot, "modules", "core-sources", sourceName)'), "Application-core build must resolve every ordered canonical source fragment from manifest entries.");
-invariant(build.includes('sourceParts.join("\\n\\n")'), "Application-core build must concatenate ordered source fragments without behavior transforms.");
+invariant(build.includes("sourceParts.join(\"\\n\\n\")"), "Application-core build must concatenate ordered source fragments without behavior transforms.");
 invariant(!build.includes("app-core-build-normalizer"), "Application-core build must not depend on behavior-changing normalizers.");
 invariant(!build.includes("replaceRequired"), "Application-core build must not perform source-string behavior rewrites.");
 invariant(!build.includes("modules/app-core.js"), "Application-core build must not depend on the retired monolith.");
@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 25
+    && sharedEntry?.sources?.length === 26
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -82,9 +82,10 @@ invariant(
     && sharedEntry.sources[21] === "shared-startup-lifecycle.js"
     && sharedEntry.sources[22] === "shared-layout-center.js"
     && sharedEntry.sources[23] === "shared-incremental-navigation.js"
-    && sharedEntry.sources[24] === "shared.js"
+    && sharedEntry.sources[24] === "shared-route-runtime-gate.js"
+    && sharedEntry.sources[25] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before incremental navigation orchestration before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before incremental navigation orchestration before the stable route-runtime gate before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -110,6 +111,7 @@ const sharedInteractionBindings = await read("./modules/core-sources/shared-inte
 const sharedStartupLifecycle = await read("./modules/core-sources/shared-startup-lifecycle.js");
 const sharedLayoutCenter = await read("./modules/core-sources/shared-layout-center.js");
 const sharedIncrementalNavigation = await read("./modules/core-sources/shared-incremental-navigation.js");
+const sharedRouteRuntimeGate = await read("./modules/core-sources/shared-route-runtime-gate.js");
 const sharedRemaining = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -138,8 +140,9 @@ invariant(
     && sharedPageLifecycle.includes("async function renderPage(pageName, updateHash = true, options = {}) {")
     && sharedPageLifecycle.includes("function applyFilters(options = {}) {")
     && sharedPageLifecycle.includes("return setIncrementalView.apply(this, arguments);")
-    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("return setIncrementalPage.call(this, pageName, updateHash, options);\n}"),
-  "Shared page lifecycle must own stable Table/page facades and the canonical base page renderer without later public-function replacement.",
+    && sharedPageLifecycle.includes('const featureOwner = Reflect.get(window, "__mflSetPageFeatureOwner");')
+    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("return setPageWithRouteRuntime.call(this, pageName, updateHash, options);\n}"),
+  "Shared page lifecycle must own stable Table/page facades and the canonical base page renderer while dispatching setPage through explicit feature/route owners without replacing the public function.",
 );
 invariant(
   sharedHomeSummary.startsWith("function updateStatusDate(generatedAt) {")
@@ -264,6 +267,15 @@ invariant(
   "Shared incremental navigation must own loading orchestration through stable facades/base rendering without replacing public function identities.",
 );
 invariant(
+  sharedRouteRuntimeGate.startsWith("async function setPageWithRouteRuntime(pageName, updateHash = true, options = {}) {")
+    && sharedRouteRuntimeGate.includes('Reflect.get(window, "__mflSetPageFeatureOwner")')
+    && sharedRouteRuntimeGate.replace(/\s*$/, "").endsWith('Reflect.set(window, "__mflSetPageRouteOwner", setPageWithRouteRuntime);')
+    && !sharedRouteRuntimeGate.includes("originalRouteRuntimeSetPage")
+    && !sharedRouteRuntimeGate.includes("setPage = routeRuntimeSetPage")
+    && !sharedRouteRuntimeGate.includes("__mflRouteRuntimeGate"),
+  "Shared route-runtime gate must own lazy runtime/core preparation behind the stable setPage facade without replacing its identity.",
+);
+invariant(
   sharedRemaining.startsWith(";(() => {\n  function tableHeaderContext() {")
     && !sharedRemaining.includes("__mflUniversalClubSearch")
     && !sharedRemaining.includes("renderSearchResultsNowV1500")
@@ -298,8 +310,9 @@ invariant(
     && !sharedInteractionBindings.includes("function setupChangelogSections")
     && !sharedStartupLifecycle.includes("function syncLayoutCenter")
     && !sharedLayoutCenter.includes("setIncrementalPage")
-    && !sharedIncrementalNavigation.includes("function tableHeaderContext"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, layout centering, and incremental navigation must not absorb later ownership domains.",
+    && !sharedIncrementalNavigation.includes("function setPageWithRouteRuntime")
+    && !sharedRouteRuntimeGate.includes("function tableHeaderContext"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, layout centering, incremental navigation, and the route-runtime gate must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
