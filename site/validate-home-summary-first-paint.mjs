@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 import { browserConfigRuntimeSource } from "./modules/app-config.js";
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { normalizePreBootstrapRouteState } from "./modules/pre-bootstrap-route-state.js";
 
 const read = (path) => readFile(new URL(path, import.meta.url), "utf8");
@@ -17,17 +17,7 @@ const [indexHtml, stylesBase, bootstrapRuntime, staticUiRuntime, coreSource, rel
   read("./styles-base.css"),
   read("./bootstrap.js"),
   read("./static-ui-runtime.js"),
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
+  readCombinedCanonicalCoreSource(),
   read("./release.json"),
 ]);
 const release = JSON.parse(releaseJson);

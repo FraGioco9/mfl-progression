@@ -1,12 +1,13 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
 const [loadingRuntime, bootstrap, sharedCore, tableSource, tableRuntime, sharedTableUi, projectionSource] = await Promise.all([
   read("./table-loading-runtime.js"),
   read("./bootstrap.js"),
-  read("./modules/core-sources/shared.js"),
+  readCombinedCanonicalCoreSource(),
   read("./modules/core-sources/table.js"),
   read("./modules/app-core-table-runtime.js"),
   read("./shared-table-ui-runtime.js"),
