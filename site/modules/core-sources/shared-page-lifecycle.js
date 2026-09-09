@@ -137,7 +137,12 @@ function restoreSavedTableState() {
     : undefined;
 }
 
-function applyFilters() {
+function applyFilters(options = {}) {
+  if (state.incrementalMode && !state.incrementalApplying && !options.localOnly) {
+    state.page = 1;
+    void reloadIncrementalPage(1, { save: options.save !== false, loadingMode: "blank" });
+    return undefined;
+  }
   return typeof __mflTableApplyFiltersOwner === "function"
     ? __mflTableApplyFiltersOwner.apply(this, arguments)
     : undefined;
@@ -197,13 +202,21 @@ function openSelectedPlayerLinks() {
     : undefined;
 }
 
-function setView() {
+function applyTableViewOwner() {
   return typeof __mflTableSetViewOwner === "function"
     ? __mflTableSetViewOwner.apply(this, arguments)
     : undefined;
 }
 
-async function setPage(pageName, updateHash = true, options = {}) {
+function setView() {
+  const pageName = state.currentPage;
+  if (tablePages.has(pageName) || pageName === "club") {
+    return setIncrementalView.apply(this, arguments);
+  }
+  return applyTableViewOwner.apply(this, arguments);
+}
+
+async function renderPage(pageName, updateHash = true, options = {}) {
   const lockedOptOutRoute = (pageName === "myplayers" || pageName === "watchlist" || pageName === "settings") && !hasWalletOptIn();
   resetTableSortSession(pageName, options);
   if (!pageNavigationIsCurrent(options)) return null;
@@ -211,7 +224,7 @@ async function setPage(pageName, updateHash = true, options = {}) {
   if (plainEvaluationEntry) preparePlainEvaluationReentry();
   if (pageName === "home") void loadSummary();
   if (pageName === "mfl" && normalizeViewForPage(options.view, "mfl") === "stats") {
-    await setPage("mflstats", updateHash, { ...options, replaceUrl: options.replaceUrl || "/mfl/stats" });
+    await renderPage("mflstats", updateHash, { ...options, replaceUrl: options.replaceUrl || "/mfl/stats" });
     return;
   }
 
@@ -473,4 +486,8 @@ async function setPage(pageName, updateHash = true, options = {}) {
   }
 
   syncHomeLoginButton();
+}
+
+async function setPage(pageName, updateHash = true, options = {}) {
+  return setIncrementalPage.call(this, pageName, updateHash, options);
 }

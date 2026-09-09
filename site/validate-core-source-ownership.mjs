@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 24
+    && sharedEntry?.sources?.length === 25
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -81,9 +81,10 @@ invariant(
     && sharedEntry.sources[20] === "shared-interaction-bindings.js"
     && sharedEntry.sources[21] === "shared-startup-lifecycle.js"
     && sharedEntry.sources[22] === "shared-layout-center.js"
-    && sharedEntry.sources[23] === "shared.js"
+    && sharedEntry.sources[23] === "shared-incremental-navigation.js"
+    && sharedEntry.sources[24] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before incremental navigation orchestration before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -108,6 +109,7 @@ const sharedIncrementalRouting = await read("./modules/core-sources/shared-incre
 const sharedInteractionBindings = await read("./modules/core-sources/shared-interaction-bindings.js");
 const sharedStartupLifecycle = await read("./modules/core-sources/shared-startup-lifecycle.js");
 const sharedLayoutCenter = await read("./modules/core-sources/shared-layout-center.js");
+const sharedIncrementalNavigation = await read("./modules/core-sources/shared-incremental-navigation.js");
 const sharedRemaining = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -133,8 +135,11 @@ invariant(
 );
 invariant(
   sharedPageLifecycle.startsWith("function resetPageScroll() {")
-    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("syncHomeLoginButton();\n}"),
-  "Shared page lifecycle must own reset-scroll through the canonical setPage boundary.",
+    && sharedPageLifecycle.includes("async function renderPage(pageName, updateHash = true, options = {}) {")
+    && sharedPageLifecycle.includes("function applyFilters(options = {}) {")
+    && sharedPageLifecycle.includes("return setIncrementalView.apply(this, arguments);")
+    && sharedPageLifecycle.replace(/\s*$/, "").endsWith("return setIncrementalPage.call(this, pageName, updateHash, options);\n}"),
+  "Shared page lifecycle must own stable Table/page facades and the canonical base page renderer without later public-function replacement.",
 );
 invariant(
   sharedHomeSummary.startsWith("function updateStatusDate(generatedAt) {")
@@ -241,12 +246,25 @@ invariant(
     && sharedLayoutCenter.includes('window.addEventListener("resize", syncLayoutCenter, { passive: true });')
     && sharedLayoutCenter.includes("new MutationObserver(syncLayoutCenter).observe(document.body, {")
     && sharedLayoutCenter.replace(/\s*$/, "").endsWith("})();")
-    && !sharedLayoutCenter.includes("const originalApplyFilters = applyFilters"),
-  "Shared layout centering must own page-content center synchronization and its resize/mutation bindings without absorbing incremental navigation overrides.",
+    && !sharedLayoutCenter.includes("setIncrementalPage"),
+  "Shared layout centering must own page-content center synchronization and its resize/mutation bindings without absorbing incremental navigation orchestration.",
 );
 invariant(
-  sharedRemaining.startsWith("/* Session-cached incremental route data and destination-first loading */")
-    && sharedRemaining.includes("const originalApplyFilters = applyFilters;")
+  sharedIncrementalNavigation.startsWith("/* Session-cached incremental route data and destination-first loading */")
+    && sharedIncrementalNavigation.includes("const setIncrementalView = async function setIncrementalView(viewName) {")
+    && sharedIncrementalNavigation.includes("const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {")
+    && sharedIncrementalNavigation.includes("const loadIncrementalRoutePage = async function loadIncrementalRoutePage(pageName, options = {}) {")
+    && sharedIncrementalNavigation.replace(/\s*$/, "").endsWith("window.mflLoadIncrementalRoutePage = loadIncrementalRoutePage;")
+    && !sharedIncrementalNavigation.includes("const originalApplyFilters")
+    && !sharedIncrementalNavigation.includes("const originalSetPage")
+    && !sharedIncrementalNavigation.includes("const originalSetView")
+    && !sharedIncrementalNavigation.includes("applyFilters = function")
+    && !sharedIncrementalNavigation.includes("setView = async function")
+    && !sharedIncrementalNavigation.includes("setPage = async function"),
+  "Shared incremental navigation must own loading orchestration through stable facades/base rendering without replacing public function identities.",
+);
+invariant(
+  sharedRemaining.startsWith(";(() => {\n  function tableHeaderContext() {")
     && !sharedRemaining.includes("__mflUniversalClubSearch")
     && !sharedRemaining.includes("renderSearchResultsNowV1500")
     && !sharedRemaining.includes("renderSearchResultsFromBootstrap")
@@ -254,7 +272,7 @@ invariant(
     && !sharedRemaining.includes("function csvEscape")
     && !sharedRemaining.includes("function mflChunkFromPublicData")
     && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at the late incremental-runtime boundary with legacy Club-search wrappers and unused serialization/data helpers retired.",
+  "Remaining Shared behavior must begin at the later table-header/search-runtime compatibility boundary with legacy Club-search wrappers and incremental public-function replacements retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -279,8 +297,9 @@ invariant(
     && !sharedIncrementalRouting.includes("let pendingViewButtonPointer")
     && !sharedInteractionBindings.includes("function setupChangelogSections")
     && !sharedStartupLifecycle.includes("function syncLayoutCenter")
-    && !sharedLayoutCenter.includes("const originalApplyFilters = applyFilters"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, and layout centering must not absorb later ownership domains.",
+    && !sharedLayoutCenter.includes("setIncrementalPage")
+    && !sharedIncrementalNavigation.includes("function tableHeaderContext"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, layout centering, and incremental navigation must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
