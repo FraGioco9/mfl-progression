@@ -36,7 +36,7 @@ const viewLoading = viewRunner.indexOf("loadingController?.beginRouteTransition?
 assert.ok(viewCancel >= 0 && viewCommit > viewCancel && viewLoading > viewCommit, "View navigation must abort obsolete data before committing the destination, then replace route-loading ownership for that destination.");
 
 
-const baseSetPageStart = appCoreSource.indexOf("async function setPage(pageName, updateHash = true, options = {}) {");
+const baseSetPageStart = appCoreSource.indexOf("async function renderPage(pageName, updateHash = true, options = {}) {");
 const baseSetPageEnd = appCoreSource.indexOf("function updateStatusDate", baseSetPageStart);
 const baseSetPage = appCoreSource.slice(baseSetPageStart, baseSetPageEnd);
 assert.match(baseSetPage, /if \(!pageNavigationIsCurrent\(options\)\) return null;/, "Every page renderer must reject a stale owning navigation before mutating destination UI.");
@@ -66,8 +66,8 @@ const incrementalRendererStart = appCoreSource.indexOf("async function renderLoa
 const incrementalRendererOwnerCheck = appCoreSource.indexOf("return pageNavigationIsCurrent(options) ? result : false;", incrementalRendererStart);
 assert.ok(incrementalRendererStart >= 0 && incrementalRendererOwnerCheck > incrementalRendererStart, "Incremental rendering must verify navigation ownership again after the base page renderer settles.");
 
-const incrementalSetPageStart = appCoreSource.indexOf("setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
-const incrementalSetPageEnd = appCoreSource.indexOf("function divisionInfo(", incrementalSetPageStart);
+const incrementalSetPageStart = appCoreSource.indexOf("const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
+const incrementalSetPageEnd = appCoreSource.indexOf("const loadIncrementalRoutePage = async function loadIncrementalRoutePage", incrementalSetPageStart);
 const incrementalSetPage = appCoreSource.slice(incrementalSetPageStart, incrementalSetPageEnd);
 assert.match(incrementalSetPage, /return runPageTransition\(pageName, navigationUpdatesHistory, options, \(navigationTransition\) => setPage\(pageName, false, \{/, "Incremental page loading must remain inside the winning route transition until its async load settles.");
 assert.match(incrementalSetPage, /skipNavigationTransition: true,[\s\S]*?__mflNavigationTransition: navigationTransition,[\s\S]*?__mflNavigationUpdatesHistory: navigationUpdatesHistory/, "The recursive incremental load must retain transition identity and original history ownership without starting another transition.");

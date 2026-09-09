@@ -87,7 +87,7 @@ excludes(sharedCore, "renderSearchResultsNowV1500", "Retired release-era Global 
 excludes(sharedCore, "renderSearchResultsFromBootstrap", "Retired bootstrap Club-result wrapper must stay removed.");
 includes(sharedCore, 'const clubTarget = pageName === "club" ? clubRouteTargetFromPath() : null;', "Shared view switching must resolve Club identity canonically.");
 includes(sharedCore, 'window.__mflAppConfig?.routes?.clubPath?.(clubTarget.clubId, viewName)', "Shared Club view switching must use canonical URL construction.");
-includes(sharedCore, "setView = async function setIncrementalView(viewName) {", "Club views must share the canonical incremental view owner.");
+includes(sharedCore, "const setIncrementalView = async function setIncrementalView(viewName) {", "Club views must share the canonical incremental view owner.");
 includes(sharedCore, "const clubViewPayloadCache = new Map();", "Shared incremental routing must own the canonical Club payload cache.");
 includes(sharedCore, "function rememberClubViewPayload(route, payload) {", "Shared incremental routing must own Club payload cache writes.");
 includes(sharedCore, "function cachedClubViewPayload(route) {", "Shared incremental routing must own Club payload cache reads.");

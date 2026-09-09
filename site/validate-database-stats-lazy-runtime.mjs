@@ -234,7 +234,7 @@ invariant(
   "Database Stats Custom menu static styling must not depend on !important overrides.",
 );
 
-const setPageIndex = coreSource.indexOf("setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
+const setPageIndex = coreSource.indexOf("const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
 const transitionIndex = coreSource.indexOf("return runPageTransition(pageName, navigationUpdatesHistory, options, (navigationTransition) => setPage(pageName, false, {", setPageIndex);
 const recursiveGuardIndex = coreSource.indexOf("skipNavigationTransition: true", transitionIndex);
 const statsBranchIndex = coreSource.indexOf('if (pageName === "database" && requestedDatabaseView === "stats") {', recursiveGuardIndex);

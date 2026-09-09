@@ -129,8 +129,8 @@ invariant(
   "Shared view navigation must keep its proven click lifecycle unchanged, with no refresh-only loading branch.",
 );
 
-const pageLoaderOwner = sourceContaining("setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {", "incremental page loader");
-const pageLoaderStart = pageLoaderOwner.text.indexOf("setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
+const pageLoaderOwner = sourceContaining("const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {", "incremental page loader");
+const pageLoaderStart = pageLoaderOwner.text.indexOf("const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {");
 const pageLoader = pageLoaderOwner.text.slice(pageLoaderStart);
 const pageRun = pageLoader.indexOf("return runPageTransition(pageName, navigationUpdatesHistory, options, (navigationTransition) => setPage(pageName, false, {");
 const pageRoutePrepare = pageLoader.indexOf("prepareIncrementalRoute(pageName", pageRun);
@@ -157,7 +157,7 @@ invariant(
 const mflStatsBranch = pageLoader.indexOf('if (pageName === "mfl" && requestedMflView === "stats") {');
 const mflStatsPrepare = pageLoader.indexOf("prepareIncrementalRoute(pageName", mflStatsBranch);
 const mflStatsRequest = pageLoader.indexOf("requestIncrementalRoute(route, 1", mflStatsPrepare);
-const mflStatsFinalRender = pageLoader.indexOf('originalSetPage.call(this, "mflstats"', mflStatsRequest);
+const mflStatsFinalRender = pageLoader.indexOf('renderPage.call(this, "mflstats"', mflStatsRequest);
 invariant(
   mflStatsBranch >= 0 && mflStatsPrepare > mflStatsBranch && mflStatsRequest > mflStatsPrepare && mflStatsFinalRender > mflStatsRequest,
   "MFL Stats must use the same incremental route preparation and request pipeline before its final renderer runs.",
@@ -212,11 +212,11 @@ for (const [transitionMarker, loaderMarker, label] of [
   );
 }
 
-const incrementalOwner = sourceContaining("setView = async function setIncrementalView(viewName) {", "incremental view loader");
+const incrementalOwner = sourceContaining("const setIncrementalView = async function setIncrementalView(viewName) {", "incremental view loader");
 const incrementalView = section(
   incrementalOwner.text,
-  "setView = async function setIncrementalView(viewName) {",
-  "setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {",
+  "const setIncrementalView = async function setIncrementalView(viewName) {",
+  "const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {",
   "incremental view loader",
 );
 const stagedTake = incrementalView.indexOf("const stagedTransition = takeStagedViewTransition(pageName, nextView);");

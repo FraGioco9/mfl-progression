@@ -51,7 +51,8 @@ for (const [facade, ownerSlot, chunkOwner] of [
   ["restoreSavedTableState", "__mflTableRestoreSavedTableStateOwner", "tableRestoreSavedTableStateOwner"],
 ]) {
   includes(sharedCore, `let ${ownerSlot} = null;`, `Shared core must keep the stable ${facade} owner slot.`);
-  includes(sharedCore, `function ${facade}() {`, `Shared core must retain the ${facade} facade.`);
+  const facadeMarker = facade === "applyFilters" ? "function applyFilters(options = {}) {" : `function ${facade}() {`;
+  includes(sharedCore, facadeMarker, `Shared core must retain the ${facade} facade.`);
   includes(tableCore, `${ownerSlot} = ${chunkOwner};`, `Canonical Table source must activate ${facade}.`);
 }
 
