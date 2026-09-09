@@ -1,0 +1,36 @@
+name: Issue 754 canonical pager Table reader
+
+on:
+  push:
+    branches:
+      - arch/754-table-interaction-bindings
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-table-interaction-bindings
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Fix pager Table source reader
+        run: |
+          python .github/754-fix-pager-table-reader.py
+          node --check site/validate-pager-current-page.mjs
+          rm .github/754-fix-pager-table-reader.py
+          rm .github/workflows/754-fix-pager-table-reader.yml
+          git diff --check
+      - name: Commit canonical pager validator
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit -m "Use canonical Table source in pager validation"
+          git push origin HEAD:arch/754-table-interaction-bindings
