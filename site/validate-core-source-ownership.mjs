@@ -85,9 +85,9 @@ invariant(
     && sharedEntry.sources[24] === "shared-route-runtime-gate.js"
     && sharedEntry.sources[25] === "shared-core-contracts.js"
     && sharedEntry.sources[26] === "shared-app-startup.js"
-    && sharedEntry.sources[27] === "shared.js"
+    && sharedEntry.sources[27] === "shared-shell-navigation.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before incremental navigation orchestration before the stable route-runtime gate before explicit core contracts before application startup before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before Changelog/startup lifecycle before layout-centered feedback before incremental navigation orchestration before the stable route-runtime gate before explicit core contracts before application startup before shell navigation and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -116,7 +116,7 @@ const sharedIncrementalNavigation = await read("./modules/core-sources/shared-in
 const sharedRouteRuntimeGate = await read("./modules/core-sources/shared-route-runtime-gate.js");
 const sharedCoreContracts = await read("./modules/core-sources/shared-core-contracts.js");
 const sharedAppStartup = await read("./modules/core-sources/shared-app-startup.js");
-const sharedRemaining = await read("./modules/core-sources/shared.js");
+const sharedShellNavigation = await read("./modules/core-sources/shared-shell-navigation.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
   "Shared foundations must end at the canonical DOM-binding boundary.",
@@ -296,15 +296,18 @@ invariant(
   "Shared application startup must own core-loaded publication, initial route-core preload, and the canonical startApp promise handoff.",
 );
 invariant(
-  sharedRemaining.startsWith(";(() => {\n  if (window.__mflFooterSpaNavigationBound) return;")
-    && !sharedRemaining.includes("__mflUniversalClubSearch")
-    && !sharedRemaining.includes("renderSearchResultsNowV1500")
-    && !sharedRemaining.includes("renderSearchResultsFromBootstrap")
-    && !sharedRemaining.includes("mfl-recent-search-clubs")
-    && !sharedRemaining.includes("function csvEscape")
-    && !sharedRemaining.includes("function mflChunkFromPublicData")
-    && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at global shell-navigation bindings after application startup publication.",
+  sharedShellNavigation.startsWith(";(() => {\n  if (window.__mflFooterSpaNavigationBound) return;")
+    && sharedShellNavigation.includes('.siteFooterDetails a[href="/changelog"]')
+    && sharedShellNavigation.includes(".changelogMinorToggle")
+    && sharedShellNavigation.includes('.brandLink[href="/"]')
+    && !sharedShellNavigation.includes("__mflUniversalClubSearch")
+    && !sharedShellNavigation.includes("renderSearchResultsNowV1500")
+    && !sharedShellNavigation.includes("renderSearchResultsFromBootstrap")
+    && !sharedShellNavigation.includes("mfl-recent-search-clubs")
+    && !sharedShellNavigation.includes("function csvEscape")
+    && !sharedShellNavigation.includes("function mflChunkFromPublicData")
+    && !sharedShellNavigation.includes("function progressionDataColumns"),
+  "Shared shell navigation must own footer Changelog navigation/toggling and brand Home navigation after application startup publication.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -334,7 +337,7 @@ invariant(
     && !sharedRouteRuntimeGate.includes("function tableHeaderContext")
     && !sharedCoreContracts.includes("window.__mflMarkApplicationCoreLoaded")
     && !sharedAppStartup.includes("__mflFooterSpaNavigationBound"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, layout centering, incremental navigation, the route-runtime gate, explicit core contracts, and application startup must not absorb later ownership domains.",
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, startup lifecycle, layout centering, incremental navigation, the route-runtime gate, explicit core contracts, application startup, and shell navigation must keep explicit terminal ownership boundaries.",
 );
 
 const retiredFiles = [

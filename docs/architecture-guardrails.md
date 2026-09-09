@@ -12,9 +12,9 @@ Do not use byte count alone as a proxy for good ownership inside a route/domain 
 
 ### Universal shared-core ceiling — keep
 
-- **Threshold:** `site/modules/core-sources/shared.js` may not exceed **355,000 UTF-8 bytes**.
+- **Threshold:** the manifest-assembled Shared domain may not exceed **355,000 UTF-8 bytes**.
 - **Enforced by:** `site/modules/core-source-manifest.js`, `site/build-app-core.mjs`, and `site/validate-core-source-ownership.mjs`.
-- **Reason:** `shared.js` is universal code. Growth there affects every route and can silently pull route-specific responsibilities back into the common runtime.
+- **Reason:** the assembled Shared domain is universal code. Growth anywhere in its manifest-owned fragments affects every route and can silently pull route-specific responsibilities back into the common runtime.
 - **Why 355,000:** this is the explicit post-decomposition upper boundary already recognized by the ownership validator. It is intentionally a stable architectural ceiling, not a moving snapshot of the current file size.
 - **Recommendation:** keep. If the ceiling is reached, first move non-universal behavior to the owning route/domain. Raise it only for behavior that is demonstrably universal and cannot be owned elsewhere without increasing coupling.
 

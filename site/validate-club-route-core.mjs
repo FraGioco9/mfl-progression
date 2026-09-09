@@ -73,7 +73,7 @@ invariant(
     && coreSourceByDomain.shared.sources[24] === "shared-route-runtime-gate.js"
     && coreSourceByDomain.shared.sources[25] === "shared-core-contracts.js"
     && coreSourceByDomain.shared.sources[26] === "shared-app-startup.js"
-    && coreSourceByDomain.shared.sources[27] === "shared.js"
+    && coreSourceByDomain.shared.sources[27] === "shared-shell-navigation.js"
     && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",
   "The core manifest must generate the shared runtime from its ordered canonical fragments.",
 );
