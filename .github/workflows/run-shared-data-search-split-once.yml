@@ -1,0 +1,31 @@
+name: Run Shared data-search split once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-data-search-fragment
+    paths:
+      - .github/split-shared-data-search-once.mjs
+      - .github/workflows/run-shared-data-search-split-once.yml
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-data-search-fragment
+          fetch-depth: 0
+      - name: Split Shared data/search prefix
+        run: node .github/split-shared-data-search-once.mjs
+      - name: Commit split and remove one-time migration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add site/modules/core-source-manifest.js site/modules/core-sources/shared-data-search.js site/modules/core-sources/shared.js
+          git rm .github/split-shared-data-search-once.mjs .github/workflows/run-shared-data-search-split-once.yml
+          git commit -m "Split Shared generic data and search core"
+          git push origin HEAD:arch/754-shared-data-search-fragment
