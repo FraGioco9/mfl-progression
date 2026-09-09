@@ -1,0 +1,27 @@
+name: Run toast-core validator migration once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-toast-core-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-toast-core-fragment
+      - name: Align toast-core validation
+        run: node .github/align-toast-core-validation.mjs
+      - name: Commit validator migration and remove one-time files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/align-toast-core-validation.mjs .github/workflows/run-toast-core-validator-migration-once.yml
+          git add site/validate.mjs site/validate-club-route-core.mjs site/validate-core-source-ownership.mjs
+          git commit -m "Align validation with Shared toast core"
+          git push origin HEAD:arch/754-shared-toast-core-fragment
