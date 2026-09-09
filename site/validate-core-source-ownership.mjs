@@ -191,8 +191,11 @@ invariant(
 );
 invariant(
   sharedGlobalSearch.startsWith("async function openSearch() {")
+    && sharedGlobalSearch.includes("function clubSearchResult(entry) {")
+    && sharedGlobalSearch.includes("const clubResults = state.clubSearchIndex")
+    && sharedGlobalSearch.includes('void window.mflOpenClubPage(entry.clubId, "attributes");')
     && sharedGlobalSearch.replace(/\s*$/, "").endsWith("  })();\n}"),
-  "Shared Global Search must own open/close, matching, recent promotion, navigation, clear state, and result rendering through renderSearchResults().",
+  "Shared Global Search must own open/close, Player/Club/Agent matching, mixed recents, navigation, clear state, and result rendering through renderSearchResults().",
 );
 invariant(
   sharedWalletRowClassification.startsWith("function linkedWalletAddressesForOwnedPlayers() {")
@@ -232,11 +235,15 @@ invariant(
   "Shared startup lifecycle must own Changelog section setup and the canonical startApp definition through background startup convergence.",
 );
 invariant(
-  sharedRemaining.startsWith(";(() => {")
+  sharedRemaining.startsWith("function syncLayoutCenter() {")
+    && !sharedRemaining.includes("__mflUniversalClubSearch")
+    && !sharedRemaining.includes("renderSearchResultsNowV1500")
+    && !sharedRemaining.includes("renderSearchResultsFromBootstrap")
+    && !sharedRemaining.includes("mfl-recent-search-clubs")
     && !sharedRemaining.includes("function csvEscape")
     && !sharedRemaining.includes("function mflChunkFromPublicData")
     && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at the universal Club-search compatibility boundary and keep unused serialization/data helpers retired.",
+  "Remaining Shared behavior must begin at the layout-centering/late-runtime boundary with legacy Club-search wrappers and unused serialization/data helpers retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -260,7 +267,7 @@ invariant(
     && !sharedHtmlEscaping.includes("function clubRouteTargetFromPath")
     && !sharedIncrementalRouting.includes("let pendingViewButtonPointer")
     && !sharedInteractionBindings.includes("function setupChangelogSections")
-    && !sharedStartupLifecycle.includes("__mflUniversalClubSearch"),
+    && !sharedStartupLifecycle.includes("function syncLayoutCenter"),
   "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, global interaction bindings, and startup lifecycle must not absorb later ownership domains.",
 );
 

@@ -238,10 +238,14 @@ invariant(
 );
 
 invariant(
-  core.includes("const MAX_SEARCH_RESULTS = 5;")
-    && core.includes("state.recentSearchItems.slice(0, MAX_SEARCH_RESULTS).forEach((key) => {")
-    && core.includes("playerSearchResults.replaceChildren(...ordered.slice(0, MAX_SEARCH_RESULTS));"),
-  "Empty Global Search must render only the five most recent mixed player, club, or agent searches.",
+  core.includes("return items.slice(0, 5).map((item) => {")
+    && core.includes('if (item.startsWith("club:")) {')
+    && core.includes("const entry = state.clubSearchIndex.find((club) => club.clubId === clubId);")
+    && core.includes("return entry ? clubSearchResult(entry) : null;")
+    && !core.includes('const RECENT_CLUBS_STORAGE_KEY = "mfl-recent-search-clubs";')
+    && !core.includes("renderSearchResultsNowV1500")
+    && !core.includes("renderSearchResultsFromBootstrap"),
+  "Empty Global Search must render only the five canonical mixed Player, Club, or Agent recents without browser-stored Club history or render wrappers.",
 );
 
 invariant(
