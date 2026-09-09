@@ -10,62 +10,22 @@ permissions:
 
 jobs:
   split:
-    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
           ref: arch/754-dead-shared-data-helpers
           fetch-depth: 0
-      - uses: actions/setup-python@v7
-        with:
-          python-version: '3.x'
-      - name: Remove definition-only Shared helpers
+      - name: Apply cleanup
+        run: python3 .github/754-dead-data-cleanup.py
+      - name: Verify cleanup
+        run: node --check site/modules/core-sources/shared.js
+      - name: Commit cleanup
         run: |
-          python - <<'PY'
-          from pathlib import Path
-
-          root = Path('site')
-          shared_path = root / 'modules/core-sources/shared.js'
-          source = shared_path.read_text(encoding='utf-8').replace('\r\n', '\n').replace('\r', '\n')
-          assert source.startswith('function mflChunkFromPublicData(chunk) {'), 'Shared head moved before dead-helper cleanup.'
-          assert source.count('function mflChunkFromPublicData(chunk) {') == 1
-          assert source.count('function progressionDataColumns(manifest) {') == 1
-          live_start = 'function clubRouteTargetFromPath() {'
-          remainder = source[source.index(live_start):]
-          assert remainder.startswith(live_start)
-          assert 'mflChunkFromPublicData' not in remainder
-          assert 'progressionDataColumns' not in remainder
-          shared_path.write_text(remainder, encoding='utf-8')
-
-          ownership_path = root / 'validate-core-source-ownership.mjs'
-          ownership = ownership_path.read_text(encoding='utf-8')
-          old = '''invariant(
-  sharedRemaining.startsWith("function mflChunkFromPublicData(chunk) {")
-    && !sharedRemaining.includes("function csvEscape"),
-  "Remaining Shared behavior must begin at the incremental public-data routing boundary and keep unused csvEscape retired.",
-);'''
-          new = '''invariant(
-  sharedRemaining.startsWith("function clubRouteTargetFromPath() {")
-    && !sharedRemaining.includes("function csvEscape")
-    && !sharedRemaining.includes("function mflChunkFromPublicData")
-    && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at the live incremental-routing boundary and keep unused serialization/data helpers retired.",
-);'''
-          assert ownership.count(old) == 1
-          ownership_path.write_text(ownership.replace(old, new), encoding='utf-8')
-          PY
-      - name: Verify dead-helper cleanup
-        run: |
-          grep -q '^function clubRouteTargetFromPath() {' site/modules/core-sources/shared.js
-          ! grep -R 'function mflChunkFromPublicData' site/modules/core-sources
-          ! grep -R 'function progressionDataColumns' site/modules/core-sources
-          node --check site/modules/core-sources/shared.js
-      - name: Remove one-shot workflow and commit
-        run: |
+          rm .github/754-dead-data-cleanup.py
           rm .github/workflows/754-remove-dead-data-helpers.yml
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add site .github/workflows/754-remove-dead-data-helpers.yml
+          git add site .github/754-dead-data-cleanup.py .github/workflows/754-remove-dead-data-helpers.yml
           git commit -m "Remove dead Shared data helpers"
           git push origin HEAD:arch/754-dead-shared-data-helpers
