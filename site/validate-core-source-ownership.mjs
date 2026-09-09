@@ -23,6 +23,7 @@ for (const entry of coreSourceManifest) {
   domains.add(entry.domain);
   invariant(Array.isArray(entry.sources) && entry.sources.length > 0, `Core source ${entry.domain} must define at least one ordered canonical source fragment.`);
   invariant(Object.isFrozen(entry.sources), `Core source ${entry.domain} fragment order must be immutable.`);
+  invariant(entry.source === entry.sources[0], `Core source ${entry.domain} compatibility source alias must reference its first ordered fragment.`);
   for (const sourceName of entry.sources) {
     invariant(typeof sourceName === "string" && sourceName.endsWith(".js"), `Core source ${entry.domain} has an invalid fragment name.`);
     invariant(!ownedSources.has(sourceName), `Canonical core source fragment must have one domain owner: ${sourceName}.`);
@@ -55,8 +56,11 @@ for (const entry of coreSourceManifest) {
 
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
-  sharedEntry?.maxUniversalBytes === 355000,
-  "Shared core must keep the explicit 355000-byte universal no-growth ceiling so route/domain behavior cannot silently return to the monolith.",
+  sharedEntry?.source === "shared.js"
+    && sharedEntry?.sources?.length === 1
+    && sharedEntry.sources[0] === "shared.js"
+    && sharedEntry.maxUniversalBytes === 355000,
+  "Shared core must retain its current compatibility source and explicit 355000-byte universal no-growth ceiling until the physical fragment split is introduced separately.",
 );
 
 const retiredFiles = [
@@ -86,4 +90,4 @@ for (const file of retiredFiles) {
   }
 }
 
-console.log("Canonical application-core manifest, ordered source-fragment ownership, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
+console.log("Canonical application-core manifest, ordered source-fragment ownership, compatibility aliases, generated equivalence, universal shared-core ceiling, domain ownership, and retired implementation cleanup validation passed.");
