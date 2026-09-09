@@ -40,6 +40,7 @@ invariant(titleFacadeIndex >= 0 && setPageIndex > titleFacadeIndex, "tableTitleF
 includes(tableCore, "function tableTitleForPageOwner(pageName) {", "Canonical Table source must own table-title implementation.");
 includes(tableCore, "__mflTableTitleForPageOwner = tableTitleForPageOwner;", "Table loading must activate the table-title owner.");
 
+// Public Table facades keep stable identities; incremental behavior dispatches behind them instead of replacing those functions.
 for (const [facade, ownerSlot, chunkOwner] of [
   ["buildHeader", "__mflTableBuildHeaderOwner", "tableBuildHeaderOwner"],
   ["applyFilters", "__mflTableApplyFiltersOwner", "tableApplyFiltersOwner"],
