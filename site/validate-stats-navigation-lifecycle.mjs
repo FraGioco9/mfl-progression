@@ -1,7 +1,8 @@
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const source = await Promise.all([
-  readFile(new URL("./modules/core-sources/shared.js", import.meta.url), "utf8"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
   readFile(new URL("./modules/core-sources/evaluation.js", import.meta.url), "utf8"),
   readFile(new URL("./modules/core-sources/mfl-stats.js", import.meta.url), "utf8"),
   readFile(new URL("./modules/core-sources/club.js", import.meta.url), "utf8"),
