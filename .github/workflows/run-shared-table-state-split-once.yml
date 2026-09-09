@@ -1,0 +1,25 @@
+name: Run Shared table-state split once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-table-state-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-table-state-fragment
+      - run: node .github/split-shared-table-state.mjs
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/split-shared-table-state.mjs .github/workflows/run-shared-table-state-split-once.yml
+          git add site/modules/core-source-manifest.js site/modules/core-sources/shared-table-state.js site/modules/core-sources/shared.js
+          git commit -m "Split Shared table navigation state from toast feedback"
+          git push origin HEAD:arch/754-shared-table-state-fragment
