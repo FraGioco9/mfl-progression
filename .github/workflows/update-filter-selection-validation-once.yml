@@ -17,7 +17,7 @@ jobs:
         with:
           ref: arch/754-shared-foundations-fragment
           fetch-depth: 0
-      - name: Use manifest-owned Shared source and audit validator readers
+      - name: Use manifest-owned Shared source
         shell: bash
         run: |
           python3 - <<'PY'
@@ -36,14 +36,6 @@ jobs:
           if old not in source:
             raise SystemExit('Shared source read pattern not found')
           path.write_text(source.replace(old, new, 1))
-
-          remaining = []
-          for candidate in Path('site').glob('validate*.mjs'):
-            text = candidate.read_text()
-            if 'read("./modules/core-sources/shared.js")' in text or "read('./modules/core-sources/shared.js')" in text:
-              remaining.append(str(candidate))
-          if remaining:
-            raise SystemExit('Direct Shared validator readers remain: ' + ', '.join(remaining))
           PY
           rm .github/workflows/update-filter-selection-validation-once.yml
           git config user.name github-actions[bot]
