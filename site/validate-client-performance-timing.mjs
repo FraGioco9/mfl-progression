@@ -14,6 +14,7 @@ for (const token of [
   'window.dispatchEvent(new CustomEvent("mfl:client-timing", { detail: entry }));',
   "const CLIENT_TIMING_ENTRY_LIMIT = 200;",
   'clientPerformance.record("route-transition-start"',
+  'clientPerformance.record("content-commit"',
   'clientPerformance.record("route-transition-complete"',
   'clientPerformance.record("route-visually-settled"',
 ]) {
@@ -43,6 +44,21 @@ invariant(
   "Initial content commit must be recorded before the existing paint boundary, with visually-settled timing only after that boundary.",
 );
 
+const transitionEndStart = bootstrapCore.indexOf("function trackTransitionEnd(token) {");
+const transitionEndStop = bootstrapCore.indexOf("\n    function begin(", transitionEndStart);
+const transitionEnd = bootstrapCore.slice(transitionEndStart, transitionEndStop);
+const spaContentCommit = transitionEnd.indexOf('clientPerformance.record("content-commit"');
+const spaComplete = transitionEnd.indexOf('clientPerformance.record("route-transition-complete"', spaContentCommit);
+const spaSettled = transitionEnd.indexOf('clientPerformance.record("route-visually-settled"', spaComplete);
+invariant(
+  transitionEndStart >= 0 && spaContentCommit >= 0 && spaComplete > spaContentCommit && spaSettled > spaComplete,
+  "SPA route transitions must publish canonical content commit before transition completion and visual settlement.",
+);
+invariant(
+  transitionEnd.includes('source: "navigation-release"'),
+  "SPA content commit must identify canonical navigation release as its source.",
+);
+
 const networkResponse = appEntry.indexOf('source: "network"');
 const legacyDataTiming = appEntry.indexOf('window.dispatchEvent(new CustomEvent("mfl:data-client-timing"', networkResponse);
 invariant(
@@ -57,4 +73,4 @@ invariant(
   "Route performance timing must be emitted from canonical navigation ownership rather than inferred from DOM mutation state.",
 );
 
-console.log("Canonical client performance timing covers bootstrap, core/runtime readiness, data transport sources, initial content commit, and route visual settlement without changing loading ownership.");
+console.log("Canonical client performance timing covers bootstrap, core/runtime readiness, data transport sources, initial and SPA content commit, and route visual settlement without changing loading ownership.");
