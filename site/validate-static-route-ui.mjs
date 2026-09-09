@@ -52,13 +52,13 @@ excludes(indexHtml, ') #myPlayersLockedPage {\n        display: block;', "Opted-
 includes(indexHtml, 'root.dataset.initialLockedPage = initialLockedPage;', "Opted-out first paint must preserve the requested protected-route identity before runtime hydration.");
 includes(indexHtml, 'watchlist: ["Watchlist", "In order to use the watchlist, you need to opt in."]', "Watchlist must render Watchlist-specific opt-out copy at first paint.");
 includes(indexHtml, 'settings: ["Settings", "In order to view settings, you need to opt in."]', "Settings must render Settings-specific opt-out copy at first paint.");
-const setPageStart = coreSource.indexOf('async function setPage(pageName, updateHash = true, options = {}) {');
-invariant(setPageStart >= 0, "Canonical setPage must exist for opted-out route validation.");
+const setPageStart = coreSource.indexOf('async function renderPage(pageName, updateHash = true, options = {}) {');
+invariant(setPageStart >= 0, "Canonical base page renderer must exist for opted-out route validation.");
 const lockedRouteDecision = coreSource.indexOf('const lockedOptOutRoute = (pageName === "myplayers" || pageName === "watchlist" || pageName === "settings") && !hasWalletOptIn();', setPageStart);
 const lockedRouteGuard = coreSource.indexOf('if (lockedOptOutRoute) {', lockedRouteDecision);
 const guardedReplace = coreSource.indexOf('if (!lockedOptOutRoute && options.replaceUrl', lockedRouteDecision);
 const guardedUpdate = coreSource.indexOf('if (!lockedOptOutRoute) {\n    updatePageUrl(pageName', lockedRouteDecision);
-invariant(lockedRouteDecision > setPageStart && lockedRouteGuard > lockedRouteDecision && guardedReplace > lockedRouteDecision && guardedUpdate > lockedRouteDecision, "Opted-out protected routes must preserve the requested refresh URL and reuse one scoped setPage lock decision.");
+invariant(lockedRouteDecision > setPageStart && lockedRouteGuard > lockedRouteDecision && guardedReplace > lockedRouteDecision && guardedUpdate > lockedRouteDecision, "Opted-out protected routes must preserve the requested refresh URL and reuse one scoped base-render lock decision.");
 const optOutStart = coreSource.indexOf("function optOutWallet() {");
 const optOutEnd = optOutStart >= 0 ? coreSource.indexOf("\nfunction ", optOutStart + "function optOutWallet".length) : -1;
 invariant(optOutStart >= 0 && optOutEnd > optOutStart, "Wallet opt-out transition owner must remain in canonical app core.");

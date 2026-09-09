@@ -1,11 +1,12 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
 const [loadingRuntime, sharedCore] = await Promise.all([
   read("./table-loading-runtime.js"),
-  read("./modules/core-sources/shared.js"),
+  Promise.resolve(readCanonicalCoreSource("shared")),
 ]);
 
 const finishStart = loadingRuntime.indexOf("function finishRequest(token) {");
