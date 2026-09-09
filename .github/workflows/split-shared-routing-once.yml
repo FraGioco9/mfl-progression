@@ -28,9 +28,9 @@ jobs:
           manifest_path = Path('site/modules/core-source-manifest.js')
 
           source = shared_path.read_text().replace('\r\n', '\n').replace('\r', '\n')
-          marker = 'let pendingViewTransition = null;'
+          marker = 'function currentNavigationPath() {'
           if source.count(marker) != 1:
-            raise SystemExit(f'Expected one Shared transition boundary, found {source.count(marker)}')
+            raise SystemExit(f'Expected one Shared transition behavior boundary, found {source.count(marker)}')
 
           boundary = source.index(marker)
           routing = source[:boundary].rstrip()
