@@ -110,7 +110,17 @@ function rowForColumns(columns) {
 const browserTestSource = String.raw`(() => {
   "use strict";
 
-  const scenario = new URLSearchParams(window.location.search).get("browser-regression") || "stale";
+  const scenario = window.location.pathname === "/privacy"
+    ? "stale"
+    : window.location.pathname.startsWith("/database/")
+      ? "database"
+      : window.location.pathname.startsWith("/players/")
+        ? "player"
+        : window.location.pathname.startsWith("/watchlist/")
+          ? "watchlist"
+          : window.location.pathname === "/mfl/stats"
+            ? "mflstats"
+            : "unknown";
   const testWallet = "0x1111111111111111";
   const testWatchlistId = "browser-list";
   const expectedPlayerName = "Browser Player";
@@ -301,15 +311,7 @@ const browserTestSource = String.raw`(() => {
     assert(!document.body.classList.contains("loading"), scenario + " left the global loading class active.");
     if (scenario === "database") {
       assert(stateValue.path === "/database/attributes", "Database canonical path is wrong: " + stateValue.path);
-      assert(
-        stateValue.tableText.includes(expectedPlayerName),
-        "Database did not render the fixture player. tableText=" + JSON.stringify(stateValue.tableText)
-          + " rows=" + document.querySelectorAll("#tableBody tr").length
-          + " width=" + window.innerWidth
-          + " dataLoading=" + document.documentElement.classList.contains("mflDataLoading")
-          + " emptyText=" + JSON.stringify(text("#emptyState"))
-          + " emptyHidden=" + hidden("#emptyState"),
-      );
+      assert(stateValue.tableText.includes(expectedPlayerName), "Database did not render the fixture player.");
       assert(stateValue.page === "database", "Database body page owner is wrong: " + stateValue.page);
     } else if (scenario === "player") {
       assert(stateValue.path === "/players/1", "Player canonical path is wrong: " + stateValue.path);
@@ -356,6 +358,7 @@ const browserTestSource = String.raw`(() => {
     const timeline = window.__mflClientPerformance;
     assert(typeof setPage === "function", "Canonical setPage owner is unavailable.");
     assert(timeline && typeof timeline.snapshot === "function", "Client performance timeline is unavailable.");
+    assert(scenario !== "unknown", "Browser regression scenario could not be derived from the route.");
     assertInitialFirstPaint();
     assertInitialTiming(timeline);
 
@@ -754,11 +757,10 @@ try {
   const executable = browserExecutable();
 
   for (const [scenario, path] of regressionScenarios) {
-    const separator = path.includes("?") ? "&" : "?";
-    const url = `http://127.0.0.1:${address.port}${path}${separator}browser-regression=${scenario}`;
+    const url = `http://127.0.0.1:${address.port}${path}`;
     const result = await runChromeRegression(executable, url);
     assert.equal(result.status, "passed");
-    console.log(`Browser routing regression passed: ${result.detail}`);
+    console.log(`Browser routing regression passed: ${scenario}: ${result.detail}`);
   }
 } finally {
   await new Promise((resolvePromise) => server.close(resolvePromise));
