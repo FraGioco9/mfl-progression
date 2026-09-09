@@ -86,7 +86,7 @@ excludes(buildCore, "modules/app-core.js", "The core build must not depend on th
 const sharedCoreManifest = coreSourceByDomain.shared;
 invariant(
   sharedCoreManifest?.source === "shared-foundations.js"
-    && sharedCoreManifest?.sources?.length === 21
+    && sharedCoreManifest?.sources?.length === 22
     && sharedCoreManifest.sources[0] === "shared-foundations.js"
     && sharedCoreManifest.sources[1] === "shared-session.js"
     && sharedCoreManifest.sources[2] === "shared-routing.js"
@@ -107,7 +107,8 @@ invariant(
     && sharedCoreManifest.sources[17] === "shared-wallet-row-classification.js"
     && sharedCoreManifest.sources[18] === "shared-html-escaping.js"
     && sharedCoreManifest.sources[19] === "shared-incremental-routing.js"
-    && sharedCoreManifest.sources[20] === "shared.js"
+    && sharedCoreManifest.sources[20] === "shared-interaction-bindings.js"
+    && sharedCoreManifest.sources[21] === "shared.js"
     && sharedCoreManifest?.runtime === "app-core-runtime.js",
   "Canonical manifest must map the ordered shared core fragments to app-core-runtime.js.",
 );

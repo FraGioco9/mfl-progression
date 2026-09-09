@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 21
+    && sharedEntry?.sources?.length === 22
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -78,9 +78,10 @@ invariant(
     && sharedEntry.sources[17] === "shared-wallet-row-classification.js"
     && sharedEntry.sources[18] === "shared-html-escaping.js"
     && sharedEntry.sources[19] === "shared-incremental-routing.js"
-    && sharedEntry.sources[20] === "shared.js"
+    && sharedEntry.sources[20] === "shared-interaction-bindings.js"
+    && sharedEntry.sources[21] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before watchlist actions before Player display/calculation before Player action facades before generic modal lifecycle before Global Search lifecycle before linked-wallet/MFL row classification before universal HTML escaping before incremental routing/cache/request before global interaction bindings before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -102,6 +103,7 @@ const sharedGlobalSearch = await read("./modules/core-sources/shared-global-sear
 const sharedWalletRowClassification = await read("./modules/core-sources/shared-wallet-row-classification.js");
 const sharedHtmlEscaping = await read("./modules/core-sources/shared-html-escaping.js");
 const sharedIncrementalRouting = await read("./modules/core-sources/shared-incremental-routing.js");
+const sharedInteractionBindings = await read("./modules/core-sources/shared-interaction-bindings.js");
 const sharedRemaining = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -210,11 +212,21 @@ invariant(
   "Shared incremental routing must own canonical route targeting, cache/request coordination, incremental payload application, and reload through the published reload facade.",
 );
 invariant(
-  sharedRemaining.startsWith("let pendingViewButtonPointer = null;")
+  sharedInteractionBindings.startsWith("let pendingViewButtonPointer = null;")
+    && sharedInteractionBindings.includes("function activateViewButton(button) {")
+    && sharedInteractionBindings.includes("viewButtons.forEach((button) => {")
+    && sharedInteractionBindings.includes('document.addEventListener("keydown", (event) => {')
+    && sharedInteractionBindings.includes("navButtons.forEach((button) => {")
+    && sharedInteractionBindings.includes('window.addEventListener("popstate", () => {')
+    && sharedInteractionBindings.replace(/\s*$/, "").endsWith('if (myPlayersOptInButton) {\n  myPlayersOptInButton.addEventListener("click", linkWallet);\n}'),
+  "Shared interaction bindings must own eager view-button, global keyboard/dropdown, navigation, and account interaction wiring.",
+);
+invariant(
+  sharedRemaining.startsWith("function setupChangelogSections() {")
     && !sharedRemaining.includes("function csvEscape")
     && !sharedRemaining.includes("function mflChunkFromPublicData")
     && !sharedRemaining.includes("function progressionDataColumns"),
-  "Remaining Shared behavior must begin at the view-button pointer/interaction boundary and keep unused serialization/data helpers retired.",
+  "Remaining Shared behavior must begin at the Changelog/startup lifecycle boundary and keep unused serialization/data helpers retired.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -236,8 +248,9 @@ invariant(
     && !sharedGlobalSearch.includes("function linkedWalletAddressesForOwnedPlayers")
     && !sharedWalletRowClassification.includes("function escapeHtml")
     && !sharedHtmlEscaping.includes("function clubRouteTargetFromPath")
-    && !sharedIncrementalRouting.includes("let pendingViewButtonPointer"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, and incremental routing must not absorb later ownership domains.",
+    && !sharedIncrementalRouting.includes("let pendingViewButtonPointer")
+    && !sharedInteractionBindings.includes("function setupChangelogSections"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, generic modal lifecycle, Global Search lifecycle, wallet-row classification, HTML escaping, incremental routing, and global interaction bindings must not absorb later ownership domains.",
 );
 
 const retiredFiles = [

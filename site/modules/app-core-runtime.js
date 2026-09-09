@@ -7207,7 +7207,6 @@ if (myPlayersOptInButton) {
   myPlayersOptInButton.addEventListener("click", linkWallet);
 }
 
-
 function setupChangelogSections() {
   const list = document.querySelector(".changelogList");
   if (!list || list.dataset.sectioned === "true") {
