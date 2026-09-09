@@ -46,7 +46,7 @@ excludes(buildCore, "app-core-route-chunks", "The canonical build must not depen
 excludes(buildCore, "app-core-build-normalizer", "The canonical build must not depend on the retired build normalizer.");
 invariant(
   coreSourceByDomain.shared?.source === "shared-foundations.js"
-    && coreSourceByDomain.shared?.sources?.length === 23
+    && coreSourceByDomain.shared?.sources?.length === 24
     && coreSourceByDomain.shared.sources[1] === "shared-session.js"
     && coreSourceByDomain.shared.sources[2] === "shared-routing.js"
     && coreSourceByDomain.shared.sources[3] === "shared-transitions.js"
@@ -68,7 +68,8 @@ invariant(
     && coreSourceByDomain.shared.sources[19] === "shared-incremental-routing.js"
     && coreSourceByDomain.shared.sources[20] === "shared-interaction-bindings.js"
     && coreSourceByDomain.shared.sources[21] === "shared-startup-lifecycle.js"
-    && coreSourceByDomain.shared.sources[22] === "shared.js"
+    && coreSourceByDomain.shared.sources[22] === "shared-layout-center.js"
+    && coreSourceByDomain.shared.sources[23] === "shared.js"
     && coreSourceByDomain.shared?.runtime === "app-core-runtime.js",
   "The core manifest must generate the shared runtime from its ordered canonical fragments.",
 );
