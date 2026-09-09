@@ -1,12 +1,11 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
-const [runtime, shared] = await Promise.all([
-  read("./global-search-runtime.js"),
-  read("./modules/core-sources/shared.js"),
-]);
+const runtime = await read("./global-search-runtime.js");
+const shared = readCanonicalCoreSource("shared");
 const start = runtime.indexOf("function onAgentSearchResultClickCapture(event)");
 const end = runtime.indexOf("function onSearchResultClickCapture(event)", start);
 const agentActivation = start >= 0 && end > start ? runtime.slice(start, end) : "";
