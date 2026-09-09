@@ -2,10 +2,11 @@ import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
-const [dataApi, dataAuth, dataPage, httpCache] = await Promise.all([
+const [dataApi, dataAuth, dataPage, dataCachePolicy, httpCache] = await Promise.all([
   read("./api/data.js"),
   read("./api/_data-auth.js"),
   read("./api/_data-page.js"),
+  read("./api/_data-cache-policy.js"),
   read("./api/_http-cache.js"),
 ]);
 
@@ -22,8 +23,16 @@ for (const mode of [
   invariant(dataApi.includes(`  "${mode}",`), `Public SQLite snapshot mode ${mode} must remain explicitly cache-classified.`);
 }
 invariant(
-  !dataApi.slice(dataApi.indexOf("const PUBLIC_SNAPSHOT_MODES"), dataApi.indexOf("function publicSnapshotEtag")).includes('"page"'),
-  "Paged data must not enter the public snapshot cache because it can include private access and volatile marketplace state.",
+  !dataApi.slice(dataApi.indexOf("const PUBLIC_SNAPSHOT_MODES"), dataApi.indexOf("function publicSnapshotEtag")).includes('"page"')
+    && dataApi.includes('const publicPageSnapshot = mode === "page" && publicPageSnapshotEligible({')
+    && dataApi.includes("requiresWallet: walletRequired,"),
+  "Paged data must use the explicit safe-page classifier instead of becoming unconditionally public-cacheable.",
+);
+invariant(
+  dataCachePolicy.includes("if (requiresWallet) return false;")
+    && dataCachePolicy.includes("return !pageRequestEmbedsMarketplace(query);")
+    && dataCachePolicy.includes("marketplaceRequiredForPage(scope, sortKey, parsedRules(query.filters))"),
+  "Public paged-data reuse must reject wallet-dependent and marketplace-embedded requests through the canonical page marketplace policy.",
 );
 invariant(
   dataApi.includes('const { snapshotEtag, requestMatchesEtag } = require("./_http-cache");')
@@ -36,8 +45,12 @@ invariant(
   "Snapshot hashing and If-None-Match parsing must stay centralized in the HTTP cache helper.",
 );
 invariant(
-  dataApi.indexOf("if (etag && requestMatchesEtag(request, etag))") < dataApi.indexOf("signedWalletFromRequest(request)"),
-  "Conditional public snapshot hits must return before wallet proof work.",
+  dataApi.indexOf("if (etag && requestMatchesEtag(request, etag))") < dataApi.indexOf("if (walletRequired)"),
+  "Conditional safe public snapshot hits must return before wallet proof work.",
+);
+invariant(
+  dataApi.indexOf("if (etag && requestMatchesEtag(request, etag))") < dataApi.indexOf("pagedData(pageRequest, signedWallet, fullAccess, ownedProgression, timings)"),
+  "Conditional safe public page hits must return before SQLite page work.",
 );
 invariant(
   dataApi.includes('if (mode !== "page") return false;')
@@ -53,7 +66,7 @@ invariant(
 invariant(
   dataAuth.includes('response.setHeader("CDN-Cache-Control", "no-store, max-age=0");')
     && dataAuth.includes('response.setHeader("Vercel-CDN-Cache-Control", "no-store, max-age=0");'),
-  "The first public-cache step must remain browser-revalidation-only until CDN freshness has a separate contract.",
+  "Public reuse must remain browser-revalidation-only until CDN freshness has a separate contract.",
 );
 invariant(
   dataApi.includes("sendNotModified(response, startedAt, timings, publicCacheOptions);")
@@ -87,4 +100,4 @@ invariant(
   "Measured JSON responses must not serialize the same payload a second time through response.json().",
 );
 
-console.log("Public data read cache, wallet-proof fast path, and backend phase timing validation passed.");
+console.log("Public data read cache, safe page revalidation, wallet-proof fast path, and backend phase timing validation passed.");
