@@ -1,28 +1,19 @@
 import { invariant } from "./validation/assertions.mjs";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { readFile } from "node:fs/promises";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
-const [runtime, styles, responsive, controls, core, appEntry, walletPreferencesApi, dataViews] = await Promise.all([
+const [runtime, styles, responsive, controls, appEntry, walletPreferencesApi, dataViews] = await Promise.all([
   read("./global-search-runtime.js"),
   read("./styles-base.css"),
   read("./responsive.css"),
   read("./controls.css"),
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
   read("./modules/app-entry.js"),
   read("./api/wallet-preferences.js"),
   read("./api/_data-views.js"),
 ]);
+const core = readCombinedCanonicalCoreSource();
 
 for (const required of [
   "const MAX_GLOBAL_SEARCH_RESULTS = 10;",
