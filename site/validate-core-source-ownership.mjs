@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 8
+    && sharedEntry?.sources?.length === 9
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -65,9 +65,10 @@ invariant(
     && sharedEntry.sources[4] === "shared-page-lifecycle.js"
     && sharedEntry.sources[5] === "shared-home-summary.js"
     && sharedEntry.sources[6] === "shared-table-state.js"
-    && sharedEntry.sources[7] === "shared.js"
+    && sharedEntry.sources[7] === "shared-toast-core.js"
+    && sharedEntry.sources[8] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -76,6 +77,7 @@ const sharedTransitions = await read("./modules/core-sources/shared-transitions.
 const sharedPageLifecycle = await read("./modules/core-sources/shared-page-lifecycle.js");
 const sharedHomeSummary = await read("./modules/core-sources/shared-home-summary.js");
 const sharedTableState = await read("./modules/core-sources/shared-table-state.js");
+const sharedToastCore = await read("./modules/core-sources/shared-toast-core.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -115,8 +117,13 @@ invariant(
   "Shared table state must own table navigation/view/sort-session behavior through canonical default table-page state.",
 );
 invariant(
-  sharedNavigation.startsWith("function scheduleToastHide(toast) {"),
-  "Remaining Shared behavior must begin at the canonical toast-presentation boundary.",
+  sharedToastCore.startsWith("function scheduleToastHide(toast) {")
+    && sharedToastCore.replace(/\s*$/, "").endsWith("scheduleToastHide(toast);\n  }\n}"),
+  "Shared toast core must own generic toast lifecycle/presentation through canonical showToast().",
+);
+invariant(
+  sharedNavigation.startsWith("function showWatchlistToast("),
+  "Remaining Shared behavior must begin at the watchlist-specific toast boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -125,8 +132,9 @@ invariant(
     && !sharedTransitions.includes("function resetPageScroll")
     && !sharedPageLifecycle.includes("function updateStatusDate")
     && !sharedHomeSummary.includes("function tablePageKey")
-    && !sharedTableState.includes("function scheduleToastHide"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, and table state must not absorb later ownership domains.",
+    && !sharedTableState.includes("function scheduleToastHide")
+    && !sharedToastCore.includes("function showWatchlistToast"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, and generic toast core must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
