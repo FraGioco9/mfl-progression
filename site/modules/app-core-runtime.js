@@ -1976,7 +1976,12 @@ function restoreSavedTableState() {
     : undefined;
 }
 
-function applyFilters() {
+function applyFilters(options = {}) {
+  if (state.incrementalMode && !state.incrementalApplying && !options.localOnly) {
+    state.page = 1;
+    void reloadIncrementalPage(1, { save: options.save !== false, loadingMode: "blank" });
+    return undefined;
+  }
   return typeof __mflTableApplyFiltersOwner === "function"
     ? __mflTableApplyFiltersOwner.apply(this, arguments)
     : undefined;
@@ -2036,13 +2041,21 @@ function openSelectedPlayerLinks() {
     : undefined;
 }
 
-function setView() {
+function applyTableViewOwner() {
   return typeof __mflTableSetViewOwner === "function"
     ? __mflTableSetViewOwner.apply(this, arguments)
     : undefined;
 }
 
-async function setPage(pageName, updateHash = true, options = {}) {
+function setView() {
+  const pageName = state.currentPage;
+  if (tablePages.has(pageName) || pageName === "club") {
+    return setIncrementalView.apply(this, arguments);
+  }
+  return applyTableViewOwner.apply(this, arguments);
+}
+
+async function renderPage(pageName, updateHash = true, options = {}) {
   const lockedOptOutRoute = (pageName === "myplayers" || pageName === "watchlist" || pageName === "settings") && !hasWalletOptIn();
   resetTableSortSession(pageName, options);
   if (!pageNavigationIsCurrent(options)) return null;
@@ -2050,7 +2063,7 @@ async function setPage(pageName, updateHash = true, options = {}) {
   if (plainEvaluationEntry) preparePlainEvaluationReentry();
   if (pageName === "home") void loadSummary();
   if (pageName === "mfl" && normalizeViewForPage(options.view, "mfl") === "stats") {
-    await setPage("mflstats", updateHash, { ...options, replaceUrl: options.replaceUrl || "/mfl/stats" });
+    await renderPage("mflstats", updateHash, { ...options, replaceUrl: options.replaceUrl || "/mfl/stats" });
     return;
   }
 
@@ -2312,6 +2325,10 @@ async function setPage(pageName, updateHash = true, options = {}) {
   }
 
   syncHomeLoginButton();
+}
+
+async function setPage(pageName, updateHash = true, options = {}) {
+  return setIncrementalPage.call(this, pageName, updateHash, options);
 }
 
 function updateStatusDate(generatedAt) {
@@ -7398,11 +7415,6 @@ function syncLayoutCenter() {
 })();
 
 /* Session-cached incremental route data and destination-first loading */
-(() => {
-  const originalApplyFilters = applyFilters;
-  const originalSetPage = setPage;
-  const originalSetView = setView;
-
   function filterRulesForLoading(pageName, savedState, viewName) {
     const normalizedView = normalizeViewForPage(viewName || savedState?.view, pageName);
     const columns = (pageName === "mfl" || pageName === "agents")
@@ -7580,7 +7592,7 @@ function syncLayoutCenter() {
     state.dataAccess = currentDataAccess(pageName);
     state.incrementalApplying = true;
     try {
-      const result = await originalSetPage.call(this, pageName, false, {
+      const result = await renderPage.call(this, pageName, false, {
         ...options,
         replaceUrl: "",
         skipNavigationLoading: true,
@@ -7596,20 +7608,10 @@ function syncLayoutCenter() {
   }
 }
 
-  applyFilters = function applyFiltersWithIncrementalData(options = {}) {
-    if (!state.incrementalMode || state.incrementalApplying || options.localOnly) {
-      return originalApplyFilters.apply(this, arguments);
-    }
-
-    state.page = 1;
-    void reloadIncrementalPage(1, { save: options.save !== false, loadingMode: "blank" });
-    return undefined;
-  };
-
-  setView = async function setIncrementalView(viewName) {
+const setIncrementalView = async function setIncrementalView(viewName) {
     const pageName = state.currentPage;
     if (!tablePages.has(pageName) && pageName !== "club") {
-      return originalSetView.apply(this, arguments);
+      return applyTableViewOwner.apply(this, arguments);
     }
     const nextView = normalizeViewForPage(viewName, pageName);
     if (!allowedViewsForPage(pageName).includes(nextView)) return;
@@ -7622,7 +7624,7 @@ function syncLayoutCenter() {
       ...(clubTarget?.clubId ? { clubId: clubTarget.clubId } : {}),
     };
     const route = incrementalRouteTarget(pageName, routeOptions);
-    if (!route) return originalSetView.call(this, nextView);
+    if (!route) return applyTableViewOwner.call(this, nextView);
 
     const stagedTransition = takeStagedViewTransition(pageName, nextView);
     const pageKey = tablePageKey();
@@ -7675,7 +7677,7 @@ function syncLayoutCenter() {
         if (!payload) return;
         state.incrementalApplying = true;
         try {
-          return await originalSetView.call(this, nextView);
+          return await applyTableViewOwner.call(this, nextView);
         } finally {
           state.incrementalApplying = false;
         }
@@ -7699,7 +7701,7 @@ function syncLayoutCenter() {
     return withInteractionBusy(loadAndRender, Reflect.get(window, "__mflInteractionBusy")?.reason);
 };
 
-  setPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {
+  const setIncrementalPage = async function setIncrementalPage(pageName, updateHash = true, options = {}) {
     resetTableSortSession(pageName, options);
     const navigationUpdatesHistory = options.__mflNavigationUpdatesHistory ?? updateHash;
     if (!options.skipNavigationTransition) {
@@ -7734,7 +7736,7 @@ function syncLayoutCenter() {
       });
       if (!route) {
         state.incrementalMode = false;
-        return originalSetPage.call(this, "mflstats", false, {
+        return renderPage.call(this, "mflstats", false, {
           ...navigationOptions,
           replaceUrl: "",
           view: "stats",
@@ -7753,7 +7755,7 @@ function syncLayoutCenter() {
       state.dataAccess = currentDataAccess(pageName);
       state.incrementalApplying = true;
       try {
-        return await originalSetPage.call(this, "mflstats", false, {
+        return await renderPage.call(this, "mflstats", false, {
           ...options,
           replaceUrl: "",
           view: "stats",
@@ -7803,7 +7805,7 @@ function syncLayoutCenter() {
     if (!route) {
       window.__mflTableLoadingRuntime?.finishRequest?.(progressionLoadingRequestToken);
       state.incrementalMode = false;
-      return originalSetPage.call(this, pageName, updateHash, navigationOptions);
+      return renderPage.call(this, pageName, updateHash, navigationOptions);
     }
 
     if (!shellFirst) {
@@ -7838,7 +7840,7 @@ function syncLayoutCenter() {
     return withInteractionBusy(loadAndRender);
   };
 
-  window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage(pageName, options = {}) {
+  const loadIncrementalRoutePage = async function loadIncrementalRoutePage(pageName, options = {}) {
     const route = prepareIncrementalRoute(pageName, options);
     if (!route) {
       return false;
@@ -7858,7 +7860,7 @@ function syncLayoutCenter() {
       try {
         updateViewButtons();
         buildHeader();
-        if (!clubPage) originalApplyFilters.call(this, { save: false });
+        if (!clubPage) applyFilters.call(this, { save: false });
       } finally {
         state.incrementalApplying = false;
       }
@@ -7871,7 +7873,8 @@ function syncLayoutCenter() {
 
     return withInteractionBusy(loadAndRender, Reflect.get(window, "__mflInteractionBusy")?.reason);
   };
-})();
+
+window.mflLoadIncrementalRoutePage = loadIncrementalRoutePage;
 
 ;(() => {
   function tableHeaderContext() {
