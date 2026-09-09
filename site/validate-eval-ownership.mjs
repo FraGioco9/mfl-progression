@@ -217,7 +217,7 @@ const [
   walletCore,
   watchlistCore,
 ] = await Promise.all([
-  read("./modules/core-sources/shared.js"),
+  readCombinedCanonicalCoreSource(),
   read("./modules/core-sources/evaluation.js"),
   read("./modules/core-sources/mfl-stats.js"),
   read("./modules/core-sources/club.js"),
