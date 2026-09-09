@@ -6156,6 +6156,7 @@ function renderPlayerPage(playerId) {
   }
   return owner(playerId);
 }
+
 function showModal(modal) {
   if (!modal) {
     return;
