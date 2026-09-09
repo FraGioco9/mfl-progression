@@ -12,8 +12,8 @@ const generatedAt = "2026-09-09T00:00:00.000Z";
 const testWatchlistId = "browser-list";
 const testPlayer = Object.freeze({
   player_id: 1,
-  wallet_address: "0xff8d2bbed8164db0",
-  wallet_name: "MFL",
+  wallet_address: "0x2222222222222222",
+  wallet_name: "Browser Agent",
   name: "Browser Player",
   listing_price: null,
   positions: "ST",
