@@ -1,0 +1,44 @@
+name: Update Listing validation once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-foundations-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-foundations-fragment
+          fetch-depth: 0
+      - name: Use canonical combined core source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('site/validate-listing-column.mjs')
+          source = path.read_text()
+          anchor = 'import { fileURLToPath } from "node:url";\n'
+          helper = 'import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";\n'
+          if helper not in source:
+            if anchor not in source:
+              raise SystemExit('URL import anchor not found')
+            source = source.replace(anchor, anchor + helper, 1)
+          old = '''const core = [\n  "site/modules/core-sources/shared.js",\n  "site/modules/core-sources/evaluation.js",\n  "site/modules/core-sources/mfl-stats.js",\n  "site/modules/core-sources/club.js",\n  "site/modules/core-sources/settings.js",\n  "site/modules/core-sources/player.js",\n  "site/modules/core-sources/table.js",\n  "site/modules/core-sources/wallet.js",\n  "site/modules/core-sources/watchlist.js",\n].map(read).join("\\n");'''
+          new = 'const core = readCombinedCanonicalCoreSource();'
+          if old not in source:
+            raise SystemExit('Listing core assembly pattern not found')
+          path.write_text(source.replace(old, new, 1))
+          PY
+          rm .github/workflows/update-listing-validation-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/validate-listing-column.mjs .github/workflows/update-listing-validation-once.yml
+          git commit -m "Use canonical core source in Listing validation"
+          git push origin HEAD:arch/754-shared-foundations-fragment
