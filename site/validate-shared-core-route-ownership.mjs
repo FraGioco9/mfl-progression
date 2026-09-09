@@ -1,10 +1,11 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 const hasFunction = (source, name) => new RegExp(`(?:async\\s+)?function\\s+${name}\\s*\\(`).test(source);
 
-const shared = await read("./modules/core-sources/shared.js");
+const shared = await readCanonicalCoreSource("shared");
 const chunks = Object.freeze({
   evaluation: await read("./modules/core-sources/evaluation.js"),
   settings: await read("./modules/core-sources/settings.js"),
