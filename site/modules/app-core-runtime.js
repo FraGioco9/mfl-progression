@@ -8300,6 +8300,7 @@ Reflect.set(window, "__mflSetPageRouteOwner", setPageWithRouteRuntime);
     ensureEvaluationRecentStateHydrated,
   });
 })();
+
 window.__mflMarkApplicationCoreLoaded?.();
 
 window.__mflAppStartPromise = (async () => {
