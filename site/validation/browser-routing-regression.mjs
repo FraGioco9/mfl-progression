@@ -90,7 +90,7 @@ const browserTestSource = String.raw`(() => {
       assert(staleResult === null, "Superseded transition did not resolve as stale.");
       assert(currentResult === "current", "Latest transition did not complete normally.");
       assert(staleCommitted === false, "Superseded transition committed after a newer route won.");
-      assert(window.location.pathname === "/privacy", `Expected /privacy, got ${window.location.pathname}.`);
+      assert(window.location.pathname === "/privacy", "Expected /privacy, got " + window.location.pathname + ".");
       assert(document.documentElement.dataset.browserRouteCommit === "privacy", "Latest route content did not remain authoritative.");
 
       const recentEntries = timeline.snapshot().filter((entry) => entry.sequence > baselineSequence);
@@ -104,9 +104,9 @@ const browserTestSource = String.raw`(() => {
       assert(completeIndex > commitIndex, "Route completion timing must follow content commit.");
       assert(settledIndex > completeIndex, "Visually-settled timing must follow route completion.");
       assert(recentEntries[commitIndex]?.detail?.source === "navigation-release", "SPA content commit has the wrong canonical source.");
-      assert(errors.length === 0, `Console/runtime errors occurred: ${errors.join(" | ")}`);
+      assert(errors.length === 0, "Console/runtime errors occurred: " + errors.join(" | "));
 
-      finish("passed", `stale-result=null; current-result=current; phases=${phases.join(",")}`);
+      finish("passed", "stale-result=null; current-result=current; phases=" + phases.join(","));
     } catch (error) {
       finish("failed", String(error?.stack || error));
     }
