@@ -1,6 +1,7 @@
 import { coreSourceManifest } from "./modules/core-source-manifest.js";
 import { readValidationTextSync } from "./validation-text.mjs";
 
+// Validators must consume manifest-assembled domains whenever behavior can cross lexical fragments.
 function readCanonicalEntrySource(entry) {
   return entry.sources
     .map((source) => readValidationTextSync(`./modules/core-sources/${source}`, import.meta.url).replace(/\s*$/, ""))
