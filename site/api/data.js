@@ -7,6 +7,7 @@ const {
   sendNotModified,
 } = require("./_data-auth");
 const { getGeneratedAt } = require("./_database");
+const { publicPageSnapshotEligible } = require("./_data-cache-policy");
 const { snapshotEtag, requestMatchesEtag } = require("./_http-cache");
 const { pagedData } = require("./_data-page");
 const {
@@ -62,7 +63,18 @@ module.exports = async function handler(request, response) {
       || (["agent", "club"].includes(scope) && ["current", "all"].includes(view));
     const publicWatchlistProgression = scope === "watchlist"
       && ["current", "all"].includes(view);
-    const publicSnapshot = PUBLIC_SNAPSHOT_MODES.has(mode);
+    const walletRequired = requiresSignedWallet(
+      mode,
+      scope,
+      accessMode,
+      publicEntityProgression,
+      publicWatchlistProgression,
+    );
+    const publicPageSnapshot = mode === "page" && publicPageSnapshotEligible({
+      query,
+      requiresWallet: walletRequired,
+    });
+    const publicSnapshot = PUBLIC_SNAPSHOT_MODES.has(mode) || publicPageSnapshot;
     const etag = publicSnapshot ? publicSnapshotEtag(request) : "";
     const publicCacheOptions = publicSnapshot
       ? { cacheControl: PUBLIC_REVALIDATE_CACHE_CONTROL, etag }
@@ -74,7 +86,7 @@ module.exports = async function handler(request, response) {
     }
 
     let signedWallet = "";
-    if (requiresSignedWallet(mode, scope, accessMode, publicEntityProgression, publicWatchlistProgression)) {
+    if (walletRequired) {
       const authStartedAt = performance.now();
       signedWallet = await signedWalletFromRequest(request);
       timings.auth = performance.now() - authStartedAt;
