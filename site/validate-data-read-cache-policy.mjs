@@ -2,10 +2,11 @@ import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
-const [dataApi, dataAuth, dataPage] = await Promise.all([
+const [dataApi, dataAuth, dataPage, httpCache] = await Promise.all([
   read("./api/data.js"),
   read("./api/_data-auth.js"),
   read("./api/_data-page.js"),
+  read("./api/_http-cache.js"),
 ]);
 
 for (const mode of [
@@ -25,8 +26,14 @@ invariant(
   "Paged data must not enter the public snapshot cache because it can include private access and volatile marketplace state.",
 );
 invariant(
-  dataApi.includes('const identity = `${getGeneratedAt()}\\n${String(request.url || "")}`;'),
-  "Public snapshot ETags must combine the database generation with the exact request URL.",
+  dataApi.includes('const { snapshotEtag, requestMatchesEtag } = require("./_http-cache");')
+    && dataApi.includes('return snapshotEtag(getGeneratedAt(), String(request.url || ""));'),
+  "Public snapshot ETags must combine the database generation with the exact request URL through the canonical HTTP cache owner.",
+);
+invariant(
+  httpCache.includes('createHash("sha256")')
+    && httpCache.includes("function requestMatchesEtag(request, etag)"),
+  "Snapshot hashing and If-None-Match parsing must stay centralized in the HTTP cache helper.",
 );
 invariant(
   dataApi.indexOf("if (etag && requestMatchesEtag(request, etag))") < dataApi.indexOf("signedWalletFromRequest(request)"),
