@@ -1,24 +1,15 @@
 import { invariant, includes, excludes } from "./validation/assertions.mjs";
+import { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
 const read = (path) => readValidationText(path, import.meta.url);
 
-const [bootstrap, staticUi, core, clubCore] = await Promise.all([
+const [bootstrap, staticUi, clubCore] = await Promise.all([
   read("./bootstrap.js"),
   read("./static-ui-runtime.js"),
-  Promise.all([
-    read("./modules/core-sources/shared.js"),
-    read("./modules/core-sources/evaluation.js"),
-    read("./modules/core-sources/mfl-stats.js"),
-    read("./modules/core-sources/club.js"),
-    read("./modules/core-sources/settings.js"),
-    read("./modules/core-sources/player.js"),
-    read("./modules/core-sources/table.js"),
-    read("./modules/core-sources/wallet.js"),
-    read("./modules/core-sources/watchlist.js"),
-  ]).then((parts) => parts.join("\n")),
   read("./modules/app-core-club-runtime.js"),
 ]);
+const core = readCombinedCanonicalCoreSource();
 
 includes(bootstrap, "primeViewButtons(normalizedPage, view);", "Bootstrap must keep priming the destination view set before data loading.");
 includes(core, "window.__mflStaticUiRuntime?.syncTableViews?.(pageName, activeView);", "The application core must keep the shared static UI runtime as the table view-button owner.");
