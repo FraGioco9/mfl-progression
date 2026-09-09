@@ -57,7 +57,7 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 12
+    && sharedEntry?.sources?.length === 13
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
     && sharedEntry.sources[2] === "shared-routing.js"
@@ -69,9 +69,10 @@ invariant(
     && sharedEntry.sources[8] === "shared-personal-state.js"
     && sharedEntry.sources[9] === "shared-data-search.js"
     && sharedEntry.sources[10] === "shared-evaluation-lifecycle.js"
-    && sharedEntry.sources[11] === "shared.js"
+    && sharedEntry.sources[11] === "shared-player-first-paint.js"
+    && sharedEntry.sources[12] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions before page lifecycle before Home summary before table state before generic toast core before personal state before data/search before Evaluation lifecycle before Player first-paint/navigation before remaining shared behavior and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
@@ -84,6 +85,7 @@ const sharedToastCore = await read("./modules/core-sources/shared-toast-core.js"
 const sharedPersonalState = await read("./modules/core-sources/shared-personal-state.js");
 const sharedDataSearch = await read("./modules/core-sources/shared-data-search.js");
 const sharedEvaluationLifecycle = await read("./modules/core-sources/shared-evaluation-lifecycle.js");
+const sharedPlayerFirstPaint = await read("./modules/core-sources/shared-player-first-paint.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -143,8 +145,13 @@ invariant(
   "Shared Evaluation lifecycle must own eager Evaluation settings/search/readiness through the canonical renderEvaluationPage facade.",
 );
 invariant(
-  sharedNavigation.startsWith("function playerFirstPaintKnownValues(row) {"),
-  "Remaining Shared behavior must begin at the Player first-paint/navigation boundary.",
+  sharedPlayerFirstPaint.startsWith("function playerFirstPaintKnownValues(row) {")
+    && sharedPlayerFirstPaint.replace(/\s*$/, "").endsWith('setPage("player", true, { playerId: key, __mflPlayerFirstPaintContext: pendingContext });\n}'),
+  "Shared Player first-paint/navigation must own cached context construction through the canonical openPlayerPage facade.",
+);
+invariant(
+  sharedNavigation.startsWith("function removePlayerIdFromAllWatchlists(playerId) {"),
+  "Remaining Shared behavior must begin at the watchlist mutation boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
@@ -157,8 +164,9 @@ invariant(
     && !sharedToastCore.includes("function showWatchlistToast")
     && !sharedPersonalState.includes("function formatCount")
     && !sharedDataSearch.includes("const DEFAULT_EVALUATION_MFL_PER_USD")
-    && !sharedEvaluationLifecycle.includes("function playerFirstPaintKnownValues"),
-  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, and Evaluation lifecycle must not absorb later ownership domains.",
+    && !sharedEvaluationLifecycle.includes("function playerFirstPaintKnownValues")
+    && !sharedPlayerFirstPaint.includes("function removePlayerIdFromAllWatchlists"),
+  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, and Player first-paint/navigation must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
