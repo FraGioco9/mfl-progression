@@ -1,0 +1,96 @@
+name: Issue 754 Shared modal lifecycle split
+
+on:
+  push:
+    branches:
+      - arch/754-shared-modal-lifecycle
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-modal-lifecycle
+          fetch-depth: 0
+      - name: Apply dependency-closed Shared split
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          def replace_once(path, old, new):
+              file = Path(path)
+              text = file.read_text()
+              count = text.count(old)
+              if count != 1:
+                  raise SystemExit(f"{path}: expected one replacement, found {count}: {old!r}")
+              file.write_text(text.replace(old, new, 1))
+
+          shared_path = Path("site/modules/core-sources/shared.js")
+          fragment_path = Path("site/modules/core-sources/shared-modal-lifecycle.js")
+          shared = shared_path.read_text()
+          boundary = "async function openSearch() {"
+          boundary_index = shared.find(boundary)
+          if boundary_index < 0:
+              raise SystemExit("openSearch boundary not found")
+          expected_fragment = shared[:boundary_index].rstrip()
+          actual_fragment = fragment_path.read_text().rstrip()
+          if actual_fragment != expected_fragment:
+              raise SystemExit("shared-modal-lifecycle.js does not exactly match the canonical Shared prefix")
+          shared_path.write_text(shared[boundary_index:])
+
+          replace_once(
+              "site/modules/core-source-manifest.js",
+              '"shared-player-actions.js", "shared.js"',
+              '"shared-player-actions.js", "shared-modal-lifecycle.js", "shared.js"',
+          )
+
+          for validator, prefix in [
+              ("site/validate.mjs", "sharedCoreManifest"),
+              ("site/validate-club-route-core.mjs", "coreSourceByDomain.shared"),
+          ]:
+              replace_once(validator, f"{prefix}?.sources?.length === 16", f"{prefix}?.sources?.length === 17")
+              replace_once(
+                  validator,
+                  f'    && {prefix}.sources[15] === "shared.js"',
+                  f'    && {prefix}.sources[15] === "shared-modal-lifecycle.js"\n    && {prefix}.sources[16] === "shared.js"',
+              )
+
+          ownership = "site/validate-core-source-ownership.mjs"
+          replace_once(ownership, "sharedEntry?.sources?.length === 16", "sharedEntry?.sources?.length === 17")
+          replace_once(
+              ownership,
+              '    && sharedEntry.sources[15] === "shared.js"',
+              '    && sharedEntry.sources[15] === "shared-modal-lifecycle.js"\n    && sharedEntry.sources[16] === "shared.js"',
+          )
+          replace_once(
+              ownership,
+              "before Player action facades before remaining shared behavior",
+              "before Player action facades before generic modal lifecycle before remaining shared behavior",
+          )
+          replace_once(
+              ownership,
+              'const sharedPlayerActions = await read("./modules/core-sources/shared-player-actions.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+              'const sharedPlayerActions = await read("./modules/core-sources/shared-player-actions.js");\nconst sharedModalLifecycle = await read("./modules/core-sources/shared-modal-lifecycle.js");\nconst sharedNavigation = await read("./modules/core-sources/shared.js");',
+          )
+          replace_once(
+              ownership,
+              'invariant(\n  sharedNavigation.startsWith("function showModal(modal) {"),\n  "Remaining Shared behavior must begin at the generic modal lifecycle boundary.",\n);',
+              'invariant(\n  sharedModalLifecycle.startsWith("function showModal(modal) {")\n    && sharedModalLifecycle.replace(/\\s*$/, "").endsWith("  pointerStartedOnBackdrop = false;\\n  });\\n}"),\n  "Shared modal lifecycle must own generic show/hide transitions and drag-safe backdrop closing.",\n);\ninvariant(\n  sharedNavigation.startsWith("async function openSearch() {"),\n  "Remaining Shared behavior must begin at the Global Search lifecycle boundary.",\n);',
+          )
+          replace_once(
+              ownership,
+              '    && !sharedPlayerDisplay.includes("async function copyPlayerId")\n    && !sharedPlayerActions.includes("function showModal"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, and Player action facades must not absorb later ownership domains.",',
+              '    && !sharedPlayerDisplay.includes("async function copyPlayerId")\n    && !sharedPlayerActions.includes("function showModal")\n    && !sharedModalLifecycle.includes("async function openSearch"),\n  "Shared foundations, session, routing, transitions, page lifecycle, Home summary, table state, generic toast core, personal state, data/search, Evaluation lifecycle, Player first-paint/navigation, watchlist actions, Player display/calculation, Player action facades, and generic modal lifecycle must not absorb later ownership domains.",',
+          )
+          PY
+          rm .github/workflows/754-split-modal-lifecycle.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git diff --cached --check
+          git commit -m "Extract Shared modal lifecycle"
+          git push origin HEAD:arch/754-shared-modal-lifecycle
