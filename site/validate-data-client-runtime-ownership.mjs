@@ -1,4 +1,5 @@
 import { readdir, readFile } from "node:fs/promises";
+import { coreSourceManifest } from "./modules/core-source-manifest.js";
 
 const siteRoot = new URL("./", import.meta.url);
 const MIGRATED_RUNTIMES = Object.freeze([
@@ -9,21 +10,12 @@ const MIGRATED_RUNTIMES = Object.freeze([
   "marketplace-overlay-runtime.js",
   "nationality-filter-options-runtime.js",
 ]);
-const CORE_SOURCE_NAMES = Object.freeze([
-  "shared.js",
-  "evaluation.js",
-  "mfl-stats.js",
-  "club.js",
-  "settings.js",
-  "player.js",
-  "table.js",
-  "wallet.js",
-  "watchlist.js",
-]);
+// Follow the manifest so transport ownership remains complete as canonical cores are split into lexical fragments.
+const CORE_SOURCE_NAMES = Object.freeze([...new Set(coreSourceManifest.flatMap(({ sources }) => sources))]);
 const MIGRATED_CORE_SOURCES = Object.freeze([
   "club.js",
   "evaluation.js",
-  "shared.js",
+  "shared-incremental-routing.js",
   "table.js",
   "wallet.js",
 ]);
