@@ -222,7 +222,7 @@ invariant(
 );
 
 const incrementalPageStart = appCoreSource.indexOf("setPage = async function setIncrementalPage(");
-const incrementalPageEnd = appCoreSource.indexOf("function divisionInfo(", incrementalPageStart);
+const incrementalPageEnd = appCoreSource.indexOf("window.mflLoadIncrementalRoutePage = async function loadIncrementalRoutePage", incrementalPageStart);
 const incrementalPageSource = appCoreSource.slice(incrementalPageStart, incrementalPageEnd);
 const progressionTokenIndex = incrementalPageSource.indexOf('const progressionLoadingRequestToken = pageName === "progression" && !routeDataCacheReady(pageName, options)');
 const pageTransitionIndex = incrementalPageSource.indexOf("return runPageTransition(pageName, navigationUpdatesHistory, options, (navigationTransition) => setPage(pageName, false, {");

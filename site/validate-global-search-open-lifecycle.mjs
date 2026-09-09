@@ -21,15 +21,18 @@ invariant(
 );
 
 invariant(
-  sourceCore.includes("return [...playerResults, ...agentResults].slice(0, 10);")
-    && sourceCore.includes("const clubResults = clubs.slice(0, query ? 10 : 5).map(clubSearchResult);")
-    && sourceCore.includes("const mergedResults = [\n      ...playerResults,\n      ...clubResults,\n      ...agentResults,\n    ].slice(0, 10);")
-    && !sourceCore.includes("return [...playerResults.slice(0, 5), ...agentResults.slice(0, 5)];")
-    && !sourceCore.includes("...playerResults.slice(0, 5),\n      ...clubResults,\n      ...agentResults.slice(0, 5),"),
-  "Typed Global Search must use one ten-result budget across players, clubs and agents instead of reserving five-result category buckets.",
+  sourceCore.includes("const clubResults = state.clubSearchIndex")
+    && sourceCore.includes(".slice(0, 10)\n    .map(clubSearchResult);")
+    && sourceCore.includes("return [\n    ...playerResults,\n    ...clubResults,\n    ...agentResults,\n  ].slice(0, 10);")
+    && sourceCore.includes("return items.slice(0, 5).map((item) => {")
+    && sourceCore.includes('if (item.startsWith("club:")) {')
+    && !sourceCore.includes("__mflUniversalClubSearch")
+    && !sourceCore.includes("renderSearchResultsNowV1500")
+    && !sourceCore.includes("renderSearchResultsFromBootstrap"),
+  "Typed Global Search must own Player/Club/Agent merging directly with one ten-result budget and no wrapper-based Club enhancer.",
 );
 
-const mergedResultsStart = sourceCore.indexOf("const mergedResults = [\n      ...playerResults,\n      ...clubResults,\n      ...agentResults,");
+const mergedResultsStart = sourceCore.indexOf("return [\n    ...playerResults,\n    ...clubResults,\n    ...agentResults,");
 invariant(
   mergedResultsStart >= 0,
   "Typed Global Search must preserve player -> club -> agent category priority while applying the shared ten-result cap.",

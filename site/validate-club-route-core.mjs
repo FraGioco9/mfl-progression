@@ -78,8 +78,11 @@ invariant(coreSourceByDomain.club?.source === "club.js" && coreSourceByDomain.cl
 excludes(sharedCore, 'const CLUB_PAGE = "club";', "Club route implementation must not execute in shared core.");
 excludes(sharedCore, "async function openClubPage(clubId", "Club route hydration must remain Club-owned.");
 excludes(sharedCore, "function applyClubPresentation()", "Club presentation must remain Club-owned.");
-includes(sharedCore, "renderSearchResultsNowWithUniversalClubs", "Universal Club search must remain available from shared core.");
-includes(sharedCore, 'void window.mflOpenClubPage(clubId, "attributes")', "Universal Club search must navigate through the stable lazy Club gate.");
+includes(sharedCore, "function clubSearchResult(entry) {", "Universal Club search must be owned directly by the canonical Global Search core.");
+includes(sharedCore, 'void window.mflOpenClubPage(entry.clubId, "attributes")', "Universal Club search must navigate through the stable lazy Club gate.");
+excludes(sharedCore, "renderSearchResultsNowWithUniversalClubs", "Retired wrapper-based Club search ownership must stay removed.");
+excludes(sharedCore, "renderSearchResultsNowV1500", "Retired release-era Global Search wrapper must stay removed.");
+excludes(sharedCore, "renderSearchResultsFromBootstrap", "Retired bootstrap Club-result wrapper must stay removed.");
 includes(sharedCore, 'const clubTarget = pageName === "club" ? clubRouteTargetFromPath() : null;', "Shared view switching must resolve Club identity canonically.");
 includes(sharedCore, 'window.__mflAppConfig?.routes?.clubPath?.(clubTarget.clubId, viewName)', "Shared Club view switching must use canonical URL construction.");
 includes(sharedCore, "setView = async function setIncrementalView(viewName) {", "Club views must share the canonical incremental view owner.");

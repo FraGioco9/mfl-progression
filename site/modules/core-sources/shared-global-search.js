@@ -24,6 +24,10 @@ function playerSearchResult(row) {
   return { type: "player", row };
 }
 
+function clubSearchResult(entry) {
+  return { type: "club", entry };
+}
+
 function searchMatchScore(query, primaryText, secondaryText = "") {
   if (primaryText === query || secondaryText === query) {
     return 100;
@@ -93,10 +97,21 @@ function bestSearchResults(query) {
       || String(a.label).localeCompare(String(b.label))
     ));
 
-  // Keep category priority while giving typed Global Search one shared ten-result budget.
-  // The club-search enhancer will insert clubs between players and agents before applying
-  // the same overall cap.
-  return [...playerResults, ...agentResults].slice(0, 10);
+  const clubResults = state.clubSearchIndex
+    .filter((club) => club.searchText.includes(query))
+    .sort((a, b) => (
+      (a.division ?? Number.POSITIVE_INFINITY) - (b.division ?? Number.POSITIVE_INFINITY)
+      || a.name.localeCompare(b.name)
+    ))
+    .slice(0, 10)
+    .map(clubSearchResult);
+
+  // Keep player -> club -> agent priority with one shared ten-result budget.
+  return [
+    ...playerResults,
+    ...clubResults,
+    ...agentResults,
+  ].slice(0, 10);
 }
 
 function agentSearchResultByWallet(walletAddress) {
@@ -113,9 +128,11 @@ function recentSearchRows() {
     ? state.recentSearchItems
     : recentSearchItemsFromLegacy(state.recentSearchPlayerIds, state.recentSearchAgentWallets);
 
-  return items.map((item) => {
+  return items.slice(0, 5).map((item) => {
     if (item.startsWith("club:")) {
-      return null;
+      const clubId = item.slice(5);
+      const entry = state.clubSearchIndex.find((club) => club.clubId === clubId);
+      return entry ? clubSearchResult(entry) : null;
     }
 
     if (item.startsWith("agent:")) {
@@ -187,6 +204,26 @@ function renderSearchResultsNow() {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "searchResult";
+
+    if (result.type === "club") {
+      const entry = result.entry;
+      const division = contractDivisionInfo(entry.division);
+      const divisionHtml = division
+        ? ` &middot; <span class="clubSearchDivision" style="color:${escapeHtml(division.color)}">${escapeHtml(division.name)}</span>`
+        : "";
+      button.classList.add("clubSearchResult");
+      button.dataset.clubId = entry.clubId;
+      button.dataset.searchKey = recentClubKey(entry.clubId);
+      button.innerHTML = `<strong>${escapeHtml(entry.name)}</strong><span>Club &middot; #${escapeHtml(entry.clubId)}${divisionHtml}</span>`;
+      button.addEventListener("click", () => {
+        closeSearch();
+        if (typeof window.mflOpenClubPage === "function") {
+          void window.mflOpenClubPage(entry.clubId, "attributes");
+        }
+      });
+      fragment.appendChild(button);
+      return;
+    }
 
     if (result.type === "agent") {
       button.dataset.searchKey = recentAgentKey(result.walletAddress);
