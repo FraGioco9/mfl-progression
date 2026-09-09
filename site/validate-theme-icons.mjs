@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { access, readFile } from "node:fs/promises";
 
@@ -5,7 +6,7 @@ const [markup, motion, appCore, controlInteractions, controls, stylesBase] = awa
   readFile(new URL("./index.html", import.meta.url), "utf8"),
   readFile(new URL("./motion.css", import.meta.url), "utf8"),
   Promise.all([
-    readFile(new URL("./modules/core-sources/shared.js", import.meta.url), "utf8"),
+    readCanonicalCoreSource("shared"),
     readFile(new URL("./modules/core-sources/evaluation.js", import.meta.url), "utf8"),
     readFile(new URL("./modules/core-sources/mfl-stats.js", import.meta.url), "utf8"),
     readFile(new URL("./modules/core-sources/club.js", import.meta.url), "utf8"),

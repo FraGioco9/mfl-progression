@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
@@ -5,7 +6,7 @@ const read = (path) => readValidationText(path, import.meta.url);
 
 const [core, generated, styles] = await Promise.all([
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

@@ -1,7 +1,7 @@
 import { invariant } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
@@ -13,7 +13,7 @@ const [index, bootstrap, controls, sharedTableUi, staticUi, dropdownRuntime, cor
   read("./static-ui-runtime.js"),
   read("./dropdowns-runtime.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

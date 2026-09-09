@@ -1,3 +1,4 @@
+import { readCanonicalCoreSource } from "./validate-core-sources.mjs";
 import { invariant } from "./validation/assertions.mjs";
 import { readValidationText } from "./validation-text.mjs";
 
@@ -7,7 +8,7 @@ const [database, dataViews, appCore] = await Promise.all([
   read("./api/_database.js"),
   read("./api/_data-views.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),

@@ -1,7 +1,7 @@
 import { includes, excludes } from "./validation/assertions.mjs";
 import { readFile } from "node:fs/promises";
 
-import { readCanonicalCoreArtifacts } from "./validate-core-sources.mjs";
+import { readCanonicalCoreArtifacts, readCanonicalCoreSource } from "./validate-core-sources.mjs";
 
 const read = async (path) => String(await readFile(new URL(path, import.meta.url), "utf8")).replace(/\r\n?/g, "\n");
 
@@ -12,7 +12,7 @@ const [bootstrap, entry, appConfig, routeCoreLoader, filterControls, coreSource]
   read("./route-core-loader-runtime.js"),
   read("./filter-controls-runtime.js"),
   Promise.all([
-    read("./modules/core-sources/shared.js"),
+    readCanonicalCoreSource("shared"),
     read("./modules/core-sources/evaluation.js"),
     read("./modules/core-sources/mfl-stats.js"),
     read("./modules/core-sources/club.js"),
