@@ -79,9 +79,10 @@ invariant(
 );
 invariant(
   coreSourceByDomain.table?.source === "table.js"
-    && coreSourceByDomain.table?.sources?.length === 2
+    && coreSourceByDomain.table?.sources?.length === 3
     && coreSourceByDomain.table.sources[0] === "table.js"
-    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"
+    && coreSourceByDomain.table.sources[1] === "table-render-lifecycle.js"
+    && coreSourceByDomain.table.sources[2] === "table-interaction-bindings.js"
     && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js",
   "The core manifest must generate Table runtime from its ordered canonical fragments.",
 );

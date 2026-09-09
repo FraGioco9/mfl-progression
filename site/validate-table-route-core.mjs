@@ -27,9 +27,10 @@ includes(buildCore, 'from "./modules/core-source-manifest.js"', "The build must 
 includes(buildCore, "for (const entry of coreSourceManifest)", "The build must generate Table and other core runtimes from the canonical manifest.");
 invariant(
   coreSourceByDomain.table?.source === "table.js"
-    && coreSourceByDomain.table?.sources?.length === 2
+    && coreSourceByDomain.table?.sources?.length === 3
     && coreSourceByDomain.table.sources[0] === "table.js"
-    && coreSourceByDomain.table.sources[1] === "table-interaction-bindings.js"
+    && coreSourceByDomain.table.sources[1] === "table-render-lifecycle.js"
+    && coreSourceByDomain.table.sources[2] === "table-interaction-bindings.js"
     && coreSourceByDomain.table?.runtime === "app-core-table-runtime.js",
   "Canonical manifest must map Table source ownership to its generated runtime.",
 );
