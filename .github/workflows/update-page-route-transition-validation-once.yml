@@ -1,0 +1,44 @@
+name: Update page route transition validation once
+
+on:
+  push:
+    branches:
+      - arch/754-shared-transitions-fragment
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-transitions-fragment
+          fetch-depth: 0
+      - name: Use combined canonical core in page route transition validation
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('site/validate-page-route-gate-transition.mjs')
+          text = path.read_text()
+          old_import = 'import assert from "node:assert/strict";\nimport fs from "node:fs";\n'
+          new_import = 'import assert from "node:assert/strict";\n\nimport { readCombinedCanonicalCoreSource } from "./validate-core-sources.mjs";\n'
+          if text.count(old_import) != 1:
+              raise SystemExit('Page-route transition import anchor changed')
+          text = text.replace(old_import, new_import, 1)
+          old_source = '''const appCoreSource = [\n  "modules/core-sources/shared.js",\n  "modules/core-sources/evaluation.js",\n  "modules/core-sources/mfl-stats.js",\n  "modules/core-sources/club.js",\n  "modules/core-sources/settings.js",\n  "modules/core-sources/player.js",\n  "modules/core-sources/table.js",\n  "modules/core-sources/wallet.js",\n  "modules/core-sources/watchlist.js",\n].map((path) => fs.readFileSync(path, "utf8")).join("\\n");\n'''
+          new_source = 'const appCoreSource = readCombinedCanonicalCoreSource();\n'
+          if text.count(old_source) != 1:
+              raise SystemExit('Page-route transition physical source-list anchor changed')
+          path.write_text(text.replace(old_source, new_source, 1))
+          PY
+          rm .github/workflows/update-page-route-transition-validation-once.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site/validate-page-route-gate-transition.mjs .github/workflows/update-page-route-transition-validation-once.yml
+          git commit -m "Make page transition validation fragment-aware"
+          git push origin HEAD:arch/754-shared-transitions-fragment
