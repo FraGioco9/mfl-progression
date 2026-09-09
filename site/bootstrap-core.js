@@ -146,6 +146,11 @@
       const transition = transitionTimings.get(token);
       if (!transition) return;
       transitionTimings.delete(token);
+      clientPerformance.record("content-commit", {
+        kind: transition.kind,
+        path: `${window.location.pathname}${window.location.search}`,
+        source: "navigation-release",
+      });
       clientPerformance.record("route-transition-complete", {
         kind: transition.kind,
         path: `${window.location.pathname}${window.location.search}`,
