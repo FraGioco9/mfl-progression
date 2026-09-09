@@ -57,15 +57,17 @@ for (const entry of coreSourceManifest) {
 const sharedEntry = coreSourceManifest.find(({ domain }) => domain === "shared");
 invariant(
   sharedEntry?.source === "shared-foundations.js"
-    && sharedEntry?.sources?.length === 3
+    && sharedEntry?.sources?.length === 4
     && sharedEntry.sources[0] === "shared-foundations.js"
     && sharedEntry.sources[1] === "shared-session.js"
-    && sharedEntry.sources[2] === "shared.js"
+    && sharedEntry.sources[2] === "shared-routing.js"
+    && sharedEntry.sources[3] === "shared.js"
     && sharedEntry.maxUniversalBytes === 355000,
-  "Shared core must keep foundations before session before navigation and retain the explicit 355000-byte universal no-growth ceiling.",
+  "Shared core must keep foundations before session before routing before transitions and retain the explicit 355000-byte universal no-growth ceiling.",
 );
 const sharedFoundations = await read("./modules/core-sources/shared-foundations.js");
 const sharedSession = await read("./modules/core-sources/shared-session.js");
+const sharedRouting = await read("./modules/core-sources/shared-routing.js");
 const sharedNavigation = await read("./modules/core-sources/shared.js");
 invariant(
   sharedFoundations.replace(/\s*$/, "").endsWith('const openSelectedLinksButton = document.querySelector("#openSelectedLinksButton");'),
@@ -80,13 +82,19 @@ invariant(
   "Shared session must end at the canonical shell/session boundary.",
 );
 invariant(
-  sharedNavigation.startsWith("function playerIdFromUrl() {"),
-  "Shared navigation must begin at the canonical URL-routing boundary.",
+  sharedRouting.startsWith("function playerIdFromUrl() {")
+    && sharedRouting.replace(/\s*$/, "").endsWith("let navigationTransitionSequence = 0;"),
+  "Shared routing must own URL parsing/path construction through the transition-state boundary.",
+);
+invariant(
+  sharedNavigation.startsWith("function currentNavigationPath() {"),
+  "Shared navigation must begin at the canonical transition-execution boundary.",
 );
 invariant(
   !sharedFoundations.includes("function normalizeSettingsTheme")
-    && !sharedSession.includes("function playerIdFromUrl"),
-  "Shared foundations and session must not absorb later ownership domains.",
+    && !sharedSession.includes("function playerIdFromUrl")
+    && !sharedRouting.includes("function currentNavigationPath"),
+  "Shared foundations, session, and routing must not absorb later ownership domains.",
 );
 
 const retiredFiles = [
