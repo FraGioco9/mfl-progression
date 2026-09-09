@@ -1,0 +1,36 @@
+name: Split Shared incremental routing
+
+on:
+  push:
+    branches:
+      - arch/754-shared-incremental-routing
+
+permissions:
+  contents: write
+
+jobs:
+  split:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: arch/754-shared-incremental-routing
+          fetch-depth: 0
+      - name: Apply split
+        run: python3 .github/754-incremental-routing-split.py
+      - name: Verify split
+        run: |
+          grep -q '^function clubRouteTargetFromPath() {' site/modules/core-sources/shared-incremental-routing.js
+          grep -q '^let pendingViewButtonPointer = null;' site/modules/core-sources/shared.js
+          grep -q 'window.mflReloadIncrementalPage = reloadIncrementalPage;' site/modules/core-sources/shared-incremental-routing.js
+          node --check site/modules/core-sources/shared-incremental-routing.js
+          node --check site/modules/core-sources/shared.js
+      - name: Commit split
+        run: |
+          rm .github/754-incremental-routing-split.py
+          rm .github/workflows/754-split-incremental-routing.yml
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add site .github/754-incremental-routing-split.py .github/workflows/754-split-incremental-routing.yml
+          git commit -m "Split Shared incremental routing"
+          git push origin HEAD:arch/754-shared-incremental-routing
