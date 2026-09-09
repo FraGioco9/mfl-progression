@@ -157,7 +157,7 @@ invariant(
   "Shared watchlist actions must own player watchlist mutation through the canonical toggleWatchlistPlayer action.",
 );
 invariant(
-  sharedNavigation.startsWith("function countryCodeForNationality(nationality) {"),
+  sharedNavigation.trimStart().startsWith("function countryCodeForNationality(nationality) {"),
   "Remaining Shared behavior must begin at the Player display/calculation boundary.",
 );
 invariant(
