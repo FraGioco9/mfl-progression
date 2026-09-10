@@ -207,6 +207,9 @@ def _fetch_details(
     candidates: list[dict[str, Any]],
     request_json: RequestJson,
     limiter: Any,
+    *,
+    log: Log | None = None,
+    progress_label: str = "Competition detail",
 ) -> list[tuple[dict[str, Any], Any]]:
     if not candidates:
         return []
@@ -220,11 +223,18 @@ def _fetch_details(
         )
         return candidate, detail
 
+    total = len(candidates)
+    completed = 0
     results: list[tuple[dict[str, Any], Any]] = []
-    with ThreadPoolExecutor(max_workers=min(DETAIL_WORKERS, len(candidates))) as executor:
+    with ThreadPoolExecutor(max_workers=min(DETAIL_WORKERS, total)) as executor:
         futures = [executor.submit(fetch, candidate) for candidate in candidates]
         for future in as_completed(futures):
             results.append(future.result())
+            completed += 1
+            if log is not None and (
+                total <= 10 or completed == 1 or completed == total or completed % 10 == 0
+            ):
+                log(f"{progress_label}: {completed}/{total}")
     return results
 
 
@@ -285,16 +295,27 @@ def refresh_competitions(
     # Both live refresh and historical backfill can use this one index request. Historical
     # mode uses it only to resolve the current season boundary when needed.
     if fetch_live or backfill_historical:
+        log("Competition current index: requesting")
         current_payload = request_json(
             CURRENT_COMPETITIONS_URL,
             "Current competitions",
             limiter,
         )
+        log(f"Competition current index loaded: {len(_competition_list(current_payload))} entries")
 
     if fetch_live:
         live_candidates = current_candidates(current_payload)
-        live_details = _fetch_details(live_candidates, request_json, limiter)
+        log(f"Competition LIVE candidates: {len(live_candidates)}")
+        live_details = _fetch_details(
+            live_candidates,
+            request_json,
+            limiter,
+            log=log,
+            progress_label="Competition LIVE detail",
+        )
         live_saved, live_seasons = _persist_details(connection, live_details, log)
+    else:
+        log("Competition LIVE refresh disabled")
 
     historical_discovered = 0
     historical_requested = 0
@@ -312,7 +333,21 @@ def refresh_competitions(
             raise RuntimeError("Could not determine the current MFL season for competition backfill")
 
         already_stored = storage.stored_competition_ids(connection)
-        for season_id in range(storage.FIRST_SEASON_ID, current_season_id + 1):
+        total_seasons = current_season_id - storage.FIRST_SEASON_ID + 1
+        log(
+            "Competition historical backfill: "
+            f"{total_seasons} seasons from seasonId {storage.FIRST_SEASON_ID} "
+            f"to {current_season_id}; already stored {len(already_stored)} competitions"
+        )
+        for season_index, season_id in enumerate(
+            range(storage.FIRST_SEASON_ID, current_season_id + 1),
+            start=1,
+        ):
+            progress_prefix = (
+                f"Competition historical season {season_index}/{total_seasons} "
+                f"(seasonId {season_id})"
+            )
+            log(f"{progress_prefix}: requesting history")
             payload = _season_history(season_id, request_json, limiter)
             candidates = discover_season_candidates(payload, season_id)
             historical_discovered += len(candidates)
@@ -321,10 +356,20 @@ def refresh_competitions(
                 for candidate in candidates
                 if candidate["id"] not in already_stored
             ]
+            log(
+                f"{progress_prefix}: discovered {len(candidates)}, "
+                f"missing {len(missing)}"
+            )
             if not missing:
                 continue
             historical_requested += len(missing)
-            details = _fetch_details(missing, request_json, limiter)
+            details = _fetch_details(
+                missing,
+                request_json,
+                limiter,
+                log=log,
+                progress_label=f"Competition season {season_id} detail",
+            )
             saved, _ = _persist_details(connection, details, log)
             historical_saved += saved
             already_stored.update(
@@ -333,9 +378,11 @@ def refresh_competitions(
                 if storage.is_eligible_detail(detail)
             )
             log(
-                f"Competition season {season_id}: discovered {len(candidates)}, "
-                f"requested {len(missing)}, saved {saved}"
+                f"{progress_prefix} complete: requested {len(missing)}, saved {saved}; "
+                f"cumulative saved {historical_saved}/{historical_requested}"
             )
+    else:
+        log("Competition historical backfill disabled")
 
     total = int(connection.execute("SELECT COUNT(*) FROM competitions").fetchone()[0])
     stats = {
