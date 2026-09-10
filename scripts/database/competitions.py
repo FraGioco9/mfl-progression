@@ -99,19 +99,24 @@ def _league_ordinal(candidate: dict[str, Any]) -> int | None:
     return ordinal if ordinal > 0 else None
 
 
-def _has_unique_in_range_league_ordinals(
+def _ordinal_generations(
     candidates: list[dict[str, Any]],
-    capacity: int,
-) -> bool:
-    """Recognize one league generation even when API competition IDs contain gaps."""
-    ordinals = [_league_ordinal(candidate) for candidate in candidates]
-    return (
-        bool(ordinals)
-        and all(ordinal is not None for ordinal in ordinals)
-        and len(set(ordinals)) == len(ordinals)
-        and min(ordinals) >= 1
-        and max(ordinals) <= capacity
-    )
+) -> list[list[dict[str, Any]]] | None:
+    """Split recreated leagues on League N resets while tolerating competition-ID gaps."""
+    ordered = sorted(candidates, key=lambda item: item["id"])
+    ordinals = [_league_ordinal(candidate) for candidate in ordered]
+    if not ordered or any(ordinal is None for ordinal in ordinals):
+        return None
+
+    generations: list[list[dict[str, Any]]] = []
+    previous_ordinal: int | None = None
+    for candidate, ordinal in zip(ordered, ordinals, strict=True):
+        assert ordinal is not None
+        if previous_ordinal is None or ordinal <= previous_ordinal:
+            generations.append([])
+        generations[-1].append(candidate)
+        previous_ordinal = ordinal
+    return generations
 
 
 def season_number_from_id(season_id: int) -> int:
@@ -143,23 +148,31 @@ def select_root_competitions(root: Any) -> list[dict[str, Any]]:
         return sorted(candidates, key=lambda item: item["id"])
 
     root_name = str(root.get("name") or root.get("id") or "unknown root")
-    if _has_unique_in_range_league_ordinals(league_candidates, capacity):
-        # MFL can allocate a later competition ID to a league slot in the same season.
-        # Unique League 1..N names prove these entries are one logical generation even
-        # when their IDs are not contiguous (Season 7 Flint has League 46 at a later ID).
-        selected_generation = league_candidates
+    ordinal_generations = _ordinal_generations(league_candidates)
+    if ordinal_generations is not None:
+        max_ordinal = max(_league_ordinal(item) or 0 for item in league_candidates)
+        if max_ordinal > capacity:
+            raise RuntimeError(
+                f"{root_name} has League {max_ordinal}, above the expected maximum of {capacity}"
+            )
+        # MFL can allocate later competition IDs to slots in the same league generation.
+        # A recreated generation restarts the League N sequence; an ID gap by itself does
+        # not. This keeps Season 7 Flint League 46 and Season 13 Flint Leagues 96-99 with
+        # their preceding logical generations while still separating true recreations.
+        generations = ordinal_generations
     else:
         generations = _contiguous_generations(league_candidates)
-        winner_generations = [
-            generation
-            for generation in generations
-            if any(item["has_winner"] for item in generation)
-        ]
-        if len(winner_generations) > 1:
-            raise RuntimeError(
-                f"{root_name} has winner-bearing competitions across multiple recreated generations"
-            )
-        selected_generation = winner_generations[0] if winner_generations else generations[-1]
+
+    winner_generations = [
+        generation
+        for generation in generations
+        if any(item["has_winner"] for item in generation)
+    ]
+    if len(winner_generations) > 1:
+        raise RuntimeError(
+            f"{root_name} has winner-bearing competitions across multiple recreated generations"
+        )
+    selected_generation = winner_generations[0] if winner_generations else generations[-1]
     winner_count = sum(item["has_winner"] for item in selected_generation)
     if winner_count > capacity:
         raise RuntimeError(

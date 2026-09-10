@@ -68,13 +68,71 @@ class CompetitionGenerationSelectionTests(unittest.TestCase):
             "name": "Flint Division",
             "division": 10,
             "competitions": [
-                {"id": 5433, "name": "Flint – League  1", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 1}}},
-                {"id": 5434, "name": "Flint – League  2", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 2}}},
-                {"id": 5669, "name": "Flint – League  46", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 46}}},
+                {
+                    "id": 5432 + ordinal,
+                    "name": f"Flint – League {ordinal}",
+                    "type": "LEAGUE",
+                    "code": "FLT",
+                    "winner": {"club": {"id": ordinal}},
+                }
+                for ordinal in range(1, 46)
+            ]
+            + [
+                {
+                    "id": 5669,
+                    "name": "Flint – League 46",
+                    "type": "LEAGUE",
+                    "code": "FLT",
+                    "winner": {"club": {"id": 46}},
+                }
             ],
         }
         selected = competitions.select_root_competitions(root)
-        self.assertEqual([item["id"] for item in selected], [5433, 5434, 5669])
+        self.assertEqual(len(selected), 46)
+        self.assertEqual([item["id"] for item in selected][-2:], [5477, 5669])
+
+    def test_ordinal_reset_separates_recreation_but_later_ids_stay_in_winning_generation(self) -> None:
+        obsolete = [
+            {
+                "id": 13182 + ordinal,
+                "name": f"Flint – League {ordinal}",
+                "type": "LEAGUE",
+                "code": "FLT",
+            }
+            for ordinal in range(1, 94)
+        ]
+        winning = [
+            {
+                "id": 13733 + ordinal,
+                "name": f"Flint – League {ordinal}",
+                "type": "LEAGUE",
+                "code": "FLT",
+                "winner": {"club": {"id": ordinal}},
+            }
+            for ordinal in range(1, 96)
+        ] + [
+            {
+                "id": 13946 + ordinal,
+                "name": f"Flint – League {ordinal}",
+                "type": "LEAGUE",
+                "code": "FLT",
+                "winner": {"club": {"id": ordinal}},
+            }
+            for ordinal in range(96, 100)
+        ]
+        root = {
+            "id": 429,
+            "name": "Flint Division",
+            "division": 10,
+            "competitions": obsolete + winning,
+        }
+
+        selected = competitions.select_root_competitions(root)
+
+        self.assertEqual(len(selected), 99)
+        self.assertEqual(selected[0]["id"], 13734)
+        self.assertEqual(selected[-1]["id"], 14045)
+        self.assertTrue(all(item["has_winner"] for item in selected))
 
     def test_duplicate_named_slots_across_multiple_generations_fail_instead_of_guessing(self) -> None:
         root = {
