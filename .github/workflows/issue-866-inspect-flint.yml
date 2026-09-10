@@ -1,0 +1,44 @@
+name: Issue 866 inspect Flint generations
+
+on:
+  push:
+    branches:
+      - fix/866-historical-competition-generations
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Inspect Season 7 Flint Division
+        env:
+          MFL_API_TOKEN: ${{ secrets.MFL_API_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json, os
+          from urllib.request import Request, urlopen
+
+          url = 'https://z519wdyajg.execute-api.us-east-1.amazonaws.com/prod/competitions/seasonHistory?seasonId=17'
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'mfl-front-office-issue-866-inspector',
+              'X-MFL-Api-Token': os.environ['MFL_API_TOKEN'],
+          }
+          with urlopen(Request(url, headers=headers), timeout=60) as response:
+              payload = json.load(response)
+          print('response seasonId:', payload.get('seasonId'))
+          roots = payload.get('rootCompetitions') or []
+          matches = [root for root in roots if str(root.get('name') or '').strip() == 'Flint Division']
+          print('matching roots:', len(matches))
+          for root in matches:
+              print('ROOT', json.dumps({k: v for k, v in root.items() if k != 'competitions'}, sort_keys=True, default=str))
+              competitions = root.get('competitions') or []
+              print('competition count:', len(competitions))
+              for item in competitions:
+                  print('COMP', json.dumps(item, sort_keys=True, default=str))
+          PY
