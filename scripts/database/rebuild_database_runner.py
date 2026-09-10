@@ -16,7 +16,10 @@ from scripts.database import run_flow_rebuild_paged as paged
 PLAYER_REQUESTS_PER_MINUTE = 60
 PROGRESSION_REQUESTS_PER_MINUTE = 60
 MFL_API_TOKEN_ENVIRONMENT_VARIABLE = "MFL_API_TOKEN"
+FETCH_WALLETS_ENVIRONMENT_VARIABLE = "MFL_FETCH_WALLETS"
 FETCH_PLAYERS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PLAYERS"
+FETCH_CLUBS_ENVIRONMENT_VARIABLE = "MFL_FETCH_CLUBS"
+FETCH_PLAYER_SEASONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PLAYER_SEASONS"
 FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PROGRESSIONS"
 FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_LIVE_COMPETITIONS"
 BACKFILL_HISTORICAL_COMPETITIONS_ENVIRONMENT_VARIABLE = (
@@ -137,10 +140,15 @@ def restore_previous_progressions(connection: Any) -> dict[str, int]:
     return {"ALL": restored, "CURRENT_SEASON": restored}
 
 
-def configure_rebuild() -> bool:
+def configure_rebuild() -> dict[str, bool]:
     """Install the authenticated, rate-limited production rebuild configuration."""
     install_mfl_api_authentication()
+    fetch_wallets = environment_flag(FETCH_WALLETS_ENVIRONMENT_VARIABLE)
     fetch_players = environment_flag(FETCH_PLAYERS_ENVIRONMENT_VARIABLE)
+    fetch_clubs = environment_flag(FETCH_CLUBS_ENVIRONMENT_VARIABLE)
+    fetch_player_seasons = environment_flag(
+        FETCH_PLAYER_SEASONS_ENVIRONMENT_VARIABLE
+    )
     fetch_progressions = environment_flag(FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE)
     fetch_live_competitions = environment_flag(
         FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE
@@ -270,21 +278,29 @@ def configure_rebuild() -> bool:
     )
     pipeline.log(
         "PlayMFL runtime configuration: "
+        f"wallets {'enabled' if fetch_wallets else 'disabled; reusing previous rows'}, "
         f"/players {'enabled at ' + str(PLAYER_REQUESTS_PER_MINUTE) + ' starts/min' if fetch_players else 'disabled; reusing previous rows'}, "
+        f"clubs/rosters {'enabled' if fetch_clubs else 'disabled; reusing previous rows'}, "
+        f"player seasons {'enabled' if fetch_player_seasons else 'disabled; requiring resolved rows'}, "
         f"/players/progressions {progression_status}, "
         f"live competitions {'enabled' if fetch_live_competitions else 'disabled'}, "
         "historical competition backfill "
         f"{'enabled' if backfill_historical_competitions else 'disabled'}, "
         f"{pipeline.MFL_WORKERS} workers"
     )
-    return fetch_players
+    return {
+        "fetch_wallets": fetch_wallets,
+        "fetch_players": fetch_players,
+        "fetch_clubs": fetch_clubs,
+        "fetch_player_seasons": fetch_player_seasons,
+    }
 
 
 def main() -> int:
     install_thread_error_logging()
     try:
-        fetch_players = configure_rebuild()
-        return rebuild.rebuild_directly(fetch_players=fetch_players)
+        rebuild_options = configure_rebuild()
+        return rebuild.rebuild_directly(**rebuild_options)
     except Exception as error:
         print_failure("Database rebuild", error)
         return 1

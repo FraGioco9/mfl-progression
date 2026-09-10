@@ -30,6 +30,11 @@ CLUB_STATUS_NAMES = {
 FLOW_CLUB_BATCH_SIZE = 200
 FLOW_OWNER_BATCH_SIZE = 100
 MIN_FLOW_SPLIT_BATCH_SIZE = 10
+CLUB_COLUMNS = (
+    "club_id", "name", "city", "country", "primary_color",
+    "secondary_color", "status", "division", "owner_wallet_address",
+    "owner_name", "signed_player_ids", "current_competition_ids",
+)
 
 FLOW_CLUB_TOTAL_SUPPLY_SCRIPT = f"""
 import MFLClub from {MFL_CLUB_ADDRESS}
@@ -226,9 +231,14 @@ def _split_resilient(
         )
 
 
+def _should_log_progress(completed: int, total: int) -> bool:
+    return total <= 10 or completed == 1 or completed == total or completed % 10 == 0
+
+
 def fetch_club_snapshots(
     club_ids: Iterable[int | str],
     execute_script: FlowExecute | None = None,
+    log: Callable[[str], None] = print,
 ) -> dict[str, dict[str, Any]]:
     execute = _flow_execute(execute_script)
     normalized_ids = sorted({int(club_id) for club_id in club_ids})
@@ -245,7 +255,19 @@ def fetch_club_snapshots(
             raise RuntimeError("Flow MFLClub snapshot response was not an array")
         return [item for item in decoded if isinstance(item, dict)]
 
-    for offset in range(0, len(normalized_ids), FLOW_CLUB_BATCH_SIZE):
+    total_batches = (
+        (len(normalized_ids) + FLOW_CLUB_BATCH_SIZE - 1) // FLOW_CLUB_BATCH_SIZE
+        if normalized_ids
+        else 0
+    )
+    log(
+        f"Flow club snapshots: {len(normalized_ids)} candidates across "
+        f"{total_batches} batches"
+    )
+    for batch_number, offset in enumerate(
+        range(0, len(normalized_ids), FLOW_CLUB_BATCH_SIZE),
+        start=1,
+    ):
         batch = normalized_ids[offset:offset + FLOW_CLUB_BATCH_SIZE]
         rows = _split_resilient(
             batch,
@@ -257,6 +279,11 @@ def fetch_club_snapshots(
             club_id = str(row.get("clubId") or "").strip()
             if club_id:
                 snapshots[club_id] = row
+        if _should_log_progress(batch_number, total_batches):
+            log(
+                f"Flow club snapshots batch {batch_number}/{total_batches}: "
+                f"requested {len(batch)}, returned {len(rows)}, total {len(snapshots)}"
+            )
     return snapshots
 
 
@@ -337,11 +364,16 @@ def fetch_detail_owner_hints(
     club_ids: Iterable[str],
     request_json: JsonRequest,
     limiter: Any = None,
+    log: Callable[[str], None] = print,
 ) -> dict[str, str]:
     """Use individual PlayMFL club responses only to locate wallets for Flow verification."""
     hints: dict[str, str] = {}
     normalized_ids = {_normalized_club_id(value) for value in club_ids}
-    for club_id in sorted((value for value in normalized_ids if value), key=int):
+    ordered_ids = sorted((value for value in normalized_ids if value), key=int)
+    total = len(ordered_ids)
+    log(f"Club owner fallback details: {total} clubs")
+    for completed, club_id in enumerate(ordered_ids, start=1):
+        outcome = "no owner hint"
         try:
             payload = request_json(
                 CLUB_DETAIL_URL.format(club_id=club_id),
@@ -349,19 +381,27 @@ def fetch_detail_owner_hints(
                 limiter,
             )
         except RuntimeError:
-            continue
-        if not isinstance(payload, dict):
-            continue
-        owner = payload.get("ownedBy") if isinstance(payload.get("ownedBy"), dict) else {}
-        address = str(owner.get("walletAddress") or "").strip().lower()
-        if address:
-            hints[club_id] = address
+            outcome = "unavailable after retries"
+        else:
+            if isinstance(payload, dict):
+                owner = payload.get("ownedBy") if isinstance(payload.get("ownedBy"), dict) else {}
+                address = str(owner.get("walletAddress") or "").strip().lower()
+                if address:
+                    hints[club_id] = address
+                    outcome = "owner hint found"
+        if _should_log_progress(completed, total):
+            log(
+                f"Club owner fallback detail {completed}/{total}: "
+                f"club {club_id}, {outcome}"
+            )
     return hints
 
 
 def fetch_club_owners(
     wallet_addresses: Iterable[str],
     execute_script: FlowExecute | None = None,
+    log: Callable[[str], None] = print,
+    phase: str = "Flow club owners",
 ) -> dict[str, str]:
     execute = _flow_execute(execute_script)
     addresses = sorted({str(value).strip().lower() for value in wallet_addresses if value})
@@ -378,14 +418,24 @@ def fetch_club_owners(
             raise RuntimeError("Flow MFLClub owner response was not an array")
         return [item for item in decoded if isinstance(item, dict)]
 
-    for offset in range(0, len(addresses), FLOW_OWNER_BATCH_SIZE):
+    total_batches = (
+        (len(addresses) + FLOW_OWNER_BATCH_SIZE - 1) // FLOW_OWNER_BATCH_SIZE
+        if addresses
+        else 0
+    )
+    log(f"{phase}: {len(addresses)} wallets across {total_batches} batches")
+    for batch_number, offset in enumerate(
+        range(0, len(addresses), FLOW_OWNER_BATCH_SIZE),
+        start=1,
+    ):
         batch = addresses[offset:offset + FLOW_OWNER_BATCH_SIZE]
         rows = _split_resilient(
             batch,
             minimum_size=MIN_FLOW_SPLIT_BATCH_SIZE,
             fetch=fetch_batch,
-            label="Flow club owners",
+            label=phase,
         )
+        resolved_this_batch = 0
         for row in rows:
             club_id = str(row.get("clubId") or "").strip()
             owner = str(row.get("owner") or "").strip().lower()
@@ -396,7 +446,14 @@ def fetch_club_owners(
                 raise RuntimeError(
                     f"Flow returned multiple owners for club {club_id}: {previous}, {owner}"
                 )
+            if previous is None:
+                resolved_this_batch += 1
             owners[club_id] = owner
+        if _should_log_progress(batch_number, total_batches):
+            log(
+                f"{phase} batch {batch_number}/{total_batches}: checked {len(batch)} wallets, "
+                f"resolved {resolved_this_batch} clubs, total {len(owners)}"
+            )
     return owners
 
 
@@ -634,6 +691,108 @@ def ensure_club_schema(connection: sqlite3.Connection) -> None:
     connection.execute("CREATE INDEX clubs_division_index ON clubs(division, club_id)")
 
 
+
+def restore_previous_clubs(
+    connection: sqlite3.Connection,
+    previous_database_path: Path | None,
+    log: Callable[[str], None] = print,
+) -> int:
+    """Reuse canonical club records while reconciling relationships from current rows."""
+    if previous_database_path is None or not previous_database_path.is_file():
+        raise RuntimeError(
+            "Club fetching disabled but no previous database is available to reuse"
+        )
+
+    database_uri = f"{previous_database_path.resolve().as_uri()}?mode=ro"
+    previous = sqlite3.connect(database_uri, uri=True)
+    try:
+        tables = {
+            str(row[0])
+            for row in previous.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "clubs" not in tables:
+            raise RuntimeError(
+                "Club fetching disabled but previous database has no clubs table"
+            )
+        previous_columns = {
+            str(row[1])
+            for row in previous.execute("PRAGMA table_info(clubs)").fetchall()
+        }
+        missing_columns = sorted(set(CLUB_COLUMNS) - previous_columns)
+        if missing_columns:
+            raise RuntimeError(
+                "Club fetching disabled but previous database club schema is incomplete: "
+                + ", ".join(missing_columns)
+            )
+        columns = ", ".join(f'"{column}"' for column in CLUB_COLUMNS)
+        rows = previous.execute(f"SELECT {columns} FROM clubs").fetchall()
+    finally:
+        previous.close()
+
+    if not rows:
+        raise RuntimeError(
+            "Club fetching disabled but previous database contains no club records"
+        )
+
+    ensure_club_schema(connection)
+    placeholders = ", ".join("?" for _ in CLUB_COLUMNS)
+    columns = ", ".join(f'"{column}"' for column in CLUB_COLUMNS)
+    connection.executemany(
+        f"INSERT INTO clubs ({columns}) VALUES ({placeholders})",
+        rows,
+    )
+
+    signed_players = signed_players_by_club(connection)
+    existing_club_ids = {
+        str(row[0])
+        for row in connection.execute("SELECT club_id FROM clubs").fetchall()
+    }
+    missing_referenced_clubs = sorted(
+        set(signed_players) - existing_club_ids,
+        key=lambda value: (0, int(value)) if value.isdigit() else (1, value),
+    )
+    if missing_referenced_clubs:
+        raise RuntimeError(
+            "Club fetching disabled but current players reference clubs absent from the "
+            "previous database: " + ", ".join(missing_referenced_clubs)
+        )
+
+    names = owner_names(connection)
+    updates: list[tuple[str, str, str]] = []
+    owner_names_updated = 0
+    signed_link_count = 0
+    for club_id, owner_wallet_address, previous_owner_name in connection.execute(
+        "SELECT club_id, owner_wallet_address, owner_name FROM clubs ORDER BY club_id"
+    ).fetchall():
+        club_key = str(club_id)
+        signed = sorted({int(player_id) for player_id in signed_players.get(club_key, [])})
+        signed_link_count += len(signed)
+        wallet = str(owner_wallet_address or "").strip().lower()
+        resolved_owner_name = names.get(wallet) or str(previous_owner_name or "")
+        if resolved_owner_name != str(previous_owner_name or ""):
+            owner_names_updated += 1
+        updates.append(
+            (
+                json.dumps(signed, separators=(",", ":")),
+                resolved_owner_name,
+                club_key,
+            )
+        )
+    connection.executemany(
+        "UPDATE clubs SET signed_player_ids = ?, owner_name = ? WHERE club_id = ?",
+        updates,
+    )
+    connection.commit()
+    log(
+        f"Club fetching disabled; reused previous clubs: {len(rows)}; "
+        f"reconciled {signed_link_count} signed-player links and "
+        f"{owner_names_updated} owner names"
+    )
+    return len(rows)
+
+
 def refresh_clubs(
     connection: sqlite3.Connection,
     execute_script: FlowExecute | None = None,
@@ -641,19 +800,32 @@ def refresh_clubs(
     limiter: Any = None,
     contract_players: Iterable[dict[str, Any]] = (),
     previous_database_path: Path | None = None,
+    log: Callable[[str], None] = print,
 ) -> int:
     """Build every canonical ClubData record, with Flow-verified ownership when it exists."""
+    log("Flow club total supply: requesting")
     total_supply = fetch_total_supply(execute_script)
+    log(f"Flow club total supply: {total_supply}")
 
     index_ids: set[str] = set()
     owner_hints: dict[str, str] = {}
     if request_json is not None:
+        log("Club discovery index: requesting")
         payload = request_json(CLUB_INDEX_URL, "Club discovery index", limiter)
         index_ids, owner_hints = club_index_hints(payload)
+        log(
+            f"Club discovery index loaded: {len(index_ids)} club IDs, "
+            f"{len(owner_hints)} owner hints"
+        )
 
     wallets = set(candidate_wallet_addresses(connection))
     wallets.update(owner_hints.values())
-    owners = fetch_club_owners(wallets, execute_script) if wallets else {}
+    log(f"Flow club owner candidates: {len(wallets)} wallets")
+    owners = (
+        fetch_club_owners(wallets, execute_script, log)
+        if wallets
+        else {}
+    )
     signed_players = signed_players_by_club(connection)
     current_colours = contract_club_colours(contract_players)
     previous_colours = load_previous_club_colours(previous_database_path)
@@ -664,7 +836,8 @@ def refresh_clubs(
     )
     candidate_ids.update(str(club_id) for club_id in range(1, total_supply + 1))
 
-    snapshots = fetch_club_snapshots(candidate_ids, execute_script)
+    log(f"Flow club snapshot candidates: {len(candidate_ids)} clubs")
+    snapshots = fetch_club_snapshots(candidate_ids, execute_script, log)
     if len(snapshots) != total_supply:
         raise RuntimeError(
             "Flow ClubData coverage was incomplete: "
@@ -680,15 +853,27 @@ def refresh_clubs(
             or str(_metadata(snapshots[club_id]).get("name") or "").strip()
         )
     ]
+    log(
+        f"Club owner fallback candidates: {len(detail_fallback_ids)} clubs "
+        f"without a Flow-verified owner"
+    )
     if request_json is not None and detail_fallback_ids:
         detail_hints = fetch_detail_owner_hints(
             detail_fallback_ids,
             request_json,
             limiter,
+            log,
         )
         new_wallets = set(detail_hints.values()) - wallets
         if new_wallets:
-            owners.update(fetch_club_owners(new_wallets, execute_script))
+            owners.update(
+                fetch_club_owners(
+                    new_wallets,
+                    execute_script,
+                    log,
+                    "Flow fallback club owners",
+                )
+            )
             wallets.update(new_wallets)
 
     names = owner_names(connection)
@@ -765,14 +950,13 @@ def refresh_clubs(
         if not any(current_colours.get(club_id, (None, None)))
         and any(previous_colours.get(club_id, (None, None)))
     )
-    print(
+    log(
         f"Canonical Flow clubs saved: {len(records)} "
         f"({sum(len(record['signed_player_ids']) for record in records)} signed-player links; "
         f"{verified_owners} Flow-verified owners; "
         f"{len(records) - verified_owners} without a current verified owner; "
         f"{colour_records} with known colours "
         f"({current_colour_records} current, {preserved_colour_records} preserved); "
-        f"statuses={status_counts})",
-        flush=True,
+        f"statuses={status_counts})"
     )
     return len(records)
