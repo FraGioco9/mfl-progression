@@ -1,11 +1,36 @@
 from __future__ import annotations
 
+import sqlite3
+import tempfile
 import unittest
+from pathlib import Path
 
+from scripts.database import competition_storage as storage
 from scripts.database import competitions
 
 
 class CompetitionRefreshSplitContractTests(unittest.TestCase):
+    @staticmethod
+    def detail(
+        competition_id: int,
+        *,
+        season_id: int = 25,
+        status: str = "LIVE",
+        code: str = "DMND",
+    ) -> dict:
+        return {
+            "id": competition_id,
+            "root": {"id": 488},
+            "season": {"id": season_id},
+            "type": "LEAGUE",
+            "subType": "LEAGUE",
+            "name": "Competition",
+            "code": code,
+            "status": status,
+            "withXp": True,
+            "schedule": {"stages": []},
+        }
+
     def test_current_candidates_only_include_live_competitions(self) -> None:
         payload = {
             "competitions": [
@@ -20,6 +45,158 @@ class CompetitionRefreshSplitContractTests(unittest.TestCase):
         candidates = competitions.current_candidates(payload)
 
         self.assertEqual([candidate["id"] for candidate in candidates], [1])
+
+    def test_both_fetch_modes_off_restore_history_without_api_calls(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            previous_path = Path(directory) / "previous.db"
+            previous = sqlite3.connect(previous_path)
+            storage.create_schema(previous)
+            self.assertTrue(
+                storage.persist_competition_detail(
+                    previous,
+                    self.detail(100, status="ENDED"),
+                    log=lambda _message: None,
+                )
+            )
+            previous.close()
+
+            current = sqlite3.connect(":memory:")
+            try:
+                def request_json(*_args):
+                    raise AssertionError("competition API must not be called")
+
+                stats = competitions.refresh_competitions(
+                    current,
+                    previous_path,
+                    request_json,
+                    object(),
+                    log=lambda _message: None,
+                    fetch_live=False,
+                    backfill_historical=False,
+                )
+
+                self.assertEqual(stats["restored"], 1)
+                self.assertEqual(stats["live_discovered"], 0)
+                self.assertEqual(stats["historical_requested"], 0)
+                self.assertEqual(storage.stored_competition_ids(current), {100})
+            finally:
+                current.close()
+
+    def test_live_refresh_does_not_request_season_history(self) -> None:
+        calls: list[str] = []
+
+        def request_json(url: str, _label: str, _limiter):
+            calls.append(url)
+            if url == competitions.CURRENT_COMPETITIONS_URL:
+                return {
+                    "competitions": [
+                        {
+                            "id": 100,
+                            "root": {"id": 488},
+                            "season": {"id": 25},
+                            "code": "DMND",
+                            "status": "LIVE",
+                            "withXp": True,
+                        },
+                        {
+                            "id": 101,
+                            "root": {"id": 487},
+                            "season": {"id": 25},
+                            "code": "PLAT",
+                            "status": "PLANNED",
+                            "withXp": True,
+                        },
+                    ]
+                }
+            if url == competitions.COMPETITION_DETAIL_URL.format(competition_id=100):
+                return self.detail(100)
+            raise AssertionError(f"unexpected request: {url}")
+
+        connection = sqlite3.connect(":memory:")
+        try:
+            stats = competitions.refresh_competitions(
+                connection,
+                None,
+                request_json,
+                object(),
+                log=lambda _message: None,
+                fetch_live=True,
+                backfill_historical=False,
+            )
+
+            self.assertEqual(stats["live_discovered"], 1)
+            self.assertEqual(stats["live_saved"], 1)
+            self.assertEqual(stats["historical_requested"], 0)
+            self.assertEqual(storage.stored_competition_ids(connection), {100})
+            self.assertFalse(any("seasonHistory" in url for url in calls))
+            self.assertFalse(any(url.endswith("/101") for url in calls))
+        finally:
+            connection.close()
+
+    def test_historical_only_uses_index_for_boundary_without_persisting_planned_current(self) -> None:
+        calls: list[str] = []
+
+        def request_json(url: str, _label: str, _limiter):
+            calls.append(url)
+            if url == competitions.CURRENT_COMPETITIONS_URL:
+                return {
+                    "competitions": [
+                        {
+                            "id": 200,
+                            "season": {"id": 11},
+                            "code": "DMND",
+                            "status": "PLANNED",
+                            "withXp": True,
+                        }
+                    ]
+                }
+            if url == f"{competitions.SEASON_HISTORY_URL}?seasonId=11":
+                return {
+                    "seasonId": 11,
+                    "rootCompetitions": [
+                        {
+                            "id": 494,
+                            "name": "IMFF Titans Cup",
+                            "competitions": [
+                                {
+                                    "id": 300,
+                                    "type": "CUP",
+                                    "code": "TITAN",
+                                    "winner": {"club": {"id": 42}},
+                                }
+                            ],
+                        }
+                    ],
+                }
+            if url == competitions.COMPETITION_DETAIL_URL.format(competition_id=300):
+                return self.detail(
+                    300,
+                    season_id=11,
+                    status="ENDED",
+                    code="TITAN",
+                )
+            raise AssertionError(f"unexpected request: {url}")
+
+        connection = sqlite3.connect(":memory:")
+        try:
+            stats = competitions.refresh_competitions(
+                connection,
+                None,
+                request_json,
+                object(),
+                log=lambda _message: None,
+                fetch_live=False,
+                backfill_historical=True,
+            )
+
+            self.assertEqual(stats["live_discovered"], 0)
+            self.assertEqual(stats["historical_discovered"], 1)
+            self.assertEqual(stats["historical_requested"], 1)
+            self.assertEqual(stats["historical_saved"], 1)
+            self.assertEqual(storage.stored_competition_ids(connection), {300})
+            self.assertFalse(any(url.endswith("/200") for url in calls))
+        finally:
+            connection.close()
 
 
 if __name__ == "__main__":
