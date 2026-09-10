@@ -299,5 +299,29 @@ class CompetitionStorageTests(unittest.TestCase):
                 fresh.close()
 
 
+class CompetitionProgressLoggingTests(unittest.TestCase):
+    def test_detail_fetch_reports_bounded_progress(self) -> None:
+        candidates = [{"id": competition_id} for competition_id in range(1, 13)]
+        logs: list[str] = []
+
+        details = competitions._fetch_details(
+            candidates,
+            lambda _url, label, _limiter: {"id": int(label.rsplit(" ", 1)[1])},
+            None,
+            log=logs.append,
+            progress_label="Competition season 11 detail",
+        )
+
+        self.assertEqual(len(details), 12)
+        self.assertEqual(
+            logs,
+            [
+                "Competition season 11 detail: 1/12",
+                "Competition season 11 detail: 10/12",
+                "Competition season 11 detail: 12/12",
+            ],
+        )
+
+
 if __name__ == "__main__":
     unittest.main()
