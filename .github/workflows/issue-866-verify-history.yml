@@ -26,7 +26,7 @@ jobs:
           from urllib.parse import urlencode
           from urllib.request import Request, urlopen
 
-          from scripts.database.competitions import discover_season_candidates, season_label
+          from scripts.database.competitions import season_label, select_root_competitions
 
           base_url = 'https://z519wdyajg.execute-api.us-east-1.amazonaws.com/prod/competitions/seasonHistory'
           headers = {
@@ -36,14 +36,41 @@ jobs:
           }
 
           totals = []
+          failures = []
           for season_id in range(11, 27):
               url = f'{base_url}?{urlencode({"seasonId": season_id})}'
               with urlopen(Request(url, headers=headers), timeout=60) as response:
                   payload = json.load(response)
-              candidates = discover_season_candidates(payload, season_id)
               roots = payload.get('rootCompetitions') or []
-              totals.append(len(candidates))
-              print(f'{season_label(season_id)}: {len(roots)} roots, {len(candidates)} selected competitions')
+              selected_count = 0
+              for root in roots:
+                  try:
+                      selected_count += len(select_root_competitions(root))
+                  except Exception as exc:
+                      summary = [
+                          {
+                              'id': item.get('id'),
+                              'name': item.get('name'),
+                              'type': item.get('type'),
+                              'winner': bool(item.get('winner')),
+                          }
+                          for item in (root.get('competitions') or [])
+                          if isinstance(item, dict)
+                      ]
+                      failure = {
+                          'season': season_label(season_id),
+                          'rootId': root.get('id'),
+                          'root': root.get('name'),
+                          'division': root.get('division'),
+                          'error': f'{type(exc).__name__}: {exc}',
+                          'competitions': summary,
+                      }
+                      failures.append(failure)
+                      print('FAIL', json.dumps(failure, sort_keys=True, default=str))
+              totals.append(selected_count)
+              print(f'{season_label(season_id)}: {len(roots)} roots, {selected_count} selected competitions, {sum(1 for item in failures if item["season"] == season_label(season_id))} failures')
 
-          print(f'Validated {len(totals)} historical seasons; selected {sum(totals)} competitions total')
+          print(f'Checked {len(totals)} historical seasons; selected {sum(totals)} competitions from valid roots; failures={len(failures)}')
+          if failures:
+              raise SystemExit(1)
           PY
