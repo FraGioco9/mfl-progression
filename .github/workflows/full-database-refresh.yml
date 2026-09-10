@@ -31,10 +31,15 @@ on:
         required: false
         default: true
         type: boolean
-      fetch_competitions:
-        description: Fetch competition data; disable to reuse previous competition history.
+      fetch_live_competitions:
+        description: Fetch and reconcile LIVE competition data; disable to reuse stored history only.
         required: false
         default: true
+        type: boolean
+      backfill_historical_competitions:
+        description: Backfill missing historical competitions from Season 1; intended for manual maintenance.
+        required: false
+        default: false
         type: boolean
       send_progression_emails:
         description: Send progression notification emails after the rebuild.
@@ -311,7 +316,8 @@ jobs:
         env:
           MFL_API_TOKEN: ${{ secrets.MFL_API_TOKEN }}
           MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}
-          MFL_FETCH_COMPETITIONS: ${{ inputs.fetch_competitions }}
+          MFL_FETCH_LIVE_COMPETITIONS: ${{ inputs.fetch_live_competitions }}
+          MFL_BACKFILL_HISTORICAL_COMPETITIONS: ${{ inputs.backfill_historical_competitions }}
         run: python -m scripts.database.rebuild_database_runner
 
       - name: Send progression emails
