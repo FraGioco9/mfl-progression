@@ -26,6 +26,11 @@ on:
         required: false
         default: ""
         type: string
+      fetch_players:
+        description: Fetch current player data; disable to reuse previous published player rows.
+        required: false
+        default: true
+        type: boolean
       fetch_progressions:
         description: Fetch player progression data; disable to reuse previous values.
         required: false
@@ -315,6 +320,7 @@ jobs:
         working-directory: builder
         env:
           MFL_API_TOKEN: ${{ secrets.MFL_API_TOKEN }}
+          MFL_FETCH_PLAYERS: ${{ inputs.fetch_players }}
           MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}
           MFL_FETCH_LIVE_COMPETITIONS: ${{ inputs.fetch_live_competitions }}
           MFL_BACKFILL_HISTORICAL_COMPETITIONS: ${{ inputs.backfill_historical_competitions }}
