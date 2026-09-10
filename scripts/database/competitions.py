@@ -36,6 +36,17 @@ def _competition_id(value: Any) -> int | None:
         return None
 
 
+def _season_id(competition: Any) -> int | None:
+    if not isinstance(competition, dict):
+        return None
+    season = competition.get("season")
+    if isinstance(season, dict):
+        resolved = _competition_id(season.get("id"))
+        if resolved is not None:
+            return resolved
+    return _competition_id(competition.get("seasonId"))
+
+
 def _is_playoff_summary(competition: dict[str, Any]) -> bool:
     code = str(competition.get("code") or "").strip().upper()
     name = str(competition.get("name") or "").strip().lower()
@@ -159,9 +170,27 @@ def _competition_list(payload: Any) -> list[dict[str, Any]]:
     return _competition_list(data) if isinstance(data, (dict, list)) else []
 
 
+def current_season_id_from_index(payload: Any) -> int | None:
+    """Resolve the newest raw MFL season ID without persisting index entries."""
+    season_ids = [
+        season_id
+        for competition in _competition_list(payload)
+        for season_id in [_season_id(competition)]
+        if season_id is not None
+    ]
+    if isinstance(payload, dict):
+        payload_season = _season_id(payload)
+        if payload_season is not None:
+            season_ids.append(payload_season)
+    return max(season_ids) if season_ids else None
+
+
 def current_candidates(payload: Any) -> list[dict[str, Any]]:
+    """Return only LIVE current-index candidates worth a detail request."""
     by_id: dict[int, dict[str, Any]] = {}
     for competition in _competition_list(payload):
+        if str(competition.get("status") or "").strip().upper() != "LIVE":
+            continue
         # Avoid an unnecessary detail request when the index explicitly says non-XP.
         if competition.get("withXp") is False:
             continue
@@ -207,14 +236,9 @@ def _persist_details(
     saved = 0
     seasons: set[int] = set()
     for candidate, detail in details:
-        if isinstance(detail, dict):
-            season = detail.get("season")
-            if isinstance(season, dict):
-                season_id = _competition_id(season.get("id"))
-            else:
-                season_id = _competition_id(detail.get("seasonId"))
-            if season_id is not None:
-                seasons.add(season_id)
+        season_id = _season_id(detail)
+        if season_id is not None:
+            seasons.add(season_id)
         if storage.persist_competition_detail(
             connection,
             detail,
@@ -245,63 +269,87 @@ def refresh_competitions(
     request_json: RequestJson,
     limiter: Any,
     log: Log = print,
+    *,
+    fetch_live: bool = True,
+    backfill_historical: bool = False,
 ) -> dict[str, int]:
-    """Restore history, refresh current competitions, then resumably backfill missing IDs."""
+    """Restore permanent history, optionally refresh LIVE data, and optionally backfill."""
     storage.create_schema(connection)
     restored = storage.restore_previous_history(connection, previous_database_path, log)
 
-    current_payload = request_json(
-        CURRENT_COMPETITIONS_URL,
-        "Current competitions",
-        limiter,
-    )
-    active_candidates = current_candidates(current_payload)
-    active_details = _fetch_details(active_candidates, request_json, limiter)
-    active_saved, active_seasons = _persist_details(connection, active_details, log)
+    current_payload: Any = None
+    live_candidates: list[dict[str, Any]] = []
+    live_saved = 0
+    live_seasons: set[int] = set()
 
-    current_season_id = max(active_seasons) if active_seasons else storage.max_stored_season_id(connection)
-    if current_season_id is None or current_season_id < storage.FIRST_SEASON_ID:
-        raise RuntimeError("Could not determine the current MFL season for competition backfill")
+    # Both live refresh and historical backfill can use this one index request. Historical
+    # mode uses it only to resolve the current season boundary when needed.
+    if fetch_live or backfill_historical:
+        current_payload = request_json(
+            CURRENT_COMPETITIONS_URL,
+            "Current competitions",
+            limiter,
+        )
 
-    already_stored = storage.stored_competition_ids(connection)
+    if fetch_live:
+        live_candidates = current_candidates(current_payload)
+        live_details = _fetch_details(live_candidates, request_json, limiter)
+        live_saved, live_seasons = _persist_details(connection, live_details, log)
+
     historical_discovered = 0
     historical_requested = 0
     historical_saved = 0
 
-    for season_id in range(storage.FIRST_SEASON_ID, current_season_id + 1):
-        payload = _season_history(season_id, request_json, limiter)
-        candidates = discover_season_candidates(payload, season_id)
-        historical_discovered += len(candidates)
-        missing = [candidate for candidate in candidates if candidate["id"] not in already_stored]
-        if not missing:
-            continue
-        historical_requested += len(missing)
-        details = _fetch_details(missing, request_json, limiter)
-        saved, _ = _persist_details(connection, details, log)
-        historical_saved += saved
-        already_stored.update(
-            candidate["id"]
-            for candidate, detail in details
-            if storage.is_eligible_detail(detail)
+    if backfill_historical:
+        current_season_id = (
+            max(live_seasons)
+            if live_seasons
+            else current_season_id_from_index(current_payload)
         )
-        log(
-            f"Competition season {season_id}: discovered {len(candidates)}, "
-            f"requested {len(missing)}, saved {saved}"
-        )
+        if current_season_id is None:
+            current_season_id = storage.max_stored_season_id(connection)
+        if current_season_id is None or current_season_id < storage.FIRST_SEASON_ID:
+            raise RuntimeError("Could not determine the current MFL season for competition backfill")
+
+        already_stored = storage.stored_competition_ids(connection)
+        for season_id in range(storage.FIRST_SEASON_ID, current_season_id + 1):
+            payload = _season_history(season_id, request_json, limiter)
+            candidates = discover_season_candidates(payload, season_id)
+            historical_discovered += len(candidates)
+            missing = [
+                candidate
+                for candidate in candidates
+                if candidate["id"] not in already_stored
+            ]
+            if not missing:
+                continue
+            historical_requested += len(missing)
+            details = _fetch_details(missing, request_json, limiter)
+            saved, _ = _persist_details(connection, details, log)
+            historical_saved += saved
+            already_stored.update(
+                candidate["id"]
+                for candidate, detail in details
+                if storage.is_eligible_detail(detail)
+            )
+            log(
+                f"Competition season {season_id}: discovered {len(candidates)}, "
+                f"requested {len(missing)}, saved {saved}"
+            )
 
     total = int(connection.execute("SELECT COUNT(*) FROM competitions").fetchone()[0])
     stats = {
         "restored": restored,
-        "active_discovered": len(active_candidates),
-        "active_saved": active_saved,
+        "live_discovered": len(live_candidates),
+        "live_saved": live_saved,
         "historical_discovered": historical_discovered,
         "historical_requested": historical_requested,
         "historical_saved": historical_saved,
         "total": total,
     }
     log(
-        "Competition history: "
-        f"restored {restored}, active {active_saved}/{len(active_candidates)}, "
+        "Competition data: "
+        f"restored {restored}, live {live_saved}/{len(live_candidates)}, "
         f"historical detail requests {historical_requested}, total stored {total}"
     )
     return stats
