@@ -22,11 +22,12 @@ jobs:
           node-version: 22
       - name: Consolidate Bootstrap route state
         run: |
-          python .github/754-canonicalize-bootstrap-route-state.py
+          python .github/754-canonicalize-bootstrap-route-state-v2.py
           node --check site/bootstrap.js
           node --check site/validate-app-config.mjs
           node --check site/validate-static-route-ui.mjs
           rm .github/754-canonicalize-bootstrap-route-state.py
+          rm .github/754-canonicalize-bootstrap-route-state-v2.py
           rm .github/workflows/754-bootstrap-canonical-route-state.yml
           git diff --check
       - name: Commit Bootstrap route-state consolidation
