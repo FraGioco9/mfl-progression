@@ -8,7 +8,6 @@ import traceback
 from collections.abc import Callable
 from typing import Any
 
-from scripts.database import competition_storage
 from scripts.database import competitions
 from scripts.database import rebuild_database as rebuild
 from scripts.database import run_flow_rebuild as pipeline
@@ -18,7 +17,10 @@ PLAYER_REQUESTS_PER_MINUTE = 60
 PROGRESSION_REQUESTS_PER_MINUTE = 60
 MFL_API_TOKEN_ENVIRONMENT_VARIABLE = "MFL_API_TOKEN"
 FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PROGRESSIONS"
-FETCH_COMPETITIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_COMPETITIONS"
+FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_LIVE_COMPETITIONS"
+BACKFILL_HISTORICAL_COMPETITIONS_ENVIRONMENT_VARIABLE = (
+    "MFL_BACKFILL_HISTORICAL_COMPETITIONS"
+)
 PROGRESSION_COLUMNS = tuple(
     f"{attribute}_prog_{suffix}"
     for suffix in ("all", "current_season")
@@ -134,40 +136,17 @@ def restore_previous_progressions(connection: Any) -> dict[str, int]:
     return {"ALL": restored, "CURRENT_SEASON": restored}
 
 
-def restore_competitions_without_fetch(
-    connection: sqlite3.Connection,
-    previous_database_path: Any,
-    _request_json: Any,
-    _limiter: Any,
-    log: Callable[[str], None] = print,
-) -> dict[str, int]:
-    """Keep permanent competition history while making no competition API requests."""
-    restored = competition_storage.restore_previous_history(
-        connection,
-        previous_database_path,
-        log,
-    )
-    total = int(connection.execute("SELECT COUNT(*) FROM competitions").fetchone()[0])
-    log(
-        "Competition fetching disabled; "
-        f"reused {restored} previously stored competitions."
-    )
-    return {
-        "restored": restored,
-        "active_discovered": 0,
-        "active_saved": 0,
-        "historical_discovered": 0,
-        "historical_requested": 0,
-        "historical_saved": 0,
-        "total": total,
-    }
-
-
 def configure_rebuild() -> None:
     """Install the authenticated, rate-limited production rebuild configuration."""
     install_mfl_api_authentication()
     fetch_progressions = environment_flag(FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE)
-    fetch_competitions = environment_flag(FETCH_COMPETITIONS_ENVIRONMENT_VARIABLE)
+    fetch_live_competitions = environment_flag(
+        FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE
+    )
+    backfill_historical_competitions = environment_flag(
+        BACKFILL_HISTORICAL_COMPETITIONS_ENVIRONMENT_VARIABLE,
+        default=False,
+    )
 
     pipeline.MFL_REQUESTS_PER_MINUTE = PLAYER_REQUESTS_PER_MINUTE
     pipeline.MFL_WORKERS = 320
@@ -210,17 +189,30 @@ def configure_rebuild() -> None:
             lambda: restore_previous_progressions(connection),
         )
 
+    def refresh_competitions_with_options(
+        connection: sqlite3.Connection,
+        previous_database_path: Any,
+        request_json: Any,
+        limiter: Any,
+        log: Callable[[str], None] = print,
+    ) -> dict[str, int]:
+        return CANONICAL_COMPETITION_REFRESH(
+            connection,
+            previous_database_path,
+            request_json,
+            limiter,
+            log,
+            fetch_live=fetch_live_competitions,
+            backfill_historical=backfill_historical_competitions,
+        )
+
     pipeline.fetch_all_player_sources = fetch_players_with_logging
     pipeline.refresh_progressions = (
         refresh_progressions_with_own_limiter
         if fetch_progressions
         else reuse_progressions
     )
-    competitions.refresh_competitions = (
-        CANONICAL_COMPETITION_REFRESH
-        if fetch_competitions
-        else restore_competitions_without_fetch
-    )
+    competitions.refresh_competitions = refresh_competitions_with_options
 
     rebuild.install_database_filename()
     rebuild.install_concise_progression_logging()
@@ -235,7 +227,9 @@ def configure_rebuild() -> None:
         "PlayMFL runtime configuration: "
         f"/players {PLAYER_REQUESTS_PER_MINUTE} starts/min, "
         f"/players/progressions {progression_status}, "
-        f"competitions {'enabled' if fetch_competitions else 'disabled'}, "
+        f"live competitions {'enabled' if fetch_live_competitions else 'disabled'}, "
+        "historical competition backfill "
+        f"{'enabled' if backfill_historical_competitions else 'disabled'}, "
         f"{pipeline.MFL_WORKERS} workers"
     )
 

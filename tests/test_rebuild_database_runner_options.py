@@ -21,6 +21,12 @@ class RebuildOptionTests(unittest.TestCase):
         with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "0"}, clear=True):
             self.assertFalse(runner.environment_flag("MFL_TEST_OPTION"))
 
+    def test_environment_flag_can_default_off(self) -> None:
+        with mock.patch.dict(os.environ, {}, clear=True):
+            self.assertFalse(runner.environment_flag("MFL_TEST_OPTION", default=False))
+        with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "true"}, clear=True):
+            self.assertTrue(runner.environment_flag("MFL_TEST_OPTION", default=False))
+
     def test_invalid_environment_flag_fails_closed(self) -> None:
         with mock.patch.dict(os.environ, {"MFL_TEST_OPTION": "sometimes"}, clear=True):
             with self.assertRaisesRegex(RuntimeError, "must be true or false"):
@@ -71,41 +77,16 @@ class RebuildOptionTests(unittest.TestCase):
             finally:
                 current.close()
 
-    def test_disabled_competitions_restore_history_without_api_requests(self) -> None:
-        with tempfile.TemporaryDirectory() as directory:
-            previous_path = Path(directory) / "previous.db"
-            previous = sqlite3.connect(previous_path)
-            competition_storage.create_schema(previous)
-            previous.execute(
-                """
-                INSERT INTO competitions (
-                  competition_id, season_id, with_xp, detail_loaded
-                ) VALUES (100, 25, 1, 1)
-                """
-            )
-            previous.commit()
-            previous.close()
-
-            current = sqlite3.connect(":memory:")
-            try:
-                request_json = mock.Mock(side_effect=AssertionError("API must not be called"))
-                stats = runner.restore_competitions_without_fetch(
-                    current,
-                    previous_path,
-                    request_json,
-                    object(),
-                    log=lambda _message: None,
-                )
-                self.assertEqual(
-                    current.execute(
-                        "SELECT competition_id FROM competitions"
-                    ).fetchall(),
-                    [(100,)],
-                )
-                self.assertEqual(stats["restored"], 1)
-                request_json.assert_not_called()
-            finally:
-                current.close()
+    def test_competition_environment_variables_are_split(self) -> None:
+        self.assertEqual(
+            runner.FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE,
+            "MFL_FETCH_LIVE_COMPETITIONS",
+        )
+        self.assertEqual(
+            runner.BACKFILL_HISTORICAL_COMPETITIONS_ENVIRONMENT_VARIABLE,
+            "MFL_BACKFILL_HISTORICAL_COMPETITIONS",
+        )
+        self.assertFalse(hasattr(runner, "FETCH_COMPETITIONS_ENVIRONMENT_VARIABLE"))
 
     def test_registration_dates_are_not_part_of_competition_storage(self) -> None:
         connection = sqlite3.connect(":memory:")
