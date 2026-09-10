@@ -342,7 +342,67 @@ def install_flow_wallet_id_cache() -> None:
     populate_seasons_from_flow._id_batches = wallet_aware_id_batches
 
 
-def rebuild_directly() -> int:
+def restore_previous_players(
+    connection: sqlite3.Connection,
+    previous_database_path: Path | None,
+) -> int:
+    """Copy the complete normalized player table from the previous published database."""
+    if previous_database_path is None or not previous_database_path.is_file():
+        raise RuntimeError(
+            "Player fetching disabled but no previous database is available to reuse"
+        )
+
+    alias = "previous_players"
+    connection.execute(f"ATTACH DATABASE ? AS {alias}", (str(previous_database_path),))
+    try:
+        previous_tables = {
+            str(row[0])
+            for row in connection.execute(
+                f"SELECT name FROM {alias}.sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "players" not in previous_tables:
+            raise RuntimeError(
+                "Player fetching disabled but previous database has no players table"
+            )
+
+        previous_columns = {
+            str(row[1])
+            for row in connection.execute(
+                f"PRAGMA {alias}.table_info(players)"
+            ).fetchall()
+        }
+        required_columns = set(run_flow_rebuild.PLAYER_COLUMNS)
+        missing_columns = sorted(required_columns - previous_columns)
+        if missing_columns:
+            raise RuntimeError(
+                "Player fetching disabled but previous database player schema is incomplete: "
+                + ", ".join(missing_columns)
+            )
+
+        columns = ", ".join(
+            f'"{column}"' for column in run_flow_rebuild.PLAYER_COLUMNS
+        )
+        connection.execute(
+            f"INSERT INTO players ({columns}) SELECT {columns} FROM {alias}.players"
+        )
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        connection.execute(f"DETACH DATABASE {alias}")
+
+    restored = int(
+        connection.execute("SELECT COUNT(*) FROM players").fetchone()[0]
+    )
+    run_flow_rebuild.log(
+        f"Player fetching disabled; reused previous player rows: {restored}"
+    )
+    return restored
+
+
+def rebuild_directly(*, fetch_players: bool = True) -> int:
     """Rebuild mfl_database.db directly without reports, validation, or candidate files."""
     total_started = time.perf_counter()
     limiter = run_flow_rebuild.RateLimiter(run_flow_rebuild.MFL_REQUESTS_PER_MINUTE)
@@ -360,24 +420,33 @@ def rebuild_directly() -> int:
             connection,
             limiter,
         )
-        source_results, _ = run_flow_rebuild.timed(
-            "All players",
-            run_flow_rebuild.fetch_all_player_sources,
-            limiter,
-        )
-        players = run_flow_rebuild.merge_players(
-            source_results["general"],
-            source_results["retired"],
-            source_results["mfl"],
-            source_results["mfl_trade"],
-        )
-        contract_players = validated_club_contract_players(players)
-        run_flow_rebuild.timed(
-            "Insert merged players",
-            run_flow_rebuild.insert_players,
-            connection,
-            players,
-        )
+        if fetch_players:
+            source_results, _ = run_flow_rebuild.timed(
+                "All players",
+                run_flow_rebuild.fetch_all_player_sources,
+                limiter,
+            )
+            players = run_flow_rebuild.merge_players(
+                source_results["general"],
+                source_results["retired"],
+                source_results["mfl"],
+                source_results["mfl_trade"],
+            )
+            contract_players = validated_club_contract_players(players)
+            run_flow_rebuild.timed(
+                "Insert merged players",
+                run_flow_rebuild.insert_players,
+                connection,
+                players,
+            )
+        else:
+            run_flow_rebuild.timed(
+                "Reuse previous players",
+                restore_previous_players,
+                connection,
+                run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+            )
+            contract_players = ()
         run_flow_rebuild.timed(
             "Restore mint ages",
             restore_previous_mint_ages,

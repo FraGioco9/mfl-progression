@@ -77,6 +77,61 @@ class RebuildOptionTests(unittest.TestCase):
             finally:
                 current.close()
 
+    def test_player_environment_variable_is_explicit(self) -> None:
+        self.assertEqual(
+            runner.FETCH_PLAYERS_ENVIRONMENT_VARIABLE,
+            "MFL_FETCH_PLAYERS",
+        )
+
+    def test_disabled_player_fetch_reuses_complete_previous_rows(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            previous_path = Path(directory) / "previous.db"
+            previous = sqlite3.connect(previous_path)
+            runner.pipeline.create_schema(previous)
+            previous.execute(
+                """
+                INSERT INTO players (
+                    player_id, wallet_address, wallet_name, name, retirement_years,
+                    overall, player_seasons, overall_prog_all, next_overall
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (42, "0xabc", "Agent", "Player Forty Two", 3, 81, 7, 5, 82.5),
+            )
+            previous.commit()
+            previous.close()
+
+            current = sqlite3.connect(":memory:")
+            try:
+                runner.pipeline.create_schema(current)
+                restored = runner.rebuild.restore_previous_players(
+                    current,
+                    previous_path,
+                )
+                row = current.execute(
+                    """
+                    SELECT player_id, wallet_address, wallet_name, name,
+                           retirement_years, overall, player_seasons,
+                           overall_prog_all, next_overall
+                    FROM players
+                    """
+                ).fetchone()
+                self.assertEqual(restored, 1)
+                self.assertEqual(
+                    row,
+                    (42, "0xabc", "Agent", "Player Forty Two", 3, 81, 7, 5, 82.5),
+                )
+            finally:
+                current.close()
+
+    def test_disabled_player_fetch_fails_without_previous_database(self) -> None:
+        current = sqlite3.connect(":memory:")
+        try:
+            runner.pipeline.create_schema(current)
+            with self.assertRaisesRegex(RuntimeError, "no previous database"):
+                runner.rebuild.restore_previous_players(current, None)
+        finally:
+            current.close()
+
     def test_competition_environment_variables_are_split(self) -> None:
         self.assertEqual(
             runner.FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE,
