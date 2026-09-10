@@ -173,7 +173,6 @@ invariant(
   "Bootstrap must require the parser-blocking canonical app configuration before first-paint hydration.",
 );
 for (const canonicalAlias of [
-  "const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;",
   "const FIRST_PAINT_BASE_COLUMNS = APP_CONFIG.table.baseColumns;",
   "const FIRST_PAINT_STAT_COLUMNS = APP_CONFIG.table.statColumns;",
   "const FIRST_PAINT_CONTRACT_COLUMNS = APP_CONFIG.table.contractColumns;",
@@ -184,10 +183,20 @@ for (const canonicalAlias of [
   "APP_CONFIG.ui.mflStatsOverallFilters.map(({ id, label }) => Object.freeze([id, label]))",
   "APP_CONFIG.ui.settingsDateFormats.map(({ value, label }) => Object.freeze([value, label]))",
   "APP_CONFIG.ui.settingsTimeFormats.map(({ value, label }) => Object.freeze([value, label]))",
-  "return APP_CONFIG.routes.tableViews;",
+  "return APP_CONFIG.routes.initialRequest(route.pathname);",
 ]) {
   invariant(bootstrapSource.includes(canonicalAlias), `Bootstrap must consume canonical config through: ${canonicalAlias}`);
 }
+for (const retiredRouteParser of [
+  "const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;",
+  "const TABLE_VIEW_SLUGS = new Set(",
+  "function tableViewConfig()",
+  "function routeParts(",
+  "function decodedRoutePart(",
+]) {
+  invariant(!bootstrapSource.includes(retiredRouteParser), `Bootstrap must not duplicate canonical route parsing through: ${retiredRouteParser}`);
+}
+
 for (const retiredOwner of [
   "const TABLE_VIEW_BY_SLUG = Object.freeze(",
   "const FIRST_PAINT_BASE_COLUMNS = Object.freeze(",
