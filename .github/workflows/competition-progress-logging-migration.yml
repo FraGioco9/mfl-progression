@@ -1,0 +1,23 @@
+name: Competition progress logging migration
+
+on:
+  push:
+    branches:
+      - fix/competition-refresh-progress-logging
+
+permissions:
+  contents: write
+
+jobs:
+  migrate:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Apply logging change
+        run: python .github/scripts/apply-competition-progress-logging.py
