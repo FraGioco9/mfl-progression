@@ -1,5 +1,4 @@
 from pathlib import Path
-import re
 
 ROOT = Path(__file__).resolve().parents[1]
 SITE = ROOT / "site"
@@ -156,7 +155,7 @@ write(app_config_validator, text)
 
 static_validator = SITE / "validate-static-route-ui.mjs"
 text = read(static_validator)
-old_assertions = '''includes(bootstrap, "const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;", "Bootstrap table chrome must consume canonical route-view configuration.");
+old_assertions = '''includes(bootstrap, "const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;", "Bootstrap table chrome must consume canonical route view slugs from the pre-bootstrap app config.");
 includes(bootstrap, "function tableViewFromUrl(page, urlLike = window.location.href) {", "Bootstrap table chrome must resolve its view from the destination URL.");
 includes(bootstrap, "const routeView = TABLE_VIEW_BY_SLUG[routeSlug] || \"\";", "Bootstrap table chrome must resolve destination slugs through the canonical route-view map.");
 '''
