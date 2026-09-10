@@ -342,6 +342,91 @@ def install_flow_wallet_id_cache() -> None:
     populate_seasons_from_flow._id_batches = wallet_aware_id_batches
 
 
+
+def restore_previous_wallets(
+    connection: sqlite3.Connection,
+    previous_database_path: Path | None,
+) -> int:
+    """Copy normalized leaderboard wallets from the previous published database."""
+    if previous_database_path is None or not previous_database_path.is_file():
+        raise RuntimeError(
+            "Wallet fetching disabled but no previous database is available to reuse"
+        )
+
+    database_uri = f"{previous_database_path.resolve().as_uri()}?mode=ro"
+    previous = sqlite3.connect(database_uri, uri=True)
+    try:
+        tables = {
+            str(row[0])
+            for row in previous.execute(
+                "SELECT name FROM sqlite_master WHERE type = 'table'"
+            ).fetchall()
+        }
+        if "wallets" not in tables:
+            raise RuntimeError(
+                "Wallet fetching disabled but previous database has no wallets table"
+            )
+        previous_columns = {
+            str(row[1])
+            for row in previous.execute("PRAGMA table_info(wallets)").fetchall()
+        }
+        required_columns = {"wallet_address", "name"}
+        missing_columns = sorted(required_columns - previous_columns)
+        if missing_columns:
+            raise RuntimeError(
+                "Wallet fetching disabled but previous database wallet schema is incomplete: "
+                + ", ".join(missing_columns)
+            )
+        rows = previous.execute(
+            "SELECT lower(wallet_address), name FROM wallets "
+            "WHERE coalesce(wallet_address, '') <> '' ORDER BY lower(wallet_address)"
+        ).fetchall()
+    finally:
+        previous.close()
+
+    if not rows:
+        raise RuntimeError(
+            "Wallet fetching disabled but previous database contains no wallet records"
+        )
+    connection.executemany(
+        "INSERT OR REPLACE INTO wallets(wallet_address, name) VALUES (?, ?)",
+        rows,
+    )
+    connection.executemany(
+        "INSERT OR REPLACE INTO wallets(wallet_address, name) VALUES (?, ?)",
+        (
+            (run_flow_rebuild.MFL_WALLET_ADDRESS, run_flow_rebuild.MFL_WALLET_NAME),
+            (run_flow_rebuild.MFL_TRADE_WALLET_ADDRESS, run_flow_rebuild.MFL_TRADE_WALLET_NAME),
+        ),
+    )
+    connection.commit()
+    restored = int(connection.execute("SELECT COUNT(*) FROM wallets").fetchone()[0])
+    run_flow_rebuild.log(
+        f"Wallet fetching disabled; reused previous wallet rows: {restored}"
+    )
+    return restored
+
+
+def reuse_resolved_player_seasons(connection: sqlite3.Connection) -> dict[str, int]:
+    """Skip external season recovery only when every current player is already resolved."""
+    total_players = int(connection.execute("SELECT COUNT(*) FROM players").fetchone()[0])
+    unresolved = run_flow_rebuild.unresolved_player_season_count(connection)
+    if unresolved:
+        raise RuntimeError(
+            "Player-season fetching disabled but "
+            f"{unresolved} players are unresolved; enable Fetch player seasons"
+        )
+    run_flow_rebuild.log(
+        f"Player-season fetching disabled; reused resolved seasons for {total_players} players"
+    )
+    return {
+        "already_known": total_players,
+        "recovered_from_flow": 0,
+        "recovered_from_mfl_history": 0,
+        "still_unresolved": 0,
+    }
+
+
 def restore_previous_players(
     connection: sqlite3.Connection,
     previous_database_path: Path | None,
@@ -402,7 +487,13 @@ def restore_previous_players(
     return restored
 
 
-def rebuild_directly(*, fetch_players: bool = True) -> int:
+def rebuild_directly(
+    *,
+    fetch_wallets: bool = True,
+    fetch_players: bool = True,
+    fetch_clubs: bool = True,
+    fetch_player_seasons: bool = True,
+) -> int:
     """Rebuild mfl_database.db directly without reports, validation, or candidate files."""
     total_started = time.perf_counter()
     limiter = run_flow_rebuild.RateLimiter(run_flow_rebuild.MFL_REQUESTS_PER_MINUTE)
@@ -414,12 +505,20 @@ def rebuild_directly(*, fetch_players: bool = True) -> int:
     connection = sqlite3.connect(database_path)
     try:
         run_flow_rebuild.timed("Create fresh database", run_flow_rebuild.create_schema, connection)
-        run_flow_rebuild.timed(
-            "Leaderboard wallets",
-            run_flow_rebuild.refresh_wallets,
-            connection,
-            limiter,
-        )
+        if fetch_wallets:
+            run_flow_rebuild.timed(
+                "Leaderboard wallets",
+                run_flow_rebuild.refresh_wallets,
+                connection,
+                limiter,
+            )
+        else:
+            run_flow_rebuild.timed(
+                "Reuse previous wallets",
+                restore_previous_wallets,
+                connection,
+                run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+            )
         if fetch_players:
             source_results, _ = run_flow_rebuild.timed(
                 "All players",
@@ -453,16 +552,26 @@ def rebuild_directly(*, fetch_players: bool = True) -> int:
             connection,
             run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
         )
-        run_flow_rebuild.timed(
-            "Flow clubs and rosters",
-            clubs.refresh_clubs,
-            connection,
-            None,
-            run_flow_rebuild.request_json,
-            limiter,
-            contract_players,
-            run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
-        )
+        if fetch_clubs:
+            run_flow_rebuild.timed(
+                "Flow clubs and rosters",
+                clubs.refresh_clubs,
+                connection,
+                None,
+                run_flow_rebuild.request_json,
+                limiter,
+                contract_players,
+                run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+                run_flow_rebuild.log,
+            )
+        else:
+            run_flow_rebuild.timed(
+                "Reuse previous clubs and rosters",
+                clubs.restore_previous_clubs,
+                connection,
+                run_flow_rebuild_paged.PREVIOUS_DATABASE_PATH,
+                run_flow_rebuild.log,
+            )
         run_flow_rebuild.timed(
             "Competition history",
             competitions.refresh_competitions,
@@ -474,16 +583,29 @@ def rebuild_directly(*, fetch_players: bool = True) -> int:
         )
 
         flow_started = time.perf_counter()
-        season_stats = run_flow_rebuild.refresh_player_seasons(connection)
-        updated_seasons = (
-            season_stats["recovered_from_flow"]
-            + season_stats["recovered_from_mfl_history"]
-        )
-        flow_seconds = time.perf_counter() - flow_started
-        run_flow_rebuild.log(
-            f"\n=== Flow seasons ===\nFlow seasons updated: {updated_seasons} "
-            f"in {run_flow_rebuild.format_duration(flow_seconds)}"
-        )
+        if fetch_player_seasons:
+            season_stats = run_flow_rebuild.refresh_player_seasons(connection)
+            updated_seasons = (
+                season_stats["recovered_from_flow"]
+                + season_stats["recovered_from_mfl_history"]
+            )
+            flow_seconds = time.perf_counter() - flow_started
+            run_flow_rebuild.log("")
+            run_flow_rebuild.log("=== Flow seasons ===")
+            run_flow_rebuild.log(
+                f"Flow seasons updated: {updated_seasons} "
+                f"in {run_flow_rebuild.format_duration(flow_seconds)}"
+            )
+        else:
+            season_stats = reuse_resolved_player_seasons(connection)
+            updated_seasons = 0
+            flow_seconds = time.perf_counter() - flow_started
+            run_flow_rebuild.log("")
+            run_flow_rebuild.log("=== Flow seasons ===")
+            run_flow_rebuild.log(
+                f"Flow season fetch disabled: {season_stats['already_known']} already resolved, "
+                f"0 unresolved in {run_flow_rebuild.format_duration(flow_seconds)}"
+            )
         run_flow_rebuild.timed(
             "Persist mint ages",
             persist_mint_ages,
