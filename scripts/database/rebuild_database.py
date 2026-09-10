@@ -20,6 +20,9 @@ from scripts.database import run_flow_rebuild
 from scripts.database import run_flow_rebuild_paged
 from scripts.database.update_database import ATTRIBUTES, MFL_WALLET_ADDRESS, next_overall_values
 
+REBUILD_MINT_AGES_TABLE = "rebuild_player_mint_ages"
+LEGACY_MINT_AGES_TABLE = "player_mint_ages"
+
 
 class WalletPlayerIds(list[int]):
     """Player IDs carrying the wallet address used to choose the Flow batch size."""
@@ -125,7 +128,7 @@ def _table_columns(connection: sqlite3.Connection, table_name: str) -> set[str]:
 
 
 def load_previous_mint_ages(previous_database_path: Path | None) -> dict[int, int]:
-    """Load stable mint ages, including a one-time derivation from legacy databases."""
+    """Load stable mint ages from rebuild state or one-time legacy sources."""
     if previous_database_path is None or not previous_database_path.exists():
         run_flow_rebuild.log("No previous database available for mint-age reuse.")
         return {}
@@ -133,13 +136,19 @@ def load_previous_mint_ages(previous_database_path: Path | None) -> dict[int, in
     mint_ages: dict[int, int] = {}
     previous = sqlite3.connect(previous_database_path)
     try:
-        mint_age_columns = _table_columns(previous, "player_mint_ages")
-        if {"player_id", "age_at_mint"}.issubset(mint_age_columns):
+        for table_name in (REBUILD_MINT_AGES_TABLE, LEGACY_MINT_AGES_TABLE):
+            mint_age_columns = _table_columns(previous, table_name)
+            if not {"player_id", "age_at_mint"}.issubset(mint_age_columns):
+                continue
             for player_id, age_at_mint in previous.execute(
-                "SELECT player_id, age_at_mint FROM player_mint_ages"
+                f'SELECT player_id, age_at_mint FROM "{table_name}"'
             ).fetchall():
                 resolved_age = run_flow_rebuild.to_int(age_at_mint)
-                if resolved_age is not None and resolved_age > 0:
+                if (
+                    int(player_id) not in mint_ages
+                    and resolved_age is not None
+                    and resolved_age > 0
+                ):
                     mint_ages[int(player_id)] = resolved_age
 
         player_columns = _table_columns(previous, "players")
@@ -228,19 +237,20 @@ def restore_previous_mint_ages(
 
 
 def persist_mint_ages(connection: sqlite3.Connection) -> int:
-    """Persist the stable mint-age basis so later rebuilds can skip Flow for known players."""
+    """Persist rebuild-only mint-age state for later refreshes."""
     connection.execute(
-        """
-        CREATE TABLE IF NOT EXISTS player_mint_ages (
+        f"""
+        CREATE TABLE IF NOT EXISTS {REBUILD_MINT_AGES_TABLE} (
             player_id INTEGER PRIMARY KEY,
             age_at_mint INTEGER NOT NULL
         )
         """
     )
-    connection.execute("DELETE FROM player_mint_ages")
+    connection.execute(f"DROP TABLE IF EXISTS {LEGACY_MINT_AGES_TABLE}")
+    connection.execute(f"DELETE FROM {REBUILD_MINT_AGES_TABLE}")
     connection.execute(
-        """
-        INSERT INTO player_mint_ages(player_id, age_at_mint)
+        f"""
+        INSERT INTO {REBUILD_MINT_AGES_TABLE}(player_id, age_at_mint)
         SELECT player_id, age - player_seasons + 1
         FROM players
         WHERE age IS NOT NULL
@@ -252,7 +262,9 @@ def persist_mint_ages(connection: sqlite3.Connection) -> int:
     )
     connection.commit()
     persisted = int(
-        connection.execute("SELECT COUNT(*) FROM player_mint_ages").fetchone()[0]
+        connection.execute(
+            f"SELECT COUNT(*) FROM {REBUILD_MINT_AGES_TABLE}"
+        ).fetchone()[0]
     )
     run_flow_rebuild.log(f"Mint ages persisted for future rebuilds: {persisted}")
     return persisted

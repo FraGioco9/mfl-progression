@@ -126,6 +126,7 @@ def is_eligible_detail(detail: Any) -> bool:
 
 
 def create_schema(connection: sqlite3.Connection) -> None:
+    connection.execute("PRAGMA foreign_keys = ON")
     connection.executescript(
         """
         CREATE TABLE IF NOT EXISTS competitions (
@@ -148,7 +149,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
           ON competitions(season_id, type, code, competition_id);
 
         CREATE TABLE IF NOT EXISTS competition_stages (
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           stage_order INTEGER NOT NULL,
           stage_api_id TEXT NOT NULL DEFAULT '',
           stage_type TEXT NOT NULL DEFAULT '',
@@ -157,7 +158,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
         );
 
         CREATE TABLE IF NOT EXISTS competition_groups (
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           stage_order INTEGER NOT NULL,
           group_order INTEGER NOT NULL,
           group_api_id TEXT NOT NULL DEFAULT '',
@@ -166,7 +167,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
         );
 
         CREATE TABLE IF NOT EXISTS competition_rounds (
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           stage_order INTEGER NOT NULL,
           group_order INTEGER NOT NULL,
           round_order INTEGER NOT NULL,
@@ -176,7 +177,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
         );
 
         CREATE TABLE IF NOT EXISTS competition_standings (
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           stage_order INTEGER NOT NULL,
           group_order INTEGER NOT NULL,
           club_id INTEGER NOT NULL,
@@ -193,7 +194,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
           ON competition_standings(club_id, competition_id);
 
         CREATE TABLE IF NOT EXISTS competition_rewards (
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           reward_order INTEGER NOT NULL,
           placement_from INTEGER,
           placement_to INTEGER,
@@ -205,7 +206,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
 
         CREATE TABLE IF NOT EXISTS competition_matches (
           match_id INTEGER PRIMARY KEY,
-          competition_id INTEGER NOT NULL,
+          competition_id INTEGER NOT NULL REFERENCES competitions(competition_id) ON DELETE CASCADE,
           stage_order INTEGER NOT NULL,
           group_order INTEGER NOT NULL,
           round_order INTEGER NOT NULL,
