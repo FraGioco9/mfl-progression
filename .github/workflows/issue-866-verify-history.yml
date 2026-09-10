@@ -1,3 +1,4 @@
+# Retriggered after applying the ordinal-generation selector fix.
 name: Issue 866 verify historical selectors
 
 on:
