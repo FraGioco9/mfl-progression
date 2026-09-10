@@ -143,9 +143,12 @@ includes(staticUi, "document.body.appendChild(tooltipPortal);", "Generic tooltip
 includes(styles, ".mflGlobalTooltip {", "The global tooltip portal must have canonical static styling.");
 includes(styles, "z-index: var(--mfl-z-topmost);", "Global tooltip portals must consume the canonical topmost stacking level.");
 
-includes(bootstrap, "const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;", "Bootstrap table chrome must consume canonical route view slugs from the pre-bootstrap app config.");
+includes(bootstrap, "function canonicalBootstrapRequest(urlLike = window.location.href) {", "Bootstrap route identity must delegate to canonical app configuration.");
+includes(bootstrap, "return APP_CONFIG.routes.initialRequest(route.pathname);", "Bootstrap route identity must use the canonical route classifier.");
 includes(bootstrap, "function tableViewFromUrl(page, urlLike = window.location.href) {", "Bootstrap table chrome must resolve its view from the destination URL.");
-includes(bootstrap, "const routeView = TABLE_VIEW_BY_SLUG[routeSlug] || \"\";", "Bootstrap table chrome must resolve destination slugs through the canonical route-view map.");
+includes(bootstrap, "return request?.pageName === normalizedPage ? String(request.options?.view || \"\") : \"\";", "Bootstrap table chrome must consume the canonical request view instead of parsing route slugs again.");
+excludes(bootstrap, "TABLE_VIEW_BY_SLUG", "Bootstrap must not retain a second route-view parser.");
+excludes(bootstrap, "function routeParts(", "Bootstrap must not retain a second path-segment parser.");
 includes(bootstrap, "const requestedView = tableViewFromUrl(normalizedPage, urlLike);", "Table chrome must make the live route authoritative.");
 const primeTableChromeStart = bootstrap.indexOf("function primeTableChrome(page, urlLike = window.location.href, options = {}) {");
 const primeTableChromeEnd = primeTableChromeStart >= 0 ? bootstrap.indexOf('\n  Reflect.set(window, "__mflPrimeTableChrome"', primeTableChromeStart) : -1;

@@ -22,8 +22,6 @@
   if (!APP_CONFIG?.routes || !APP_CONFIG?.table || !APP_CONFIG?.ui) {
     throw new Error("Bootstrap requires canonical pre-bootstrap app configuration.");
   }
-  const TABLE_VIEW_BY_SLUG = APP_CONFIG.routes.viewBySlug;
-  const TABLE_VIEW_SLUGS = new Set(Object.keys(TABLE_VIEW_BY_SLUG));
   const FIRST_PAINT_BASE_COLUMNS = APP_CONFIG.table.baseColumns;
   const FIRST_PAINT_STAT_COLUMNS = APP_CONFIG.table.statColumns;
   const FIRST_PAINT_CONTRACT_COLUMNS = APP_CONFIG.table.contractColumns;
@@ -73,15 +71,12 @@
   root.classList.add("mflSingleRenderPending");
   root.classList.remove("mflInitialRouteResolved");
 
-  function tableViewConfig() {
-    return APP_CONFIG.routes.tableViews;
-  }
-
-  function routeParts(urlLike = window.location.href) {
+  function canonicalBootstrapRequest(urlLike = window.location.href) {
     try {
-      return new URL(String(urlLike || window.location.href), window.location.href).pathname.split("/").filter(Boolean);
+      const route = new URL(String(urlLike || window.location.href), window.location.href);
+      return APP_CONFIG.routes.initialRequest(route.pathname);
     } catch {
-      return window.location.pathname.split("/").filter(Boolean);
+      return APP_CONFIG.routes.initialRequest(window.location.pathname);
     }
   }
 
@@ -90,35 +85,19 @@
     return address ? (address.startsWith("0x") ? address : `0x${address}`) : "";
   }
 
-  function decodedRoutePart(value) {
-    try {
-      return decodeURIComponent(String(value || ""));
-    } catch {
-      return String(value || "");
-    }
-  }
-
   function tableViewFromUrl(page, urlLike = window.location.href) {
-    const normalizedPage = String(page || "").toLowerCase();
-    const config = tableViewConfig()[normalizedPage];
-    if (!config || !Array.isArray(config.order)) return "";
-
-    const parts = routeParts(urlLike);
-    const routeSlug = decodedRoutePart(parts[parts.length - 1]).toLowerCase();
-    const routeView = TABLE_VIEW_BY_SLUG[routeSlug] || "";
-    return config.order.includes(routeView) ? routeView : "";
+    const normalizedPage = APP_CONFIG.routes.normalizePageName(page);
+    const request = canonicalBootstrapRequest(urlLike);
+    return request?.pageName === normalizedPage ? String(request.options?.view || "") : "";
   }
 
   function firstPaintWatchlistIdentity(urlLike = window.location.href) {
-    const parts = routeParts(urlLike);
-    if (String(parts[0] || "").toLowerCase() !== "watchlist") {
+    const request = canonicalBootstrapRequest(urlLike);
+    if (request?.pageName !== "watchlist") {
       return { id: "", name: "Default" };
     }
 
-    const firstSegment = decodedRoutePart(parts[1]);
-    const routeWatchlistId = firstSegment && !TABLE_VIEW_SLUGS.has(firstSegment.toLowerCase())
-      ? firstSegment
-      : "";
+    const routeWatchlistId = String(request.options?.watchlistId || "");
 
     try {
       const wallet = normalizeWalletAddress(localStorage.getItem(LINKED_WALLET_STORAGE_KEY));
@@ -140,9 +119,8 @@
   }
 
   function firstPaintClubIdentity(urlLike = window.location.href) {
-    const parts = routeParts(urlLike);
-    const routeRoot = String(parts[0] || "").toLowerCase();
-    const clubId = ["club", "clubs"].includes(routeRoot) ? decodedRoutePart(parts[1]).trim() : "";
+    const request = canonicalBootstrapRequest(urlLike);
+    const clubId = request?.pageName === "club" ? String(request.options?.clubId || "").trim() : "";
     if (!clubId) {
       return { clubId: "", name: "Club", divisionName: "", divisionColor: "" };
     }
@@ -172,7 +150,7 @@
       const playerId = String(route.searchParams.get("player") || "").trim();
       const savedId = String(route.searchParams.get("saved") || "").trim();
       const shareId = String(route.searchParams.get("share") || "").trim();
-      const evaluationRoute = route.pathname === "/evaluation";
+      const evaluationRoute = canonicalBootstrapRequest(route.href)?.pageName === "evaluation";
       return {
         evaluationRoute,
         plain: evaluationRoute && !playerId && !savedId && !shareId,
