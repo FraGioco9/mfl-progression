@@ -1,0 +1,78 @@
+name: Issue 864 refresh controls migration v2
+
+on:
+  push:
+    branches:
+      - issue-864-refresh-controls-club-progress
+    paths:
+      - .github/workflows/issue-864-migration-v2.yml
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: issue-864-refresh-controls-club-progress
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Apply issue 864 changes
+        run: |
+          python .github/issue-864-migration.py
+          python .github/issue-864-fix.py
+
+      - name: Check Python syntax
+        run: |
+          python -m py_compile \
+            scripts/database/clubs.py \
+            scripts/database/rebuild_database.py \
+            scripts/database/rebuild_database_runner.py \
+            tests/test_database_refresh_controls.py
+
+      - name: Run focused database tests
+        run: |
+          python -m unittest \
+            tests.test_database_refresh_controls \
+            tests.test_club_chain_data \
+            tests.test_rebuild_database_runner_options \
+            tests.test_full_database_refresh_workflow
+
+      - name: Upload modified Full database refresh workflow as Git blob
+        id: workflow_blob
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          BLOB_SHA="$(
+            jq -Rs '{content: ., encoding: "utf-8"}' .github/workflows/full-database-refresh.yml \
+              | gh api --method POST "repos/${GITHUB_REPOSITORY}/git/blobs" --input - --jq '.sha'
+          )"
+          echo "workflow_blob_sha=$BLOB_SHA" >> "$GITHUB_OUTPUT"
+          echo "FULL_DATABASE_REFRESH_BLOB_SHA=$BLOB_SHA"
+
+      - name: Commit permanent non-workflow changes
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git restore .github/workflows/full-database-refresh.yml
+          git add \
+            scripts/database/clubs.py \
+            scripts/database/rebuild_database.py \
+            scripts/database/rebuild_database_runner.py \
+            tests/test_database_refresh_controls.py
+          git rm .github/issue-864-migration.py .github/issue-864-fix.py
+          git commit -m 'Add granular refresh controls and club progress logging'
+          git push
+
+      - name: Summary
+        run: |
+          echo "FULL_DATABASE_REFRESH_BLOB_SHA=${{ steps.workflow_blob.outputs.workflow_blob_sha }}"
