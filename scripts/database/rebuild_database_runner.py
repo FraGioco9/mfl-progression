@@ -16,6 +16,7 @@ from scripts.database import run_flow_rebuild_paged as paged
 PLAYER_REQUESTS_PER_MINUTE = 60
 PROGRESSION_REQUESTS_PER_MINUTE = 60
 MFL_API_TOKEN_ENVIRONMENT_VARIABLE = "MFL_API_TOKEN"
+FETCH_PLAYERS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PLAYERS"
 FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_PROGRESSIONS"
 FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE = "MFL_FETCH_LIVE_COMPETITIONS"
 BACKFILL_HISTORICAL_COMPETITIONS_ENVIRONMENT_VARIABLE = (
@@ -136,9 +137,10 @@ def restore_previous_progressions(connection: Any) -> dict[str, int]:
     return {"ALL": restored, "CURRENT_SEASON": restored}
 
 
-def configure_rebuild() -> None:
+def configure_rebuild() -> bool:
     """Install the authenticated, rate-limited production rebuild configuration."""
     install_mfl_api_authentication()
+    fetch_players = environment_flag(FETCH_PLAYERS_ENVIRONMENT_VARIABLE)
     fetch_progressions = environment_flag(FETCH_PROGRESSIONS_ENVIRONMENT_VARIABLE)
     fetch_live_competitions = environment_flag(
         FETCH_LIVE_COMPETITIONS_ENVIRONMENT_VARIABLE
@@ -165,10 +167,53 @@ def configure_rebuild() -> None:
             operation = lambda: configured_player_fetcher(limiter)
         return run_with_error_logging("/players", operation)
 
+    def prepare_progression_batches_from_reused_players(
+        connection: sqlite3.Connection,
+    ) -> None:
+        rows = connection.execute(
+            """
+            SELECT player_id, lower(coalesce(wallet_address, '')), retirement_years
+            FROM players
+            ORDER BY player_id
+            """
+        ).fetchall()
+
+        def stub(player_id: int, wallet_address: str) -> dict[str, Any]:
+            return {
+                "id": int(player_id),
+                "ownedBy": {"walletAddress": str(wallet_address or "")},
+            }
+
+        active_players = [
+            stub(player_id, wallet_address)
+            for player_id, wallet_address, retirement_years in rows
+            if retirement_years != 0
+        ]
+        retired_players = [
+            stub(player_id, wallet_address)
+            for player_id, wallet_address, retirement_years in rows
+            if retirement_years == 0
+        ]
+        paged.ACTIVE_PROGRESSION_BATCHES = paged.prepare_progression_batches(
+            active_players,
+            "CURRENT_SEASON",
+        )
+        paged.RETIRED_PROGRESSION_BATCHES = paged.prepare_progression_batches(
+            retired_players,
+            "ALL",
+        )
+        pipeline.log(
+            "Progression batches prepared from reused player rows: "
+            f"active {len(active_players)}, retired {len(retired_players)}"
+        )
+
+
     def refresh_progressions_with_own_limiter(
         connection: object,
         _player_limiter: paged.RollingRateLimiter,
     ) -> dict[str, int]:
+        if not fetch_players:
+            prepare_progression_batches_from_reused_players(connection)
         progression_limiter = paged.RollingRateLimiter(
             PROGRESSION_REQUESTS_PER_MINUTE
         )
@@ -225,20 +270,21 @@ def configure_rebuild() -> None:
     )
     pipeline.log(
         "PlayMFL runtime configuration: "
-        f"/players {PLAYER_REQUESTS_PER_MINUTE} starts/min, "
+        f"/players {'enabled at ' + str(PLAYER_REQUESTS_PER_MINUTE) + ' starts/min' if fetch_players else 'disabled; reusing previous rows'}, "
         f"/players/progressions {progression_status}, "
         f"live competitions {'enabled' if fetch_live_competitions else 'disabled'}, "
         "historical competition backfill "
         f"{'enabled' if backfill_historical_competitions else 'disabled'}, "
         f"{pipeline.MFL_WORKERS} workers"
     )
+    return fetch_players
 
 
 def main() -> int:
     install_thread_error_logging()
     try:
-        configure_rebuild()
-        return rebuild.rebuild_directly()
+        fetch_players = configure_rebuild()
+        return rebuild.rebuild_directly(fetch_players=fetch_players)
     except Exception as error:
         print_failure("Database rebuild", error)
         return 1

@@ -36,6 +36,7 @@ class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
 
     def test_manual_refresh_options_use_safe_defaults(self) -> None:
         defaults = {
+            "fetch_players": "true",
             "fetch_progressions": "true",
             "fetch_live_competitions": "true",
             "backfill_historical_competitions": "false",
@@ -48,6 +49,10 @@ class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
             self.assertIn("type: boolean", option_block)
 
     def test_rebuild_receives_split_competition_options(self) -> None:
+        self.assertIn(
+            "MFL_FETCH_PLAYERS: ${{ inputs.fetch_players }}",
+            self.workflow,
+        )
         self.assertIn(
             "MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}",
             self.workflow,
