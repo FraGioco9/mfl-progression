@@ -34,26 +34,34 @@ class FullDatabaseRefreshWorkflowTests(unittest.TestCase):
         self.assertNotIn("PRAGMA table_info(players)", self.restore_step)
         self.assertNotIn("sqlite3.connect", self.restore_step)
 
-    def test_manual_fetch_options_default_to_enabled(self) -> None:
-        for option in (
-            "fetch_progressions",
-            "fetch_competitions",
-            "send_progression_emails",
-        ):
+    def test_manual_refresh_options_use_safe_defaults(self) -> None:
+        defaults = {
+            "fetch_progressions": "true",
+            "fetch_live_competitions": "true",
+            "backfill_historical_competitions": "false",
+            "send_progression_emails": "true",
+        }
+        for option, expected_default in defaults.items():
             option_tail = self.workflow.split(f"      {option}:\n", 1)[1]
-            option_block = option_tail[:300]
-            self.assertIn("default: true", option_block)
+            option_block = option_tail[:350]
+            self.assertIn(f"default: {expected_default}", option_block)
             self.assertIn("type: boolean", option_block)
 
-    def test_rebuild_receives_fetch_options(self) -> None:
+    def test_rebuild_receives_split_competition_options(self) -> None:
         self.assertIn(
             "MFL_FETCH_PROGRESSIONS: ${{ inputs.fetch_progressions }}",
             self.workflow,
         )
         self.assertIn(
-            "MFL_FETCH_COMPETITIONS: ${{ inputs.fetch_competitions }}",
+            "MFL_FETCH_LIVE_COMPETITIONS: ${{ inputs.fetch_live_competitions }}",
             self.workflow,
         )
+        self.assertIn(
+            "MFL_BACKFILL_HISTORICAL_COMPETITIONS: ${{ inputs.backfill_historical_competitions }}",
+            self.workflow,
+        )
+        self.assertNotIn("      fetch_competitions:\n", self.workflow)
+        self.assertNotIn("MFL_FETCH_COMPETITIONS:", self.workflow)
 
     def test_progression_email_requires_restored_database_and_enabled_progressions(self) -> None:
         self.assertIn(
