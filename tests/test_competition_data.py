@@ -179,6 +179,38 @@ class CompetitionStorageTests(unittest.TestCase):
         detail["name"] = "Diamond Playoff"
         self.assertFalse(storage.is_eligible_detail(detail))
 
+    def test_child_tables_reference_competitions_with_cascade_delete(self) -> None:
+        self.assertEqual(self.connection.execute("PRAGMA foreign_keys").fetchone()[0], 1)
+        child_tables = (
+            "competition_stages",
+            "competition_groups",
+            "competition_rounds",
+            "competition_standings",
+            "competition_rewards",
+            "competition_matches",
+        )
+        for table in child_tables:
+            foreign_keys = self.connection.execute(
+                f'PRAGMA foreign_key_list("{table}")'
+            ).fetchall()
+            parent_links = [
+                row for row in foreign_keys
+                if row[2] == "competitions"
+                and row[3] == "competition_id"
+                and row[4] == "competition_id"
+                and str(row[6]).upper() == "CASCADE"
+            ]
+            self.assertEqual(len(parent_links), 1, table)
+
+        self.assertTrue(storage.persist_competition_detail(self.connection, self.detail()))
+        self.connection.execute("DELETE FROM competitions WHERE competition_id = 100")
+        self.connection.commit()
+        for table in child_tables:
+            count = self.connection.execute(
+                f'SELECT COUNT(*) FROM "{table}" WHERE competition_id = 100'
+            ).fetchone()[0]
+            self.assertEqual(count, 0, table)
+
     def test_detail_persists_normalized_competition_standings_and_match(self) -> None:
         self.assertTrue(storage.persist_competition_detail(self.connection, self.detail()))
         competition = self.connection.execute(

@@ -95,7 +95,7 @@ class ClubChainDataTests(unittest.TestCase):
                 "owner_wallet_address": "0xabcdef",
                 "owner_name": "Owner Name",
                 "signed_player_ids": [3, 9],
-                "competition_ids": [1, 8],
+                "current_competition_ids": [1, 8],
             },
         )
 
@@ -252,7 +252,8 @@ class ClubChainDataTests(unittest.TestCase):
             row = connection.execute(
                 """
                 SELECT club_id, name, city, country, primary_color, secondary_color, status,
-                       division, owner_wallet_address, owner_name, signed_player_ids, competition_ids
+                       division, owner_wallet_address, owner_name, signed_player_ids,
+                       current_competition_ids
                 FROM clubs
                 """
             ).fetchone()
@@ -266,6 +267,9 @@ class ClubChainDataTests(unittest.TestCase):
             )
             self.assertEqual(json.loads(row[10]), [3, 9])
             self.assertEqual(json.loads(row[11]), [1, 11])
+            columns = {str(item[1]) for item in connection.execute("PRAGMA table_info(clubs)")}
+            self.assertIn("current_competition_ids", columns)
+            self.assertNotIn("competition_ids", columns)
         finally:
             connection.close()
 
@@ -333,7 +337,7 @@ class ClubChainDataTests(unittest.TestCase):
         finally:
             connection.close()
 
-    def test_runtime_clubs_projects_chain_fields_and_compatibility_logo_version(self) -> None:
+    def test_runtime_clubs_projects_current_schema(self) -> None:
         connection = sqlite3.connect(":memory:")
         try:
             connection.create_function(
@@ -362,7 +366,7 @@ class ClubChainDataTests(unittest.TestCase):
                     owner_wallet_address TEXT NOT NULL,
                     owner_name TEXT NOT NULL,
                     signed_player_ids TEXT NOT NULL,
-                    competition_ids TEXT NOT NULL
+                    current_competition_ids TEXT NOT NULL
                 )
                 """
             )
@@ -378,8 +382,8 @@ class ClubChainDataTests(unittest.TestCase):
             row = connection.execute(
                 """
                 SELECT name, city, country, primary_color, secondary_color, status, division,
-                       owner_wallet_address, signed_player_ids, competition_ids, logo_version,
-                       leaderboard_rank, mfl_points
+                       owner_wallet_address, signed_player_ids, current_competition_ids,
+                       logo_version, leaderboard_rank, mfl_points
                 FROM runtime_clubs WHERE club_id = '42'
                 """
             ).fetchone()
@@ -390,6 +394,52 @@ class ClubChainDataTests(unittest.TestCase):
                     "FOUNDED", 2, "0xabc", "[3,9]", "[1,11]", "2", None, None,
                 ),
             )
+            columns = {
+                str(item[1]) for item in connection.execute("PRAGMA table_info(runtime_clubs)")
+            }
+            self.assertIn("current_competition_ids", columns)
+            self.assertNotIn("competition_ids", columns)
+        finally:
+            connection.close()
+
+    def test_runtime_clubs_maps_legacy_competition_ids_to_current_name(self) -> None:
+        connection = sqlite3.connect(":memory:")
+        try:
+            connection.create_function(
+                "normalize_search", 1, runtime_db.normalize_search, deterministic=True
+            )
+            connection.execute(
+                """
+                CREATE TABLE players (
+                    active_contract_club_id TEXT,
+                    active_contract_club_name TEXT,
+                    active_contract_club_division TEXT
+                )
+                """
+            )
+            connection.execute(
+                """
+                CREATE TABLE clubs (
+                    club_id TEXT PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    division INTEGER,
+                    owner_wallet_address TEXT NOT NULL,
+                    owner_name TEXT NOT NULL,
+                    signed_player_ids TEXT NOT NULL,
+                    competition_ids TEXT NOT NULL
+                )
+                """
+            )
+            connection.execute(
+                "INSERT INTO clubs VALUES (?, ?, ?, ?, ?, ?, ?)",
+                ("42", "Legacy Club", 2, "0xabc", "Owner", "[3,9]", "[1,11]"),
+            )
+
+            runtime_db.prepare_runtime_clubs(connection)
+            row = connection.execute(
+                "SELECT current_competition_ids FROM runtime_clubs WHERE club_id = '42'"
+            ).fetchone()
+            self.assertEqual(row, ("[1,11]",))
         finally:
             connection.close()
 
@@ -431,7 +481,7 @@ class ClubChainDataTests(unittest.TestCase):
             row = connection.execute(
                 """
                 SELECT city, country, primary_color, secondary_color, status, signed_player_ids,
-                       competition_ids, logo_version, leaderboard_rank, mfl_points
+                       current_competition_ids, logo_version, leaderboard_rank, mfl_points
                 FROM runtime_clubs WHERE club_id = '42'
                 """
             ).fetchone()

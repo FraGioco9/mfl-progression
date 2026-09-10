@@ -125,7 +125,7 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
           owner_wallet_address TEXT NOT NULL DEFAULT '',
           owner_name TEXT NOT NULL DEFAULT '',
           signed_player_ids TEXT NOT NULL DEFAULT '[]',
-          competition_ids TEXT NOT NULL DEFAULT '[]',
+          current_competition_ids TEXT NOT NULL DEFAULT '[]',
           logo_version TEXT NOT NULL DEFAULT '',
           leaderboard_rank INTEGER,
           mfl_points REAL
@@ -149,11 +149,12 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
             if "signed_player_ids" in club_columns
             else "'[]'"
         )
-        competition_ids_expression = (
-            "coalesce(competition_ids, '[]')"
-            if "competition_ids" in club_columns
-            else "'[]'"
-        )
+        if "current_competition_ids" in club_columns:
+            current_competition_ids_expression = "coalesce(current_competition_ids, '[]')"
+        elif "competition_ids" in club_columns:
+            current_competition_ids_expression = "coalesce(competition_ids, '[]')"
+        else:
+            current_competition_ids_expression = "'[]'"
         logo_version_expression = (
             "coalesce(logo_version, '')"
             if "logo_version" in club_columns
@@ -178,7 +179,7 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               owner_wallet_address,
               owner_name,
               signed_player_ids,
-              competition_ids,
+              current_competition_ids,
               logo_version,
               leaderboard_rank,
               mfl_points
@@ -196,7 +197,7 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
               lower(coalesce(owner_wallet_address, '')),
               coalesce(owner_name, ''),
               {signed_players_expression},
-              {competition_ids_expression},
+              {current_competition_ids_expression},
               {logo_version_expression},
               {leaderboard_rank_expression},
               {mfl_points_expression}
@@ -237,6 +238,7 @@ def prepare_runtime_clubs(connection: sqlite3.Connection) -> None:
         "CREATE INDEX runtime_clubs_owner_index "
         "ON runtime_clubs(owner_wallet_address, division, club_id)"
     )
+
 
 def prepare_runtime_database(database_path: Path) -> None:
     if not database_path.is_file():

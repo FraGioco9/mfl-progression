@@ -604,7 +604,7 @@ def build_club_record(
         "owner_wallet_address": owner_wallet_address.strip().lower(),
         "owner_name": owner_name.strip(),
         "signed_player_ids": sorted({int(player_id) for player_id in signed_player_ids}),
-        "competition_ids": competition_ids,
+        "current_competition_ids": competition_ids,
     }
 
 
@@ -624,7 +624,7 @@ def ensure_club_schema(connection: sqlite3.Connection) -> None:
             owner_wallet_address TEXT NOT NULL DEFAULT '',
             owner_name TEXT NOT NULL DEFAULT '',
             signed_player_ids TEXT NOT NULL DEFAULT '[]',
-            competition_ids TEXT NOT NULL DEFAULT '[]'
+            current_competition_ids TEXT NOT NULL DEFAULT '[]'
         )
         """
     )
@@ -725,7 +725,7 @@ def refresh_clubs(
             owner_wallet_address,
             owner_name,
             signed_player_ids,
-            competition_ids
+            current_competition_ids
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """,
         [
@@ -741,7 +741,7 @@ def refresh_clubs(
                 record["owner_wallet_address"],
                 record["owner_name"],
                 json.dumps(record["signed_player_ids"], separators=(",", ":")),
-                json.dumps(record["competition_ids"], separators=(",", ":")),
+                json.dumps(record["current_competition_ids"], separators=(",", ":")),
             )
             for record in sorted(records, key=lambda item: int(item["club_id"]))
         ],
