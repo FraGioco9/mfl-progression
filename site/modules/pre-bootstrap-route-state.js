@@ -23,7 +23,9 @@ const APP_CONFIG_EXPORTS_WITH_INITIAL_ROUTE = `  window.__mflAppConfig = appConf
 
 /**
  * Commit the real initial route and release metadata in the parser-blocking
- * pre-bootstrap runtime without adding DOM-repair ownership.
+ * pre-bootstrap runtime without adding DOM-repair ownership. Bootstrap
+ * consumers reuse the published canonical route request instead of reparsing
+ * destination paths independently.
  * @param {string} source
  */
 export function normalizePreBootstrapRouteState(source) {
