@@ -62,6 +62,33 @@ class CompetitionGenerationSelectionTests(unittest.TestCase):
         selected = competitions.select_root_competitions(root)
         self.assertEqual([item["id"] for item in selected], [10, 11, 12])
 
+    def test_unique_named_league_slots_can_span_noncontiguous_ids(self) -> None:
+        root = {
+            "id": 248,
+            "name": "Flint Division",
+            "division": 10,
+            "competitions": [
+                {"id": 5433, "name": "Flint – League  1", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 1}}},
+                {"id": 5434, "name": "Flint – League  2", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 2}}},
+                {"id": 5669, "name": "Flint – League  46", "type": "LEAGUE", "code": "FLT", "winner": {"club": {"id": 46}}},
+            ],
+        }
+        selected = competitions.select_root_competitions(root)
+        self.assertEqual([item["id"] for item in selected], [5433, 5434, 5669])
+
+    def test_duplicate_named_slots_across_multiple_generations_fail_instead_of_guessing(self) -> None:
+        root = {
+            "id": 488,
+            "name": "Diamond League",
+            "division": 1,
+            "competitions": [
+                {"id": 1, "name": "Diamond – League 1", "type": "LEAGUE", "code": "DMND", "winner": {"club": {"id": 1}}},
+                {"id": 10, "name": "Diamond – League 1", "type": "LEAGUE", "code": "DMND", "winner": {"club": {"id": 2}}},
+            ],
+        }
+        with self.assertRaisesRegex(RuntimeError, "multiple recreated generations"):
+            competitions.select_root_competitions(root)
+
     def test_winners_across_multiple_generations_fail_instead_of_guessing(self) -> None:
         root = {
             "id": 488,
@@ -300,6 +327,10 @@ class CompetitionStorageTests(unittest.TestCase):
 
 
 class CompetitionProgressLoggingTests(unittest.TestCase):
+    def test_raw_season_id_is_not_used_as_display_season(self) -> None:
+        self.assertEqual(competitions.season_number_from_id(17), 7)
+        self.assertEqual(competitions.season_label(17), "Season 7 (seasonId 17)")
+
     def test_detail_fetch_reports_bounded_progress(self) -> None:
         candidates = [{"id": competition_id} for competition_id in range(1, 13)]
         logs: list[str] = []
@@ -309,16 +340,16 @@ class CompetitionProgressLoggingTests(unittest.TestCase):
             lambda _url, label, _limiter: {"id": int(label.rsplit(" ", 1)[1])},
             None,
             log=logs.append,
-            progress_label="Competition season 11 detail",
+            progress_label="Competition Season 1 detail (seasonId 11)",
         )
 
         self.assertEqual(len(details), 12)
         self.assertEqual(
             logs,
             [
-                "Competition season 11 detail: 1/12",
-                "Competition season 11 detail: 10/12",
-                "Competition season 11 detail: 12/12",
+                "Competition Season 1 detail (seasonId 11): 1/12",
+                "Competition Season 1 detail (seasonId 11): 10/12",
+                "Competition Season 1 detail (seasonId 11): 12/12",
             ],
         )
 

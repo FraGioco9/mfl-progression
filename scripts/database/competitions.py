@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Discover, backfill, and refresh official non-playoff MFL competitions."""
 
+import re
 import sqlite3
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -66,6 +67,7 @@ def _candidate(
         "id": competition_id,
         "root_competition_id": _competition_id(root.get("id")),
         "primary_color": str(competition.get("primaryColor") or "").strip(),
+        "name": str(competition.get("name") or "").strip(),
         "has_winner": isinstance(winner, dict) and bool(winner),
         "type": str(competition.get("type") or "").strip().upper(),
     }
@@ -81,6 +83,44 @@ def _contiguous_generations(candidates: list[dict[str, Any]]) -> list[list[dict[
         else:
             generations[-1].append(candidate)
     return generations
+
+
+_LEAGUE_ORDINAL_PATTERN = re.compile(r"\bLeague\s+(\d+)\s*$", re.IGNORECASE)
+
+
+def _league_ordinal(candidate: dict[str, Any]) -> int | None:
+    match = _LEAGUE_ORDINAL_PATTERN.search(str(candidate.get("name") or "").strip())
+    if match is None:
+        return None
+    try:
+        ordinal = int(match.group(1))
+    except (TypeError, ValueError):
+        return None
+    return ordinal if ordinal > 0 else None
+
+
+def _has_unique_in_range_league_ordinals(
+    candidates: list[dict[str, Any]],
+    capacity: int,
+) -> bool:
+    """Recognize one league generation even when API competition IDs contain gaps."""
+    ordinals = [_league_ordinal(candidate) for candidate in candidates]
+    return (
+        bool(ordinals)
+        and all(ordinal is not None for ordinal in ordinals)
+        and len(set(ordinals)) == len(ordinals)
+        and min(ordinals) >= 1
+        and max(ordinals) <= capacity
+    )
+
+
+def season_number_from_id(season_id: int) -> int:
+    """Convert raw MFL API season IDs (11+) to displayed seasons (1+)."""
+    return season_id - storage.FIRST_SEASON_ID + 1
+
+
+def season_label(season_id: int) -> str:
+    return f"Season {season_number_from_id(season_id)} (seasonId {season_id})"
 
 
 def select_root_competitions(root: Any) -> list[dict[str, Any]]:
@@ -102,20 +142,24 @@ def select_root_competitions(root: Any) -> list[dict[str, Any]]:
     if capacity is None or not league_candidates:
         return sorted(candidates, key=lambda item: item["id"])
 
-    generations = _contiguous_generations(league_candidates)
-    winner_generations = [
-        generation
-        for generation in generations
-        if any(item["has_winner"] for item in generation)
-    ]
     root_name = str(root.get("name") or root.get("id") or "unknown root")
-
-    if len(winner_generations) > 1:
-        raise RuntimeError(
-            f"{root_name} has winner-bearing competitions across multiple recreated generations"
-        )
-
-    selected_generation = winner_generations[0] if winner_generations else generations[-1]
+    if _has_unique_in_range_league_ordinals(league_candidates, capacity):
+        # MFL can allocate a later competition ID to a league slot in the same season.
+        # Unique League 1..N names prove these entries are one logical generation even
+        # when their IDs are not contiguous (Season 7 Flint has League 46 at a later ID).
+        selected_generation = league_candidates
+    else:
+        generations = _contiguous_generations(league_candidates)
+        winner_generations = [
+            generation
+            for generation in generations
+            if any(item["has_winner"] for item in generation)
+        ]
+        if len(winner_generations) > 1:
+            raise RuntimeError(
+                f"{root_name} has winner-bearing competitions across multiple recreated generations"
+            )
+        selected_generation = winner_generations[0] if winner_generations else generations[-1]
     winner_count = sum(item["has_winner"] for item in selected_generation)
     if winner_count > capacity:
         raise RuntimeError(
@@ -140,15 +184,15 @@ def select_root_competitions(root: Any) -> list[dict[str, Any]]:
 
 def discover_season_candidates(payload: Any, season_id: int) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
-        raise RuntimeError(f"Season {season_id} history response was not an object")
+        raise RuntimeError(f"{season_label(season_id)} history response was not an object")
     response_season = _competition_id(payload.get("seasonId"))
     if response_season is not None and response_season != season_id:
         raise RuntimeError(
-            f"Season history requested {season_id} but response reported {response_season}"
+            f"{season_label(season_id)} history response reported seasonId {response_season}"
         )
     roots = payload.get("rootCompetitions")
     if not isinstance(roots, list):
-        raise RuntimeError(f"Season {season_id} history response had no rootCompetitions list")
+        raise RuntimeError(f"{season_label(season_id)} history response had no rootCompetitions list")
 
     by_id: dict[int, dict[str, Any]] = {}
     for root in roots:
@@ -268,7 +312,7 @@ def _season_history(
     query = urlencode({"seasonId": season_id})
     return request_json(
         f"{SEASON_HISTORY_URL}?{query}",
-        f"Competition season history {season_id}",
+        f"Competition {season_label(season_id)} history",
         limiter,
     )
 
@@ -336,15 +380,17 @@ def refresh_competitions(
         total_seasons = current_season_id - storage.FIRST_SEASON_ID + 1
         log(
             "Competition historical backfill: "
-            f"{total_seasons} seasons from seasonId {storage.FIRST_SEASON_ID} "
-            f"to {current_season_id}; already stored {len(already_stored)} competitions"
+            f"{total_seasons} seasons from {season_label(storage.FIRST_SEASON_ID)} "
+            f"to {season_label(current_season_id)}; "
+            f"already stored {len(already_stored)} competitions"
         )
         for season_index, season_id in enumerate(
             range(storage.FIRST_SEASON_ID, current_season_id + 1),
             start=1,
         ):
+            display_season = season_number_from_id(season_id)
             progress_prefix = (
-                f"Competition historical season {season_index}/{total_seasons} "
+                f"Competition historical Season {display_season}/{total_seasons} "
                 f"(seasonId {season_id})"
             )
             log(f"{progress_prefix}: requesting history")
@@ -368,7 +414,7 @@ def refresh_competitions(
                 request_json,
                 limiter,
                 log=log,
-                progress_label=f"Competition season {season_id} detail",
+                progress_label=f"Competition Season {display_season} detail (seasonId {season_id})",
             )
             saved, _ = _persist_details(connection, details, log)
             historical_saved += saved
