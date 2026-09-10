@@ -1,0 +1,49 @@
+name: Issue 866 verify historical selectors
+
+on:
+  push:
+    branches:
+      - fix/866-historical-selector-verification
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Validate all historical season selectors against live history
+        env:
+          MFL_API_TOKEN: ${{ secrets.MFL_API_TOKEN }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from urllib.parse import urlencode
+          from urllib.request import Request, urlopen
+
+          from scripts.database.competitions import discover_season_candidates, season_label
+
+          base_url = 'https://z519wdyajg.execute-api.us-east-1.amazonaws.com/prod/competitions/seasonHistory'
+          headers = {
+              'Accept': 'application/json',
+              'User-Agent': 'mfl-front-office-issue-866-history-verifier',
+              'X-MFL-Api-Token': os.environ['MFL_API_TOKEN'],
+          }
+
+          totals = []
+          for season_id in range(11, 27):
+              url = f'{base_url}?{urlencode({"seasonId": season_id})}'
+              with urlopen(Request(url, headers=headers), timeout=60) as response:
+                  payload = json.load(response)
+              candidates = discover_season_candidates(payload, season_id)
+              roots = payload.get('rootCompetitions') or []
+              totals.append(len(candidates))
+              print(f'{season_label(season_id)}: {len(roots)} roots, {len(candidates)} selected competitions')
+
+          print(f'Validated {len(totals)} historical seasons; selected {sum(totals)} competitions total')
+          PY
