@@ -299,21 +299,12 @@
     if (page === "progression") return "Progression";
     if (page === "myplayers") return "My Players";
     if (page === "watchlist") return `Watchlist - ${firstPaintWatchlistIdentity(urlLike).name}`;
-    const parts = routeParts(urlLike);
     if (page === "agents") {
-      const wallet = String(parts[1] || "").trim();
-      try {
-        const decodedWallet = wallet ? decodeURIComponent(wallet) : "";
-        if (!decodedWallet) return "Agents";
-        const normalizedWallet = normalizeWalletAddress(decodedWallet).toLowerCase();
-        const agentName = firstPaintAgentNameForWallet(normalizedWallet);
-        return agentName ? `${agentName} - ${normalizedWallet}` : normalizedWallet;
-      } catch {
-        const normalizedWallet = normalizeWalletAddress(wallet).toLowerCase();
-        if (!normalizedWallet) return "Agents";
-        const agentName = firstPaintAgentNameForWallet(normalizedWallet);
-        return agentName ? `${agentName} - ${normalizedWallet}` : normalizedWallet;
-      }
+      const request = canonicalBootstrapRequest(urlLike);
+      const normalizedWallet = normalizeWalletAddress(request?.pageName === "agents" ? request.options?.walletAddress : "").toLowerCase();
+      if (!normalizedWallet) return "Agents";
+      const agentName = firstPaintAgentNameForWallet(normalizedWallet);
+      return agentName ? `${agentName} - ${normalizedWallet}` : normalizedWallet;
     }
     if (page === "club") {
       const identity = firstPaintClubIdentity(urlLike);
@@ -340,7 +331,7 @@
   }
 
   function primeViewButtons(page, view) {
-    const config = tableViewConfig()[page];
+    const config = APP_CONFIG.routes.tableViews[page];
     if (!config || !Array.isArray(config.order)) return;
     const container = document.querySelector("#progressionPage .views");
     if (!(container instanceof HTMLElement)) return;
@@ -378,10 +369,10 @@
   }
 
   function primeTableChrome(page, urlLike = window.location.href, options = {}) {
-    const normalizedPage = String(page || "").toLowerCase();
+    const normalizedPage = APP_CONFIG.routes.normalizePageName(page);
     if (!normalizedPage) return "";
 
-    const config = tableViewConfig()[normalizedPage];
+    const config = APP_CONFIG.routes.tableViews[normalizedPage];
     const requestedView = tableViewFromUrl(normalizedPage, urlLike);
     const view = config?.order?.includes(requestedView) ? requestedView : String(config?.fallback || requestedView || "");
     primeViewButtons(normalizedPage, view);
